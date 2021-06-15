@@ -1,4 +1,4 @@
-from .entropy import shannon_entropy, ErgodicEnsemble
+from .entropy import shannon_entropy, int_entropy, ErgodicEnsemble
 import numpy as np
 import unittest
 
@@ -35,10 +35,7 @@ class TestEntropy(unittest.TestCase):
             (1.5219280948873621, [0, 0.9, 1, 1.1, 2]),
         ]
         for entropy, observations in cases:
-            observations = np.array(observations)
-            bins = np.arange(observations.max()+2)
-            pdf, nbins = np.histogram(observations, bins=bins)
-            np.testing.assert_almost_equal(shannon_entropy(pdf, True), entropy)
+            np.testing.assert_almost_equal(int_entropy(observations), entropy)
 
         # errors for not normalised
         with self.assertRaises(ValueError):

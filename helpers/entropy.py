@@ -27,6 +27,17 @@ def shannon_entropy(pmf, normalise=False):
     return -np.sum(pmf * np.log2(pmf))
 
 
+def int_entropy(observations):
+    """
+    Work out entropy for a given set of observations
+    Using a bin strategy of just int bounds
+    """
+    observations = np.array(observations)
+    bins = np.arange(observations.max()+2)
+    pdf, nbins = np.histogram(observations, bins=bins)
+    return shannon_entropy(pdf, True)
+
+
 class ErgodicEnsemble(object):
     """
     A simple model to help calculate the 
@@ -39,8 +50,8 @@ class ErgodicEnsemble(object):
 
         # Check data quality
         if len(observations.shape) != 2:
-            raise ValueError("Need a set of observations, with shape 2\
-                got %s" % len(observations.shape))
+            raise ValueError("Need a set of observations, i.e. a 2d matrix,\
+                but got %s" % len(observations.shape))
         if observations.shape[0] < 2:
             raise ValueError("Need at least 2 sets of observations")
 
@@ -116,7 +127,8 @@ class ErgodicEnsemble(object):
             self.tidy_ensembles
         except AttributeError:
             self.tidy_ensembles = pd.melt(pd.DataFrame(self.observations).transpose())
-            self.tidy_ergo = pd.DataFrame({tidy_variable:tidy_h,tidy_value:self.get_ergodic_observations()})
+            self.tidy_ergo = pd.DataFrame({
+                tidy_variable:tidy_h,tidy_value:self.get_ergodic_observations()})
         
         # Ignore Tight layout warning
         with warnings.catch_warnings():
@@ -167,10 +179,11 @@ class ErgodicEnsemble(object):
                     alpha=1.0, linewidth=0, legend=False)
 
     def stats(self):
-        msg = "Ergodic entropy: %.3f\n" % self.ergodic
+        msg = ""
+        msg += "Ensembles count: %s\n" % self.ensembles_count
+        msg += "Ergodic entropy: %.3f\n" % self.ergodic
         msg += "Average ensemble entropy: %.3f\n" % self.ensemble
         msg += "Ergodic Complexity: %.3f\n" % self.complexity
-        #msg += "Ensembles: %s" % len(self.observations)
         print(msg)
 
 
