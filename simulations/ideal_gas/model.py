@@ -96,6 +96,7 @@ class IsolatedBox(Model):
         sns.lineplot(ax=axes[0], data=model_data)
         axes[0].set_title("Entropy evolution over time")
         axes[0].set_ylim(bottom=0)
+        axes[0].legend(facecolor='white')
         
         # trace
         if trace:
