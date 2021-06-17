@@ -13,7 +13,7 @@ class Node(Agent):
         super().__init__(uid, model)
         self.table = table
         self.neighbours = neighbours
-        self.state = initial
+        self.state = int(initial)
     
     def neighbour_states(self):
         states = []
@@ -29,7 +29,7 @@ class Node(Agent):
             raise Exception(
                 "State is set to be %s which is not a 0 or 1"
                 % self.next_state)
-        self.state = self.next_state
+        self.state = int(self.next_state)
 
 
 class RandomBooleanNetwork(Model):
