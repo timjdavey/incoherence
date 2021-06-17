@@ -23,8 +23,8 @@ def shannon_entropy(pmf, normalise=False):
     pmf = np.ma.masked_equal(pmf,0).compressed()
     # could use nansum below, but rightly gives runtime warnings
 
-    # treat as discrete entropy
-    return -np.sum(pmf * np.log2(pmf))
+    # add 0 as workaround to avoid -0.0
+    return -np.sum(pmf * np.log2(pmf)) + 0
 
 
 def int_entropy(observations):
