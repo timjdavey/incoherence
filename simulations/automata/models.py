@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import cellpylib as cpl
+from cellpylib.entropy import shannon_entropy
 
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -10,12 +11,13 @@ def complexity(ergodic, ensemble):
     """ This function might change, which is why it's encapsulated """
     return ensemble/ergodic
 
+def r2e(row):
+    return shannon_entropy([str(s) for s in row])
+
 def diagnol_entropies(array, flip=False):
     """
     Calculates the entropy for diagnols
     """
-    entropy = cpl.entropy.shannon_entropy
-
     steps, cells = array.shape
 
     if flip:
@@ -25,12 +27,12 @@ def diagnol_entropies(array, flip=False):
     # upper triangle
     for i in range(cells):
         d = np.diag(array, i)
-        ents.append(entropy([str(a) for a in d]))
+        ents.append(r2e(d))
 
     # lower triangle
     for i in range(1,steps):
         d = np.diag(array, -i)
-        ents.append(entropy([str(a) for a in d]))
+        ents.append(r2e(d))
 
     return np.array(ents)
 
@@ -107,6 +109,12 @@ class CA1DEnsemble:
                         np.random.choice([0,1],self.cells,p=[self.p,1-self.p])
                     ]))
     
+    """
+    Execution
+
+    """
+
+
     def run(self, distance, save=False):
         new_raw = []
         for i, e in enumerate(self.raw):
@@ -126,18 +134,16 @@ class CA1DEnsemble:
         except FileNotFound:
             self.run(distance, save)
     
+
+
+    """
+    Saving & loading data
+
+    """
+
     @property
     def key(self):
         return "%s%s-%s-%s" % (self.folder, self.rule, self.cells, self.init)
-    
-    @property
-    def analysis_keys(self):
-        return ('ensemble', 'ergodic', 'meta')
-
-    @property
-    def timesteps(self):
-        return len(self.raw[0])
-    
     
     def save(self, delta=None):
         # optionally save current status
@@ -159,43 +165,40 @@ class CA1DEnsemble:
         except FileNotFound:
             raise FileNotFound("Ensemble analysis not found. Please run .analyse_ensemble()")
 
-    def analyse_ca(self, e):
+
+    """
+    Analysis
+
+    """
+
+    def analyse(self):
+        self._analyse_ensembles()
+        self._analyse_ergodic()
+        self.analysis = pd.DataFrame(self._raw_analysis)
+        self._analyse_complexity()
+        self.analysis = pd.DataFrame(self._raw_analysis)
+
+    def _analyse_ca(self, e):
         timesteps = len(e)
         stable = e[int(timesteps/2):]
         return {
              'Avg Cell Entropy' : cpl.average_cell_entropy(e),
              'Avg Stable Cell Entropy' : cpl.average_cell_entropy(stable),
-             'Last Cell Entropy' : cpl.shannon_entropy(self.r2s(e[-1])),
+             'Last Cell Entropy' : r2e(e[-1]),
              'Stable diag LR': diagnol_entropies(stable).mean(),
              'Stable diag RL': diagnol_entropies(stable, True).mean(),
-             'Timesteps': timesteps,
-             'Cells': self.cells,
-             'Rule': self.rule,
-             'Initial' : self.r2s(e[0]),
-             'Init': self.init,
-             'Ergodic': False,
+             'Initial' : "".join([str(x) for x in e[0]]),
+             'Kind': 'ensemble',
             }
 
-    def analyse(self):
-        self.analyse_ensembles()
-        self.analyse_ergodic()
-        self.analysis = pd.DataFrame(self._raw_analysis)
-
-    def analyse_ensembles(self):
-        # check there is data to analyse
-        if len(self.raw) == 0:
-            raise Exception("No data. Please run .load() or .create() first.")
-        
-        analysis = []
+    def _analyse_ensembles(self):        
+        rows = []
         for e in self.raw:
-            analysis.append(self.analyse_ca(e))
-        self._raw_analysis = analysis
+            rows.append(self._analyse_ca(e))
+        self._raw_analysis = rows
         return self._raw_analysis
     
-    def analyse_ergodic(self):
-        if self._raw_analysis is None:
-            raise Exception("No data. Please .analyse_ensembles() first.")
-
+    def _analyse_ergodic(self):
         # for avg cell entropy
         whole = np.concatenate(self.raw)
         
@@ -211,23 +214,45 @@ class CA1DEnsemble:
             # Raw ergodic calcs
             'Avg Cell Entropy': cpl.average_cell_entropy(whole),
             'Avg Stable Cell Entropy': cpl.average_cell_entropy(half),
-            'Last Cell Entropy': cpl.shannon_entropy(self.r2s(last)),
+            'Last Cell Entropy': r2e(last),
             'Stable diag LR': diagnol_entropies(half).mean(),
             'Stable diag RL': diagnol_entropies(half, True).mean(),
-            # Freedom
-            'Timesteps': timesteps,
-            'Cells': self.cells,
-            'Rule': self.rule,
-            'Init': self.init,
             'Initial' : "",
-            'Ergodic': True,
+            'Kind': 'ergodic',
         }
         self._raw_analysis.append(ergodic_analysis)
+    
+    def get_analysis(self, kind='ensemble'):
+        return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:5]]
+
+    def _analyse_complexity(self):
+        c = {}
+        ensemble_data = self.get_analysis('ensemble').mean().to_dict()
+        ergodic_data = self.get_analysis('ergodic').mean().to_dict()
         
-    
-    def r2s(self, row):
-        return ''.join([str(s) for s in row])
-    
+        # calc basic complexity value
+        for k, v in ensemble_data.items():
+            c[k] = ergodic_data[k] - v
+
+        # set unique vars
+        c['Initial'] = ""
+        c['Kind'] = "complexity"
+        # attach generic vars
+        self._raw_analysis.append(c)
+
+
+    """
+    Plotting
+
+    """
+
+    def plot(self, i=None):
+        fig, axes = plt.subplots(1, 3,
+            sharex=False, sharey=False, figsize=(20,5))
+        self.plot_heatmap(axes[0])
+        self.plot_single(ax=axes[1])
+        self.plot_data(axes[2])
+
     def plot_cpl(self, i=0):
         """ Plot using cpl """
         cpl.plot(self.raw[i])
@@ -238,7 +263,6 @@ class CA1DEnsemble:
         f.set_title("%s ensembles with rule %s" %
             (self.count, self.rule))
 
-
     def plot_single(self, i=None, ax=None):
         if i is None:
             i = np.random.randint(0, self.count)
@@ -247,19 +271,17 @@ class CA1DEnsemble:
                 xticklabels=False, yticklabels=False)
         s.set_title("Single plot of ensemble %s" % i)
         s.set_xlabel("%s Cells" % self.cells)
-        s.set_ylabel("%s Timesteps" % self.timesteps)
+        s.set_ylabel("%s Timesteps" % self.count)
 
     def plot_data(self, ax=None):
 
         # variables
         df = self.analysis
-        m_first = 'Avg Cell Entropy'
-        m_last = 'Stable diag RL'
         m = 'measurement'
         v = 'value'
 
         # all the cell means
-        melt = pd.melt(df.loc[:self.count, m_first:m_last], var_name=m)
+        melt = pd.melt(self.get_analysis('ensemble'), var_name=m)
         sns.stripplot(x=m, y=v, data=melt, ax=ax,
                         alpha=0.3, zorder=1, palette="crest")
         
@@ -269,11 +291,7 @@ class CA1DEnsemble:
                       markers="v", scale=1, ci=None)
         
         # ergodic means
-        erg = pd.melt(
-            # ergodic value appended last
-            # should probably get via Ergodic=True
-            df.loc[self.count:self.count+1, m_first:m_last],
-            var_name=m)
+        erg = pd.melt(self.get_analysis('ergodic'), var_name=m)
         g = sns.pointplot(y=v, x=m, ax=ax,
                       data=erg, palette="flare",
                       markers="^", scale=1, ci=None)
@@ -283,15 +301,8 @@ class CA1DEnsemble:
             ax = g
         ax.set_xlabel('')
         ax.set_ylabel('Entropy value')
+        ax.set_ylim([0,1])
         ax.set_title("Ergodic & Mean entropy values")
-
-
-    def plot(self, i=None):
-        fig, axes = plt.subplots(1, 3,
-            sharex=False, sharey=False, figsize=(20,5))
-        self.plot_heatmap(axes[0])
-        self.plot_single(ax=axes[1])
-        self.plot_data(axes[2])
         
 
 

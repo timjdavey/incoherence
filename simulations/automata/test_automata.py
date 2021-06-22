@@ -56,15 +56,20 @@ class TestAutomata(unittest.TestCase):
             'Avg Cell Entropy': 0.9249603170398115,
             'Avg Stable Cell Entropy': 0.8713415946277461,
             'Last Cell Entropy': 0.9709505944546686,
-            'Timesteps': steps,
-            'Cells': cells,
+            'Stable diag LR': 0.6959999571987501,
+            'Stable diag RL': 0.5353554929439425,
         }
         df = ca.analysis
-        for i in range(len(df)):
+        # loop over the ensemble & ergodic
+        for i in [0,1]:
+            # then test data for ensembles
             for k, v in ensemble_data.items():
                 np.testing.assert_almost_equal(df[k][i], v)
-
-        # Then check appends ergodic data
-        self.assertEqual(df['Ergodic'][0], False)
-        self.assertEqual(df['Ergodic'][1], True)
+        
+        # then check complexity numbers net to zero
+        # as they're the same value
+        i = 2
+        for k, v in ensemble_data.items():
+            np.testing.assert_almost_equal(df[k][i], 0)
+        
 
