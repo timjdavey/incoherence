@@ -283,7 +283,7 @@ class CA1DEnsemble:
         # all the cell means
         melt = pd.melt(self.get_analysis('ensemble'), var_name=m)
         sns.stripplot(x=m, y=v, data=melt, ax=ax,
-                        alpha=0.3, zorder=1, palette="crest")
+                        alpha=0.4, zorder=1, palette="crest")
         
         # means of means
         sns.pointplot(y=v, x=m, ax=ax,

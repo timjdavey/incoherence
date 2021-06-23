@@ -122,6 +122,7 @@ class ErgodicEnsemble(object):
         tidy_variable = 'variable'
         tidy_value = 'value'
         tidy_h = 'h'
+        palette = 'flare'
 
         try:
             self.tidy_ensembles
@@ -135,23 +136,19 @@ class ErgodicEnsemble(object):
             warnings.simplefilter(action="ignore", category=UserWarning)
 
             if ridge:
-                # Colours
-                pal = sns.cubehelix_palette(self.ensembles_count, rot=-.25, light=0.7)
 
                 # Initialize the FacetGrid object
                 g = sns.FacetGrid(self.tidy_ensembles, row=tidy_variable,
-                    hue=tidy_variable, aspect=8, height=0.5, palette=pal)
+                    hue=tidy_variable, aspect=8, height=0.5, palette=palette)
                 
                 # Draw the densities
                 # Which aren't exactly the histograms, but a more visually clear rep
-                g.map(sns.kdeplot, tidy_value,
-                       clip_on=False,
-                      fill=True, alpha=0.8, linewidth=0.5)
+                g.map(sns.histplot, tidy_value,
+                    element='step',
+                    fill=True, alpha=0.8)
     
-                # White plot outlines
-                g.map(sns.kdeplot, tidy_value, clip_on=False, color="w", lw=1.0)
                 # Set the subplots to overlap
-                g.fig.subplots_adjust(hspace=-0.9)
+                g.fig.subplots_adjust(hspace=-0.6)
                 # Remove axes details that don't play well with overlap
                 g.fig.suptitle('Distributions of each ensemble, as a ridge plot for clarity')
                 g.set_titles("")
@@ -160,23 +157,22 @@ class ErgodicEnsemble(object):
 
             else:
                 # Subplots
-                fig, axes = plt.subplots(1, 2, sharey=True, figsize=(15,5))
+                fig, axes = plt.subplots(1, 2, sharex=True, sharey=False, figsize=(15,5))
                 
                 # Ensembles
                 axes[0].set_title('Distributions by ensemble')
                 # Colours - reverse colours
-                pal = sns.cubehelix_palette(self.ensembles_count, rot=-.25, light=0.7, reverse=True)
-                sns.kdeplot(ax=axes[0], data=self.tidy_ensembles, x=tidy_value, hue=tidy_variable,
-                    # reverse order of plot, to match ridge
-                    hue_order=[i for i in range(self.ensembles_count-1, -1, -1)],
-                    fill=True, common_norm=False, palette=pal,
-                    alpha=0.8, linewidth=0, legend=False)
+                sns.histplot(ax=axes[0],
+                    bins=self.bins, element='step', fill=True,
+                    data=self.tidy_ensembles, x=tidy_value, hue=tidy_variable,
+                    palette="%s_r" % palette, alpha=0.3, legend=False)
 
                 # Ergodic
                 axes[1].set_title('Distribution of all observations (ergodic)')
-                sns.kdeplot(ax=axes[1], data=self.tidy_ergo, x=tidy_value, hue=tidy_variable,
-                    fill=True, common_norm=False, palette="flare",
-                    alpha=1.0, linewidth=0, legend=False)
+                sns.histplot(ax=axes[1],
+                    bins=self.bins, element='step',
+                    data=self.tidy_ergo, x=tidy_value, hue=tidy_variable,
+                    palette=palette, alpha=1.0, legend=False)
 
     def stats(self):
         msg = ""
