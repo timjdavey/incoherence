@@ -1,4 +1,4 @@
-from .entropy import shannon_entropy, int_entropy, ErgodicEnsemble
+from .entropy import shannon_entropy, int_entropy, complexity, ErgodicEnsemble
 import numpy as np
 import unittest
 
@@ -47,6 +47,21 @@ class TestEntropy(unittest.TestCase):
         # rounding error catch
         with self.assertRaises(ValueError):
             shannon_entropy([1.000001]) #6
+
+    def test_complexity(self):
+        cases = [
+            # minimal
+            (0, 0, 0),
+            (0.1, 0.1, 0),
+            (20, 20, 0),
+            # maximal
+            (0, 1, 1),
+            (0, 20, 1),
+            # mid
+            (0.5, 1, 0.5)
+        ]
+        for c in cases:
+            self.assertEqual(complexity(c[0], c[1]), c[2])
 
     def test_ergodic(self):
         np.random.seed(19680800)

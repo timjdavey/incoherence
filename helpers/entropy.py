@@ -27,6 +27,17 @@ def shannon_entropy(pmf, normalise=False):
     return -np.sum(pmf * np.log2(pmf)) + 0
 
 
+def complexity(avg_ensemble_entropy, ergodic_entropy):
+    """ This function might change, which is why it's encapsulated """
+    # handle zero division error
+    # since erg should be > ensemble always
+    # checking for erg is 0 means ensemble is zero too 
+    if ergodic_entropy == 0:
+        return 0
+    else:
+        return 1 - (avg_ensemble_entropy / ergodic_entropy)
+
+
 def int_entropy(observations):
     """
     Work out entropy for a given set of observations
@@ -107,7 +118,7 @@ class ErgodicEnsemble(object):
 
     @property
     def complexity(self):
-        return self.ergodic - self.ensemble
+        return complexity(self.ensemble, self.ergodic)
 
     def plot(self, ridge=False):
         import warnings
@@ -179,7 +190,7 @@ class ErgodicEnsemble(object):
         msg += "Ensembles count: %s\n" % self.ensembles_count
         msg += "Ergodic entropy: %.3f\n" % self.ergodic
         msg += "Average ensemble entropy: %.3f\n" % self.ensemble
-        msg += "Ergodic Complexity: %.3f\n" % self.complexity
+        msg += "Ergodic Complexity: %.1f%%\n" % (self.complexity*100)
         print(msg)
 
 

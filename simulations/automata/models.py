@@ -1,15 +1,12 @@
 import numpy as np
 import pandas as pd
 import cellpylib as cpl
-from cellpylib.entropy import shannon_entropy
-
 import seaborn as sns
-from matplotlib import pyplot as plt
+
+from cellpylib.entropy import shannon_entropy
+from helpers.entropy import complexity
 
 
-def complexity(ergodic, ensemble):
-    """ This function might change, which is why it's encapsulated """
-    return ensemble/ergodic
 
 def r2e(row):
     return shannon_entropy([str(s) for s in row])
@@ -232,7 +229,7 @@ class CA1DEnsemble:
         
         # calc basic complexity value
         for k, v in ensemble_data.items():
-            c[k] = ergodic_data[k] - v
+            c[k] = complexity(v, ergodic_data[k])
 
         # set unique vars
         c['Initial'] = ""
