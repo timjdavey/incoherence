@@ -248,7 +248,11 @@ class CA1DEnsemble:
             sharex=False, sharey=False, figsize=(20,5))
         self.plot_heatmap(axes[0])
         self.plot_single(ax=axes[1])
-        self.plot_data(axes[2])
+        try:
+            self.plot_data(axes[2])
+        except AttributeError:
+            # if not have done analysis
+            pass
 
     def plot_cpl(self, i=0):
         """ Plot using cpl """
@@ -285,13 +289,13 @@ class CA1DEnsemble:
         # means of means
         sns.pointplot(y=v, x=m, ax=ax,
                       data=melt, palette="flare",
-                      markers="v", scale=1, ci=None)
+                      markers="_", scale=1, ci=None)
         
         # ergodic means
         erg = pd.melt(self.get_analysis('ergodic'), var_name=m)
         g = sns.pointplot(y=v, x=m, ax=ax,
                       data=erg, palette="flare",
-                      markers="^", scale=1, ci=None)
+                      markers="_", scale=1, ci=None)
         
         # labels
         if ax is None:
