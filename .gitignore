@@ -6,8 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
-# Large results files
+# Large results & datasets
 *.npz
+datasets/*
 
 # Distribution / packaging
 .Python

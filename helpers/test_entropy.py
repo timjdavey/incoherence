@@ -1,6 +1,8 @@
-from .entropy import shannon_entropy, int_entropy, complexity, ErgodicEnsemble
 import numpy as np
 import unittest
+
+from .entropy import shannon_entropy, int_entropy, complexity
+
 
 
 class TestEntropy(unittest.TestCase):
@@ -62,28 +64,6 @@ class TestEntropy(unittest.TestCase):
         ]
         for c in cases:
             self.assertEqual(complexity(c[0], c[1]), c[2])
-
-    def test_ergodic(self):
-        np.random.seed(19680800)
-
-        cases = [
-            (2.1697928929727737, 2.1639188572981265,
-                [np.random.power(5,1000)*10 for c in range(1000)]),
-            (3.3219230427487183, 3.3153808928073305,
-                [np.random.uniform(0,10,1000) for c in range(1000)]),
-        ]
-        
-        for ergodic, ensemble, observations in cases:
-            observations = np.array(observations)
-            bins = np.arange(observations.max() + 2)
-            ee = ErgodicEnsemble(observations, bins)
-            self.assertEqual(ee.ergodic, ergodic)
-            self.assertEqual(ee.ensemble, ensemble)
-            np.testing.assert_almost_equal(ee.complexity, 0.0, 2)
-
-        # test do they run
-        #ee.plot()
-        ee.stats()
 
 
 

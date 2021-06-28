@@ -303,7 +303,7 @@ class CA1DEnsemble:
         ax.set_xlabel('')
         ax.set_ylabel('Entropy value')
         ax.set_ylim([0,1])
-        ax.set_title("Ergodic & Mean entropy values")
+        ax.set_title("Ergodic (higher) & Mean (lower) entropy values")
         
 
 
