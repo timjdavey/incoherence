@@ -32,7 +32,7 @@ class MoneyModel(Model):
         self.schedule = RandomActivation(self)
         
         # normalize
-        wealths = wealths * wealths.size * level / wealths.sum()
+        wealths = wealths * wealths.size / wealths.sum()
         # level up
         wealths *= level
         
@@ -42,5 +42,5 @@ class MoneyModel(Model):
             self.schedule.add(a)
 
     def step(self):
-        '''Advance the model by one step.'''
         self.schedule.step()
+
