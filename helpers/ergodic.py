@@ -18,6 +18,7 @@ class ErgodicEnsemble:
     
     :bins: the bins to be used for the data e.g. np.linspace(data.min(), data.max(), 20)
     :ensemble_name: the name of the ensemble to be used plots
+    :dist_name: the name of the distribution variable
 
     properties
     :ensemble: the average ensemble entropy
@@ -29,7 +30,7 @@ class ErgodicEnsemble:
     :ridge: plots a ridge plot of the ensemble histograms
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins, ensemble_name=None):
+    def __init__(self, observations, bins, ensemble_name=None, dist_name=None):
 
         if isinstance(observations, (list, np.ndarray)):
             self.observations = observations
@@ -45,16 +46,13 @@ class ErgodicEnsemble:
         
         self.bins = bins
         self.ensemble_name = ensemble_name
+        self.dist_name = dist_name
 
         # helpful to store for plotting or other analysis
-        histograms = []
         entropies = []
         for obs in self.observations:
             hist, nbins = np.histogram(obs, bins=self.bins)
-            histograms.append(hist)
             entropies.append(shannon_entropy(hist, True))
-        
-        self.histograms = np.array(histograms)
         self.entropies = np.array(entropies)
 
 
@@ -95,14 +93,12 @@ class ErgodicEnsemble:
         # in function import so doesn't require
         # pandas or seaborn to use above
         from .plots import dual
-        en = 'ensemble'
-        if self.ensemble_name is not None:
-            en = self.ensemble_name
-        dual(self.observations, self.bins, self.labels, variable=en)
+        dual(self.observations, self.bins, self.labels,
+            tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
 
     def ridge(self):
         from .plots import ridge
-        ridge(self.observations, self.bins)
+        ridge(self.observations, self.bins, self.labels, tidy_value=self.dist_name)
         
         
     def stats(self):

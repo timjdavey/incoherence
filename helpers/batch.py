@@ -69,7 +69,7 @@ def ergodic_collection(df, dist_name, ensemble_names, bin_number=20, display=Fal
             observations[r] = vals
 
         # store the analyser class
-        ee = ErgodicEnsemble(observations, bins, candidate)
+        ee = ErgodicEnsemble(observations, bins, candidate, dist_name)
         ees[candidate] = ee
 
         if display:
