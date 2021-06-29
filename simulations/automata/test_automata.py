@@ -1,8 +1,24 @@
 import unittest
 import numpy as np
-from .models import CA1DEnsemble
+
+from .models import r2e, CA1DEnsemble
+from helpers.entropy import shannon_entropy
+
 
 class TestAutomata(unittest.TestCase):
+
+    def test_r2e(self):
+        cases = [
+            np.ones(10),
+            np.zeros(10),
+            np.random.choice([0,1], size=200),
+            np.random.choice([0,1], p=[0.1, 0.9], size=200),
+        ]
+        for c in cases:
+            pmf, bins = np.histogram(c, bins=[0,1,2])
+            # is my shannon_entropy calculator the same as the cpl calc
+            # while testing the r2e which uses the cpl version
+            np.testing.assert_almost_equal(shannon_entropy(pmf, True), r2e(c))
 
     def test_creation(self):
 

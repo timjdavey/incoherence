@@ -7,13 +7,21 @@ from cellpylib.entropy import shannon_entropy
 from helpers.entropy import complexity
 
 
-
 def r2e(row):
+    """ 'row 2 entropy'. CA row (array) of 1's & 0's
+    
+    :returns: entropy float.
+    """
     return shannon_entropy([str(s) for s in row])
 
 def diagnol_entropies(array, flip=False):
     """
-    Calculates the entropy for diagnols
+    Calculates the entropy for diagnols of a CA.
+
+    :flip: default is top left to bottom right,
+    if flipped, it goes top right to bottom left.
+
+    :returns: an array of entropy floats.
     """
     steps, cells = array.shape
 
@@ -41,6 +49,11 @@ class CA1DEnsemble:
 
     In particular an Ensemble (a collection of )
     Celluar Automata that are 1 Dimensional.
+
+    :rule: the wolfram new kind of science rule number
+    :cells: the number of cells
+    :count: the number of ensembles
+    :init: takes {random|simple|half|sparse}
 
     There's a very simple flow to it's usage being e.g.
     ca = CA1DEnsemble(rule=30, cells=200, count=5, init='random')

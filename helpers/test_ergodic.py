@@ -29,8 +29,6 @@ class TestEntropy(unittest.TestCase):
             self.assertEqual(ee.ensemble, ensemble)
             np.testing.assert_almost_equal(ee.complexity, 0.0, 2)
 
-            # getters
-            self.assertEqual(len(ee.get_ergodic_observations()), ensembles*samples)
 
             # test do they run
             #ee.plot()

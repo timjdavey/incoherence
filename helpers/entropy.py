@@ -47,6 +47,6 @@ def int_entropy(observations):
     """
     observations = np.array(observations)
     bins = np.arange(observations.max()+2)
-    pdf, nbins = np.histogram(observations, bins=bins)
-    return shannon_entropy(pdf, True)
+    pmf, nbins = np.histogram(observations, bins=bins)
+    return shannon_entropy(pmf, True)
 
