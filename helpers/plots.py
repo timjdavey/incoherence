@@ -5,23 +5,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-
-def dual(observations, bins, labels=None,
-        tidy_variable=None, tidy_value=None, palette='flare', tidy_h='h'):
+def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
+        tidy_variable='ensemble', tidy_value='value', palette='flare', tidy_h='h'):
     
     """ Plots the histograms overlaid & the ergodic frequency plot """
+
     sns.set_style('white')
 
-    # Names & labels
-    if tidy_value is None: tidy_value = 'value'
-    if tidy_variable is None: tidy_variable = 'ensemble'
+    # Only show legend if have small size
     legend = labels is not None and len(labels) < 12
-
-    # tidy data
-    tidy_ensembles = pd.melt(pd.DataFrame(observations, index=labels).T,
-            var_name=tidy_variable, value_name=tidy_value)
-    tidy_ergo = pd.DataFrame({
-            tidy_variable:tidy_h,tidy_value:np.concatenate(observations)})
 
     # Subplots
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(15,5))
@@ -46,14 +38,11 @@ def dual(observations, bins, labels=None,
 
 
 
-def ridge(observations, bins, labels, tidy_variable='ensemble',
-        tidy_value='value', palette = 'flare',
+def ridge(tidy_ensembles, bins, labels=None,
+        tidy_variable='ensemble', tidy_value='value', palette = 'flare',
         title='Distributions of each ensemble, as a ridge plot for clarity'):
-    """ Plots a ridge plot for a series of ensembles """
 
-    # tidy data
-    tidy_ensembles = pd.melt(pd.DataFrame(observations, index=labels).T,
-            var_name=tidy_variable, value_name=tidy_value)
+    """ Plots a ridge plot for a series of ensembles """
 
     # Ignore Tight layout warning
     with warnings.catch_warnings():
@@ -73,7 +62,8 @@ def ridge(observations, bins, labels, tidy_variable='ensemble',
         # labels
         def label(x, color, label):
             ax = plt.gca()
-            ax.text(-0.1, .2, label, fontweight="bold", color=color, ha="left", va="center", transform=ax.transAxes)
+            ax.text(-0.1, .2, label, fontweight="bold",
+                color=color, ha="left", va="center", transform=ax.transAxes)
         g.map(label, tidy_variable)
 
         # Set the subplots to overlap
@@ -86,3 +76,15 @@ def ridge(observations, bins, labels, tidy_variable='ensemble',
 
         # reset theme
         sns.set_style('white')
+
+def scatter(tidy_ensembles, bins, tidy_variable='ensemble', tidy_value='value',
+            palette='flare', jitter=0.5, alpha=0.7):
+    """ Plots a stripplot recreating what a scatter plot of the original data might have looked like """
+    sns.set_theme(style="white")#, rc={"figure.figsize":(15, 10)})
+    g = sns.stripplot(data=tidy_ensembles, x=tidy_variable, y=tidy_value,
+            palette=palette, jitter=jitter, alpha=alpha, size=2)
+
+
+
+
+

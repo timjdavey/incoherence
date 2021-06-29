@@ -1,4 +1,5 @@
 import numpy as np
+from functools import cached_property
 
 from .entropy import shannon_entropy, complexity
 
@@ -30,8 +31,13 @@ class ErgodicEnsemble:
     :ridge: plots a ridge plot of the ensemble histograms
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins, ensemble_name=None, dist_name=None):
+    def __init__(self, observations, bins, ensemble_name='ensemble', dist_name='value'):
 
+        # naming for plots
+        self.ensemble_name = ensemble_name
+        self.dist_name = dist_name
+
+        # observations by dict or list
         if isinstance(observations, (list, np.ndarray)):
             self.observations = observations
             self.labels = None
@@ -44,48 +50,83 @@ class ErgodicEnsemble:
             raise TypeError(
                 "observations is of type %s not list or dict" % type(observations))
         
-        self.bins = bins
-        self.ensemble_name = ensemble_name
-        self.dist_name = dist_name
+        # all of the observations
+        self.ergodic_observations = np.concatenate(self.observations)
 
-        # helpful to store for plotting or other analysis
+        # error check bins must be constructed correctly
+        emin = self.ergodic_observations.min()
+        emax = self.ergodic_observations.max()
+        if len(bins) < 2:
+            raise ValueError("%s bins is too small" % bins)
+        elif bins[0] > emin:
+            raise ValueError("%s lower bin value less than ergodic min" % emin)
+        elif bins[-1] < emax:
+            raise ValueError("%s higher bin value less than ergodic max" % emax)
+        else:
+            self.bins = bins
+
+
+
+    """
+    Data processing
+    
+    """
+    @cached_property
+    def entropies(self):
+        """ Array of entropies for each ensemble """
         entropies = []
         for obs in self.observations:
             hist, nbins = np.histogram(obs, bins=self.bins)
             entropies.append(shannon_entropy(hist, True))
-        self.entropies = np.array(entropies)
+        return np.array(entropies)
 
+    @cached_property
+    def ensemble_melt(self):
+        """ Dataframe of ensemble data prepared """
+        import pandas as pd
+        return pd.melt(pd.DataFrame(self.observations, index=self.labels).T,
+            var_name=self.ensemble_name, value_name=self.dist_name)
 
+    @cached_property
+    def ergodic_melt(self):
+        import pandas as pd
+        return pd.DataFrame({
+            self.dist_name:self.ergodic_observations,
+            self.ensemble_name:'h',})
+    
     """
     Calculations & metrics
     
     """
+    @cached_property
+    def ensemble_count(self):
+        return len(self.entropies)
 
-    @property
+    @cached_property
     def ensemble(self):
+        """ The average (mean) ensemble entropy """
         return np.mean(self.entropies)
 
-    @property
+    @cached_property
     def geometric_ensemble_mean(self):
-        return self.entropies.prod()**(1.0/len(self.entropies))
+        """ The geometric (mean) ensemble entropy """
+        return self.entropies.prod()**(1.0/self.ensemble_count)
 
-    @property
+    @cached_property
     def ergodic(self):
-        try:
-            return self._ergodic
-        except AttributeError:
-            hist, nbins = np.histogram(np.concatenate(self.observations), bins=self.bins)
-            self._ergodic = shannon_entropy(hist, True)
-            return self._ergodic
+        """ The entropy of the ergodic distribution """
+        hist, nbins = np.histogram(self.ergodic_observations, bins=self.bins)
+        return shannon_entropy(hist, True)
 
-    @property
+    @cached_property
     def complexity(self):
+        """ The ergodic complexity """
         return complexity(self.ensemble, self.ergodic)
 
 
 
     """
-    Plot
+    Plots & displays
     
     """
 
@@ -93,20 +134,25 @@ class ErgodicEnsemble:
         # in function import so doesn't require
         # pandas or seaborn to use above
         from .plots import dual
-        dual(self.observations, self.bins, self.labels,
+        dual(self.ensemble_melt, self.ergodic_melt, self.bins, self.labels,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
 
     def ridge(self):
         from .plots import ridge
-        ridge(self.observations, self.bins, self.labels, tidy_value=self.dist_name)
+        ridge(self.ensemble_melt, self.bins, self.labels,
+            tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
         
-        
+    def scatter(self):
+        from .plots import scatter
+        scatter(self.ensemble_melt, self.bins,
+            tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
+    
     def stats(self):
         msg = ""
         if self.ensemble_name is not None:
             msg += "%s\n" % self.ensemble_name
         msg += "%.1f%% ergodic complexity\n" % (self.complexity*100)
         msg += "%.3f (%.3f) average ensemble (ergodic)\n" % (self.ensemble, self.ergodic)
-        msg += "From %s ensembles\n" % len(self.observations) 
+        msg += "From %s ensembles\n" % self.ensemble_count
         msg += "With bins %s from %s to %s.\n" % (len(self.bins), self.bins[0], self.bins[-1])
         print(msg)

@@ -36,6 +36,7 @@ def complexity_stablise(bin_range, plot=False, *args, **kwargs):
     df = pd.DataFrame(complexities)
     if plot:
         melt = pd.melt(df, id_vars='bins')
+        sns.set_style('white')
         sns.lineplot(data=melt, x='bins', y='value', hue='variable')
     return df
 
