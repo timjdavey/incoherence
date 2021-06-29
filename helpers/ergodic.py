@@ -10,6 +10,24 @@ class ErgodicEnsemble:
     Contains some simple performance boosts, but also stores
     some helpful data to make visualisation simpler
     (hence why it's a class rather than just a function).
+    
+    intialization
+    :observations: either takes a list or dict of the observations grouped by ensemble
+    e.g. [[0,0,1,0], [0,1,0]] or {'UK':[0,0,1,0], 'US':[0,1,0]}
+    if pass a dict, the keys will be used as a legend in the ensemble plots
+    
+    :bins: the bins to be used for the data e.g. np.linspace(data.min(), data.max(), 20)
+    :ensemble_name: the name of the ensemble to be used plots
+
+    properties
+    :ensemble: the average ensemble entropy
+    :ergodic: the entropy of the ergodic distribution
+    :complexity: the ergodic complexity
+
+    functions
+    :plot: plots the ensemble & ergodic histograms
+    :ridge: plots a ridge plot of the ensemble histograms
+    :stats: prints all the stats in an easy to read format
     """
     def __init__(self, observations, bins, ensemble_name=None):
 
