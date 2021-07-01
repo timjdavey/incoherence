@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from .entropy import shannon_entropy, int_entropy, complexity
+from .entropy import shannon_entropy, int_entropy, complexity, sigmoid_complexity
 
 
 
@@ -52,18 +52,30 @@ class TestEntropy(unittest.TestCase):
 
     def test_complexity(self):
         cases = [
-            # minimal
-            (0, 0, 0),
-            (0.1, 0.1, 0),
-            (20, 20, 0),
-            # maximal
-            (0, 1, 1),
-            (0, 20, 1),
-            # mid
-            (0.5, 1, 0.5)
+            # ensemble, ergodic, complexity, sigmoid
+            (0, 0, 0.0, 0.0),
+            (0.1, 0.1, 0.0, 0.0),
+            (10, 10, 0.0, 0.0),
+            (9, 10, 0.09999999999999998, 0.02961714293482348),
+            (8, 10, 0.19999999999999996, 0.14470087946071847),
+            (7, 10, 0.30000000000000004, 0.38736483348305006),
+            (6, 10, 0.4, 0.687573460372717),
+            (5, 10, 0.5, 0.8860289610969977),
+            (4, 10, 0.6, 0.9692676482913651),
+            (3, 10, 0.7, 0.9973864276163549),
+            (2, 10, 0.8, 1.0),
+            (1, 10, 0.9, 1.0),
+            (0, 20, 1.0, 1.0),
+            (0, 1, 1.0, 1.0),
+            (2, 1, 0.0, 0.0),
         ]
+
         for c in cases:
-            self.assertEqual(complexity(c[0], c[1]), c[2])
+            comp = complexity(c[0], c[1])
+            self.assertEqual(comp, c[2])
+            self.assertEqual(sigmoid_complexity(comp), c[3])
+            #print("(%s, %s, %s, %s)," % (c[0], c[1], comp, sigmoid_complexity(comp)))
+
 
 
 

@@ -4,7 +4,7 @@ import seaborn as sns
 from .ergodic import ErgodicEnsemble
 
 
-def complexity_stablise(bin_range, plot=False, *args, **kwargs):
+def complexity_stablise(bin_range, plot=False, sigmoid=False, *args, **kwargs):
     """
     Runs `ergodic_collection` for series of different bin numbers.
     To that you can get a sense check that you've binned correctly.
@@ -30,7 +30,10 @@ def complexity_stablise(bin_range, plot=False, *args, **kwargs):
         # store in dict ready for a dataframe
         store = {'bins': str(i)}
         for e in ees.values():
-            store[e.ensemble_name] = e.complexity
+            if sigmoid:
+                store[e.ensemble_name] = e.sigmoid
+            else:
+                store[e.ensemble_name] = e.complexity
         complexities.append(store)
 
     df = pd.DataFrame(complexities)
@@ -56,7 +59,7 @@ def ergodic_collection(df, dist_name, ensemble_names, bin_number=20, display=Fal
     :returns: a dict with candidate ensembles as keys and it's ErgodicEnsemble as values.
     """
     # create a simple bin structure
-    bins = np.linspace(df[dist_name].min(), df[dist_name].max(), bin_number)
+    bins = np.linspace(df[dist_name].min(), df[dist_name].max(), bin_number+1)
 
     ees = {}
     # for each of the candidate ensembles e.g. ['region', 'year']

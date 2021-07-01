@@ -27,7 +27,11 @@ class TestEntropy(unittest.TestCase):
             # statistics
             self.assertEqual(ee.ergodic, ergodic)
             self.assertEqual(ee.ensemble, ensemble)
+
+            # should be about 0 complexity as they're all power or uniform
             np.testing.assert_almost_equal(ee.complexity, 0.0, 2)
+            # sigmoid_complexity slightly better at getting to 0.00
+            np.testing.assert_almost_equal(ee.sigmoid, 0.0, 3)
 
 
             # test do they run

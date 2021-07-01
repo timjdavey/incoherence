@@ -33,10 +33,33 @@ def complexity(avg_ensemble_entropy, ergodic_entropy):
     # handle zero division error
     # since erg should be > ensemble always
     # checking for erg is 0 means ensemble is zero too 
-    if ergodic_entropy == 0:
-        return 0
+    if ergodic_entropy == 0 or avg_ensemble_entropy > ergodic_entropy:
+        return 0.0
     else:
         return 1 - (avg_ensemble_entropy / ergodic_entropy)
+
+
+def sigmoid_complexity(complexity, a=4, b=-12,k=1.04,l=0.03):
+    """
+    Similar function to the basic entropy calculation above,
+    except it amplifies the limits by passing it through
+    a sigmoid function.
+
+    a & b are defaulted so that it's skewed to present
+    complexities > 0.3 as more prominent and > 0.5 as basically 1.0
+
+    You can visualise the variables below
+    https://www.desmos.com/calculator/hcs6p0jhfn
+
+    In some cases it comes off worse, but the big benefit
+    of this is it makes the results more consistent across
+    - what bin strategies you choose
+    - how fine grained your ensembles are
+    - how many obversations you have
+    """
+    calc = k/(1+np.exp(a+b*complexity)) - l
+    # make sure only returns in bounds [0.0, 1.0]
+    return min(max(calc, 0.0), 1.0)
 
 
 

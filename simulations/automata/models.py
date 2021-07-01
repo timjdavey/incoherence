@@ -4,7 +4,7 @@ import cellpylib as cpl
 import seaborn as sns
 
 from cellpylib.entropy import shannon_entropy
-from helpers.entropy import complexity
+from helpers.entropy import complexity, sigmoid_complexity
 
 
 def r2e(row):
@@ -236,6 +236,8 @@ class CA1DEnsemble:
         return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:5]]
 
     def _analyse_complexity(self):
+
+        # Store standard complexity
         c = {}
         ensemble_data = self.get_analysis('ensemble').mean().to_dict()
         ergodic_data = self.get_analysis('ergodic').mean().to_dict()
@@ -246,8 +248,17 @@ class CA1DEnsemble:
 
         # set unique vars
         c['Initial'] = ""
-        c['Kind'] = "complexity"
-        # attach generic vars
+        c['Kind'] = "Complexity"
+        self._raw_analysis.append(c)
+
+        
+        # Store sigmoid complexity
+        sc = {}
+        for k, v in ensemble_data.items():
+            c[k] = sigmoid_complexity(c[k])
+
+        c['Initial'] = ""
+        c['Kind'] = "Sigmoid Complexity"
         self._raw_analysis.append(c)
 
 

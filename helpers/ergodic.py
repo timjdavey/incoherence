@@ -1,7 +1,12 @@
 import numpy as np
 from functools import cached_property
 
-from .entropy import shannon_entropy, complexity
+from .entropy import shannon_entropy, complexity, sigmoid_complexity
+
+
+class BinError(ValueError):
+    """ When checking good bin structure """
+    pass
 
 
 class ErgodicEnsemble:
@@ -24,7 +29,8 @@ class ErgodicEnsemble:
     properties
     :ensemble: the average ensemble entropy
     :ergodic: the entropy of the ergodic distribution
-    :complexity: the ergodic complexity
+    :complexity: the simple ergodic complexity metric
+    :sigmoid: the complexity metric passed through a sigmoid function, to amplify & stable the results
 
     functions
     :plot: plots the ensemble & ergodic histograms
@@ -56,12 +62,17 @@ class ErgodicEnsemble:
         # error check bins must be constructed correctly
         emin = self.ergodic_observations.min()
         emax = self.ergodic_observations.max()
-        if len(bins) < 2:
-            raise ValueError("%s bins is too small" % bins)
+        lbin = len(bins)-1
+        leo = len(self.ergodic_observations)
+        if lbin < 2:
+            raise BinError("%s bins is too small" % bins)
         elif bins[0] > emin:
-            raise ValueError("%s lower bin value less than ergodic min" % emin)
+            raise BinError("%s lower bin value less than ergodic min" % emin)
         elif bins[-1] < emax:
-            raise ValueError("%s higher bin value less than ergodic max" % emax)
+            raise BinError("%s higher bin value less than ergodic max" % emax)
+        elif leo/lbin < 10:
+            raise BinError("There are only %s observations for %s bins,\
+recommend at least 10-100+ observations per bin not %s" % (leo, lbin, int(leo/lbin)))
         else:
             self.bins = bins
 
@@ -76,8 +87,10 @@ class ErgodicEnsemble:
         """ Array of entropies for each ensemble """
         entropies = []
         for obs in self.observations:
-            hist, nbins = np.histogram(obs, bins=self.bins)
-            entropies.append(shannon_entropy(hist, True))
+            # ignore ensembles with no observations
+            if len(obs) > 0:
+                hist, nbins = np.histogram(obs, bins=self.bins)
+                entropies.append(shannon_entropy(hist, True))
         return np.array(entropies)
 
     @cached_property
@@ -108,11 +121,6 @@ class ErgodicEnsemble:
         return np.mean(self.entropies)
 
     @cached_property
-    def geometric_ensemble_mean(self):
-        """ The geometric (mean) ensemble entropy """
-        return self.entropies.prod()**(1.0/self.ensemble_count)
-
-    @cached_property
     def ergodic(self):
         """ The entropy of the ergodic distribution """
         hist, nbins = np.histogram(self.ergodic_observations, bins=self.bins)
@@ -120,10 +128,13 @@ class ErgodicEnsemble:
 
     @cached_property
     def complexity(self):
-        """ The ergodic complexity """
+        """ A simplier version of the formula """
         return complexity(self.ensemble, self.ergodic)
 
-
+    @cached_property
+    def sigmoid(self):
+        """ The sigmoid ergodic complexity to be used by default """
+        return sigmoid_complexity(self.complexity)
 
     """
     Plots & displays
@@ -152,7 +163,8 @@ class ErgodicEnsemble:
         if self.ensemble_name is not None:
             msg += "%s\n" % self.ensemble_name
         msg += "%.1f%% ergodic complexity\n" % (self.complexity*100)
+        msg += "%.1f%% sigmoid complexity\n" % (self.sigmoid*100)
         msg += "%.3f (%.3f) average ensemble (ergodic)\n" % (self.ensemble, self.ergodic)
         msg += "From %s ensembles\n" % self.ensemble_count
-        msg += "With bins %s from %s to %s.\n" % (len(self.bins), self.bins[0], self.bins[-1])
+        msg += "With bins %s from %s to %s.\n" % (len(self.bins)-1, self.bins[0], self.bins[-1])
         print(msg)

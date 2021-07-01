@@ -89,3 +89,5 @@ class TestAutomata(unittest.TestCase):
             np.testing.assert_almost_equal(df[k][i], 0)
         
 
+if __name__ == '__main__':
+    unittest.main()

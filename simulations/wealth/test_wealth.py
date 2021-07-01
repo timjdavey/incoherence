@@ -34,3 +34,5 @@ class TestWealth(unittest.TestCase):
             np.testing.assert_raises(AssertionError,
                 np.testing.assert_array_equal, new_agent_wealths, agent_wealths)
 
+if __name__ == '__main__':
+    unittest.main()

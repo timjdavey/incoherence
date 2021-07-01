@@ -25,9 +25,8 @@ def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
         data=tidy_ensembles, bins=bins,
         x=tidy_value, hue=tidy_variable,
         element='step', fill=True, stat='probability',
-        common_norm=False, multiple='dodge',
+        common_norm=False, #multiple='dodge',
         palette=palette, alpha=0.2, legend=legend)
-    g.legend
 
     # Ergodic
     axes[1].set_title('Distribution of all observations (ergodic)')
