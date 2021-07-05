@@ -59,6 +59,13 @@ class ErgodicEnsemble:
         # all of the observations
         self.ergodic_observations = np.concatenate(self.observations)
 
+        # store data about observation counts across ensembles
+        # can't use shape, as different lengths, hence doing this
+        obs_counts = []
+        for o in self.observations:
+            obs_counts.append(len(o))
+        self.obs_counts = (np.amin(obs_counts), np.mean(obs_counts), np.amax(obs_counts))
+
         # error check bins must be constructed correctly
         emin = self.ergodic_observations.min()
         emax = self.ergodic_observations.max()
@@ -83,14 +90,25 @@ recommend at least 10-100+ observations per bin not %s" % (leo, lbin, int(leo/lb
     
     """
     @cached_property
+    def histograms(self):
+        histograms = []
+        for obs in self.observations:
+            # ignore erroroneous ensembles with no observations
+            if len(obs) > 0:
+                hist, nbins = np.histogram(obs, bins=self.bins)
+                histograms.append(hist)
+        return np.array(histograms)
+
+    @cached_property
+    def ergodic_histogram(self):
+        return np.histogram(self.ergodic_observations, bins=self.bins)[0]
+
+    @cached_property
     def entropies(self):
         """ Array of entropies for each ensemble """
         entropies = []
-        for obs in self.observations:
-            # ignore ensembles with no observations
-            if len(obs) > 0:
-                hist, nbins = np.histogram(obs, bins=self.bins)
-                entropies.append(shannon_entropy(hist, True))
+        for hist in self.histograms:
+            entropies.append(shannon_entropy(hist, True))
         return np.array(entropies)
 
     @cached_property
@@ -135,6 +153,32 @@ recommend at least 10-100+ observations per bin not %s" % (leo, lbin, int(leo/lb
     def sigmoid(self):
         """ The sigmoid ergodic complexity to be used by default """
         return sigmoid_complexity(self.complexity)
+
+    @cached_property
+    def chisquare(self):
+        if len(ee.histograms) == 2:
+            x2, p = chisquare(self.histograms[0], self.histograms[1])
+        else:
+            x2, p = chisquare(self.histograms, self.ergodic_histogram)
+        return x2, p
+
+    @cached_property
+    def significance_bool(self):
+        """
+        returns bool values of whether obversations meet null hypothesis.
+
+        Put explicitly, returns true (1.0) if there's no evidence to
+        that the ensembles show ergodic complexity. That is, the distributions
+        of each ensemble are independant of how the observations were grouped
+        into ensemebles.
+        """
+        return {
+            'p > 0.05': 1.0 if self.chisquare[1] > 0.05 else 0.0,
+            'p > 0.01': 1.0 if self.chisquare[1] > 0.01 else 0.0,
+            'c < ~0.05': 1.0 if self.complexity < 2**0.5/self.obs_counts[1] else 0.0,
+            'c < ~0.01': 1.0 if self.complexity < 1/self.obs_counts[1] else 0.0,
+        }
+
 
     """
     Plots & displays
