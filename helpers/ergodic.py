@@ -150,17 +150,27 @@ recommend at least 10-100+ observations per bin not %s" % (leo, lbin, int(leo/lb
         return complexity(self.ensemble, self.ergodic)
 
     @cached_property
+    def complexity2(self):
+        return sum([(self.ensemble - e)**2 for e in self.entropies])
+
+    @cached_property
+    def complexity4(self):
+        return sum([(self.ensemble - e)**4 for e in self.entropies])
+
+    @cached_property
     def sigmoid(self):
         """ The sigmoid ergodic complexity to be used by default """
         return sigmoid_complexity(self.complexity)
 
     @cached_property
-    def chisquare(self):
-        if len(ee.histograms) == 2:
-            x2, p = chisquare(self.histograms[0], self.histograms[1])
+    def chisquare_p(self):
+        from scipy.stats import chi2_contingency
+        try:
+            chi2, p, dof, expected = chi2_contingency(self.histograms)
+        except ValueError: # if a bin is zero
+            return None
         else:
-            x2, p = chisquare(self.histograms, self.ergodic_histogram)
-        return x2, p
+            return p
 
     @cached_property
     def significance_bool(self):
