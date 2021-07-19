@@ -6,6 +6,7 @@ class Daisy(Agent):
     def __init__(self, uid, model, name, albedo, lifespan=25):
         super().__init__(uid, model)
         self.name = name
+        self.legend = model.legend[name]
         self.albedo = albedo
         self.age = 0
         self.lifespan = lifespan

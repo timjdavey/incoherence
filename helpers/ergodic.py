@@ -141,8 +141,7 @@ recommend at least 10-100+ observations per bin not %s" % (leo, lbin, int(leo/lb
     @cached_property
     def ergodic(self):
         """ The entropy of the ergodic distribution """
-        hist, nbins = np.histogram(self.ergodic_observations, bins=self.bins)
-        return shannon_entropy(hist, True)
+        return shannon_entropy(self.ergodic_histogram, True)
 
     @cached_property
     def complexity(self):
