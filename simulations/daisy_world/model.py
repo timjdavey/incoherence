@@ -27,13 +27,16 @@ class DaisyWorld(Model):
     This port matches the NetLogo version
     http://www.netlogoweb.org/launch#http://www.netlogoweb.org/assets/modelslib/Sample%20Models/Biology/Daisyworld.nlogo
     
-    Inputs
+    Standard inputs
     :population: `dict` the population of species in the world e.g. see POP_DEFAULT
     :size: `int 29` the width in cells of the world (which is square i.e. `.area` is size**2)
     :luminosity: `float 1.0` is the luminosity of the sun, which can be reset throughout
     :surface_albedo: `float 0.4` albedo of an empty cell
     :store: `bool True` store common variables to `DataCollector` accessed via `.df` 
-    
+
+    Enhanced model inputs
+    :mutate_p: `float 0.0` probability that a daisy will mutate on seeding
+    :mutate_a: `float 0.05` the variance of the normal of much the albedo mutates by
 
     Basic Usage
     >> w = DaisyWorld(POP_DEFAULT) # initialise
@@ -43,15 +46,27 @@ class DaisyWorld(Model):
 
     """
     
-    def __init__(self, population, size=29, luminosity=1.0, surface_albedo=0.4, store=True):
+    def __init__(self, population,
+            # standard temp variables
+            size=29, luminosity=1.0, surface_albedo=0.4, 
+            # mutate variables
+            mutate_p=0.0,
+            mutate_a=0.05,
+            # store data in datacollector or not
+            store=True): 
+
         # setup grid world
         self.size = int(size)
         self.grid = SingleGrid(size, size, True)
         
-        # temperature store
+        # temperature
         self.temperatures = np.zeros((size, size))
         self.luminosity = luminosity
         self.surface_albedo = surface_albedo
+
+        # mutation
+        self.mutate_p = mutate_p
+        self.mutate_a = mutate_a
         
         # keep counts consistent
         self.agents_ever = 0
@@ -60,7 +75,8 @@ class DaisyWorld(Model):
         # populate the world
         # can be done after initialisation as well
         # although the counts won't be stored
-        self.legend = None
+        # adding the 'empty' cell "species"
+        self.legend = {'empty': 0}
         if population:
             self.populate(population)
         
@@ -80,7 +96,6 @@ class DaisyWorld(Model):
                 model_reporters[name] = pop_count(name)
             
             self.datacollector = DataCollector(model_reporters)
-        
     
     def populate(self, population):
         """
@@ -95,15 +110,12 @@ class DaisyWorld(Model):
         
         where `initial` is the % coverage to add of that new population type
         """
-        # creates a uid for each name type
-        self.legend = {'empty': 0}
-        
+
         # for each in the population
         for name, traits in population.items():
             
-            # only add to legend on first go
-            if name not in self.legend:
-                self.legend[name] = len(self.legend)
+            # add to the legend
+            self.add_species(name, mutation=False)
 
             # create the given % of them
             how_many = int(self.area*traits['initial'])
@@ -113,6 +125,23 @@ class DaisyWorld(Model):
             
             for pos in positions:
                 self.add_agent(pos, name, traits['albedo'])
+
+    def add_species(self, name, mutation=False):
+        """ Adds a species to the legend """
+
+        if name not in self.legend:
+            self.legend[name] = len(self.legend)
+            new_name = name
+        elif mutation:
+            # will become a nested set of names
+            # tracked by id
+            # parents would be new_name.split(">")
+            l = len(self.legend)
+            new_name = "%s>%s" % (name, l)
+            self.legend[new_name] = l
+
+        return new_name
+
 
     def add_agent(self, pos, name, albedo):
         """
@@ -126,7 +155,8 @@ class DaisyWorld(Model):
         self.grid.place_agent(agent, pos)
         self.schedule.add(agent)
         self.agents_ever += 1
-    
+
+
     def random_cells(self, amount=1):
         """
         Used in replacement for self.grid.position_agent()
@@ -137,7 +167,32 @@ class DaisyWorld(Model):
         empties = list(self.grid.empties)
         idx = np.random.choice(len(empties), amount, replace=False)
         return [empties[i] for i in idx]
+
+    """
+    Running the model
+    """
+
+    def step(self):
+        """ Move the model one step on """
+        # adjust the temperature
+        self._update_global_temperature()
+        
+        # step all the agents
+        # spawning or dieing the daisies
+        self.schedule.step()
+        
+        # store variables
+        self._collect()
+        
+        
+    def simulate(self, ticks):
+        for i in range(ticks):
+            self.step()
     
+    """
+    Temperature calculations
+    """
+
     def _calculate_temperature(self, albedo, current_temperature):
         """ Calculates new temperature of a cell
         
@@ -194,26 +249,9 @@ class DaisyWorld(Model):
                 
                 # calculate ultimate temperature after diffusion
                 self.temperatures[cx][cy] = (self.temperatures[cx][cy] + absorbed) / 2
-            
-    def step(self):
-        """ Move the model one step on """
-        # adjust the temperature
-        self._update_global_temperature()
-        
-        # step all the agents
-        # spawning or dieing the daisies
-        self.schedule.step()
-        
-        # store variables
-        self._collect()
-        
-        
-    def simulate(self, ticks):
-        for i in range(ticks):
-            self.step()
-    
+
     """
-    Convience attributes
+    Simple data manipulations
     """
     
     @cached_property
@@ -244,10 +282,6 @@ class DaisyWorld(Model):
     def histogram(self):
         """ Returns a histogram of the current counts """
         return list(self.counts.values())
-
-    @property
-    def bins(self):
-        return list(range(len(self.legend)+1))
 
     """
     Key stats to store
@@ -307,19 +341,23 @@ class DaisyWorld(Model):
         data = self.grid_as_numpy(offset)
         cmap = sns.color_palette("cubehelix_r", as_cmap=True)
         vmax = len(self.legend)+1
-        sns.heatmap(data, cmap=cmap, ax=ax,
+        g = sns.heatmap(data, cmap=cmap, ax=ax,
                 xticklabels=False, yticklabels=False, vmin=0, vmax=vmax)
+        return g
     
     def plot_temperature(self, ax=None):
-        sns.heatmap(self.temperatures, ax=ax,
+        g = sns.heatmap(self.temperatures, ax=ax,
                    xticklabels=False, yticklabels=False)
+        return g
     
     def plot_global_temp(self, ax=None):
         d = self.df.temperature
-        sns.lineplot(data=d, ax=ax)
+        g = sns.lineplot(data=d, ax=ax)
+        return g
     
     def plot_entropy(self, ax=None):
         e = self.df.entropy
         g = sns.lineplot(data=e, ax=ax)
         g.set(ylim=(0, None))
+        return g
 

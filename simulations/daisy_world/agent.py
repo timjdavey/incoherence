@@ -19,7 +19,6 @@ class Daisy(Agent):
     def step(self):
         """ Move the agent along one step """
         self.age += 1
-        #self.update_lifespan()
         
         # if too old, then die, otherwise propogate!
         if self.age >= self.lifespan:
@@ -31,17 +30,6 @@ class Daisy(Agent):
         """ Removes the agent. """
         self.model.schedule.remove(self)
         self.model.grid.remove_agent(self)
-    
-    def update_lifespan(self):
-        """
-        Allows the plant to live longer in termperate conditions,
-        and die faster outside of goldilocks zone.
-        """
-        # lifespan adjusts based on if in temperate climate
-        if 18 < self.temperature < 25:
-            self.lifespan += 0.2
-        else:
-            self.lifespan -= 1
     
     def empty_neighbors(self):
         """
@@ -63,9 +51,17 @@ class Daisy(Agent):
         """ Reproduce itself into an empty neighbor cell """
         empty_neighbors = self.empty_neighbors()
         
+        # must be cells to reproduce into
         if empty_neighbors:
             x, y = self.random.choice(empty_neighbors)
-            self.model.add_agent((x, y), self.name, self.albedo)
+
+            # does it mutate?
+            if np.random.random() < self.model.mutate_p:
+                species = self.model.add_species(self.name, mutation=True)
+                albedo = np.random.normal(self.albedo, self.model.mutate_a)
+                self.model.add_agent((x, y), species, albedo)
+            else:
+                self.model.add_agent((x, y), self.name, self.albedo)
     
     def reproduce_if(self):
         """ Check if conditions are right to reproduce.
