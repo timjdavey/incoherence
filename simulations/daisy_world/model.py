@@ -72,6 +72,17 @@ class DaisyWorld(Model):
         self.agents_ever = 0
         self.schedule = RandomActivation(self)
         
+        # you'd want to turn off storing
+        # for minor performance gains        
+        if store:
+            self.datacollector = DataCollector(model_reporters = {
+                        'entropy':'entropy',
+                        'temperature': 'temperature',
+                        'luminosity': 'luminosity',
+            })
+        else:
+            self.datacollector = None
+        
         # populate the world
         # can be done after initialisation as well
         # although the counts won't be stored
@@ -79,23 +90,11 @@ class DaisyWorld(Model):
         self.legend = {'empty': 0}
         if population:
             self.populate(population)
-        
-        # store the population variables
-        self.store = store
+    
+    """
+    Populating the world
+    """
 
-        # you'd turn this off for minor performance gains
-        if self.store:
-            model_reporters = {
-                    'entropy':'entropy',
-                    'temperature': 'temperature',
-                    'luminosity': 'luminosity',
-                }
-            for name in self.legend.keys():
-                def pop_count(name):
-                    return lambda s: s.counts[name]
-                model_reporters[name] = pop_count(name)
-            
-            self.datacollector = DataCollector(model_reporters)
     
     def populate(self, population):
         """
@@ -127,11 +126,15 @@ class DaisyWorld(Model):
                 self.add_agent(pos, name, traits['albedo'])
 
     def add_species(self, name, mutation=False):
-        """ Adds a species to the legend """
-
+        """ Adds a species to the legend & collector """
+        
+        # add to legend
         if name not in self.legend:
             self.legend[name] = len(self.legend)
             new_name = name
+        
+        # if it's a mutation it exists by definition
+        # then it mutates the existing species
         elif mutation:
             # will become a nested set of names
             # tracked by id
@@ -139,6 +142,13 @@ class DaisyWorld(Model):
             l = len(self.legend)
             new_name = "%s>%s" % (name, l)
             self.legend[new_name] = l
+        
+        # if storing data to datacollector
+        # need to add new column
+        if self.datacollector is not None:
+            self.datacollector.model_reporters[new_name] = lambda s: s.counts[new_name]
+            # populate with zeroes for previous time steps (as didn't exist)
+            self.datacollector.model_vars[new_name] = list(np.zeros(self.schedule.steps, dtype='int'))
 
         return new_name
 
@@ -251,7 +261,7 @@ class DaisyWorld(Model):
                 self.temperatures[cx][cy] = (self.temperatures[cx][cy] + absorbed) / 2
 
     """
-    Simple data manipulations
+    Helpful data structures
     """
     
     @cached_property
@@ -293,13 +303,13 @@ class DaisyWorld(Model):
         """ Collect the data at the current step """
         
         # only store if collecting
-        if self.store:
+        if self.datacollector is not None:
             # clear the cached variables
             for stat in self.STATS_TO_CLEAR:
                 try:
                     delattr(self, stat)
                 except AttributeError:
-                    # ignore any clearing issues
+                    # ignore if hasn't yet cached
                     pass
             
             # store the data
@@ -337,6 +347,7 @@ class DaisyWorld(Model):
         self.plot_global_temp(axes[1][1])
     
     def plot_grid(self, ax=None):
+        """ Plots a heatmap visual of each of the populations on the world """
         offset = 1
         data = self.grid_as_numpy(offset)
         cmap = sns.color_palette("cubehelix_r", as_cmap=True)
@@ -346,16 +357,19 @@ class DaisyWorld(Model):
         return g
     
     def plot_temperature(self, ax=None):
+        """ Plots the temperature of each cell at this point in time """
         g = sns.heatmap(self.temperatures, ax=ax,
                    xticklabels=False, yticklabels=False)
         return g
     
     def plot_global_temp(self, ax=None):
+        """ Plots how the global temperature has changed over time """
         d = self.df.temperature
         g = sns.lineplot(data=d, ax=ax)
         return g
     
     def plot_entropy(self, ax=None):
+        """ Plots how the entropy has changed over time """
         e = self.df.entropy
         g = sns.lineplot(data=e, ax=ax)
         g.set(ylim=(0, None))
