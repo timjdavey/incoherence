@@ -11,8 +11,7 @@ def complexity_stablise(bin_range, plot=False, sigmoid=False, *args, **kwargs):
     Typically complexity values stablise at a certain level,
     but that level depends on the sparseness of the data.
 
-    :bin_range: this is not the bins themselves, but the number of bins within the range
-    e.g. range(5,10,50)
+    :bin_range: this is range of bins to test e.g. range(5,10,50)
     :plot: whether to automatically plot the returns results
     :*args, **kwargs: passed to `ergodic_collection`
 

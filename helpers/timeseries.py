@@ -14,6 +14,9 @@ class ErgodicTimeSeries:
         self.observations = []
         self.log = log_func
     
+    def simulate(self):
+        raise NotImplementedError("Please extend this object with a simulation specific implementation")
+
     def analyse(self):
         """
         Creates ErgodicEnsembles for each timestep
@@ -56,6 +59,7 @@ class ErgodicTimeSeries:
         trend = int(len(self.timesteps)*0.1)
         return self.complexities[-trend:].mean()
 
+
     def stats(self):
         """ Prints out basic summary statistics """
         msg = ""
@@ -71,11 +75,15 @@ class ErgodicTimeSeries:
         
         fig, axes = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(15,5))
         
-        # ergodics
+        # ensembles
         for e in np.stack(self.entropies, axis=1):
             sns.lineplot(x=self.timesteps, y=e, alpha=0.15, ax=axes[0])
+        
+        # mean
         means = self.entropies.mean(axis=1)
         sns.lineplot(x=self.timesteps, y=means, ax=axes[0], label="Ensemble Mean")
+        
+        # ergodic
         g = sns.lineplot(x=self.timesteps, y=self.ergodics, ax=axes[0], label="Ergodic")
         g.set(ylim=(0,None))
         g.set_xlabel("Timesteps")
