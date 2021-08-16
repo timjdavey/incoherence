@@ -35,7 +35,7 @@ class ErgodicEnsemble:
     :stats: prints all the stats in an easy to read format
     """
     def __init__(self, observations, bins=None, 
-            ensemble_name='ensemble', dist_name='value', units='bits'):
+            ensemble_name='ensemble', dist_name='value', units='nats'):
 
         # observations by dict or list
         self.raw = observations

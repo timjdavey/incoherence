@@ -20,7 +20,7 @@ class TestEntropy(unittest.TestCase):
             (2.0, [2, 2, 2, 2]),
         ]
         for entropy, observations in cases:
-            np.testing.assert_almost_equal(shannon_entropy(observations, normalise=True), entropy)
+            np.testing.assert_almost_equal(shannon_entropy(observations, normalise=True, units='bits'), entropy)
 
         # errors for empty
         with self.assertRaises(ValueError):
@@ -69,7 +69,7 @@ class TestEntropy(unittest.TestCase):
             ([[0,1],[0.5,0.5],[1,0]], 1.0/3, 1.0, 2.0/3),
         ]
         for c in cases:
-            mms = measures(c[0])
+            mms = measures(c[0], units='bits')
             self.assertEqual(mms[0], c[1]) # ensemble
             self.assertEqual(mms[1], c[2]) # ergodic
             self.assertEqual(mms[2], c[2]-c[1]) # divergence

@@ -13,9 +13,9 @@ class TestErgodic(unittest.TestCase):
 
         cases = [
             ([np.random.power(5,samples)*10 for c in range(ensembles)], 
-                [4.578316190618324, 4.611125507245071, 0.032809316626747353, 0.007115251271126111]),
+                [3.1734469592390404, 3.1961886445549688, 0.02274168531592835, 0.007115251271126]),
             ([np.random.uniform(0,10,samples) for c in range(ensembles)], 
-                [5.608217983831986, 5.643831331149529, 0.0356133473175424, 0.006310136718825188]),
+                [3.8873204834587227, 3.912005774742179, 0.024685291283456312, 0.006310136718825077]),
         ]
 
         for observations, measures in cases:
@@ -36,7 +36,7 @@ class TestErgodic(unittest.TestCase):
                 'first': np.random.power(5,first_samples)*10,
                 'second': np.random.power(5,second_samples)*10,
             }
-        measures = (3.5828707715189196, 3.6305413029431524, 0.04767053142423272, 0.013130419804228022)
+        measures = (2.4834567735889754, 2.5164994680414767, 0.0330426944525013, 0.013130419804228133)
         ee = ErgodicEnsemble(obs)
         self.assertEqual(list(ee.labels), ['first', 'second'])
         np.testing.assert_array_equal(ee.measures, measures)

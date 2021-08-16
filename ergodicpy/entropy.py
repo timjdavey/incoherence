@@ -1,6 +1,6 @@
 import numpy as np
 
-def shannon_entropy(pmf, normalise=False, unit='bits'):
+def shannon_entropy(pmf, normalise=False, units='nats'):
     """
     Calculates the Shannon entropy for a
     discrete probability mass function.
@@ -17,9 +17,9 @@ def shannon_entropy(pmf, normalise=False, unit='bits'):
         raise ValueError('len(pmf) is < 2 %s' % pmf)
     
     # setting the base
-    if unit == 'bits':
+    if units == 'bits':
         log = np.log2
-    elif unit == 'nats':
+    elif units == 'nats':
         log = np.log
     else:
         raise ValueError('Please specify a `unit` of `bits` or `nats`')
