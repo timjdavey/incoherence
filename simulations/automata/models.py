@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import cellpylib as cpl
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from cellpylib.entropy import shannon_entropy
-from helpers.entropy import complexity, sigmoid_complexity
+from helpers.entropy import complexity
 
 
 def r2e(row):
@@ -239,26 +240,16 @@ class CA1DEnsemble:
 
         # Store standard complexity
         c = {}
+        c['Initial'] = ""
+        c['Kind'] = "complexity"
+
         ensemble_data = self.get_analysis('ensemble').mean().to_dict()
         ergodic_data = self.get_analysis('ergodic').mean().to_dict()
         
         # calc basic complexity value
         for k, v in ensemble_data.items():
             c[k] = complexity(v, ergodic_data[k])
-
-        # set unique vars
-        c['Initial'] = ""
-        c['Kind'] = "Complexity"
-        self._raw_analysis.append(c)
-
         
-        # Store sigmoid complexity
-        sc = {}
-        for k, v in ensemble_data.items():
-            c[k] = sigmoid_complexity(c[k])
-
-        c['Initial'] = ""
-        c['Kind'] = "Sigmoid Complexity"
         self._raw_analysis.append(c)
 
 
@@ -277,6 +268,7 @@ class CA1DEnsemble:
         except AttributeError:
             # if not have done analysis
             pass
+        return fig
 
     def plot_cpl(self, i=0):
         """ Plot using cpl """
@@ -287,6 +279,7 @@ class CA1DEnsemble:
             xticklabels=False, yticklabels=False)
         f.set_title("%s ensembles with rule %s" %
             (self.count, self.rule))
+        return f
 
     def plot_single(self, i=None, ax=None):
         if i is None:
@@ -294,9 +287,10 @@ class CA1DEnsemble:
         
         s = sns.heatmap(self.raw[i], ax=ax, cbar=False,
                 xticklabels=False, yticklabels=False)
-        s.set_title("Single plot of ensemble %s" % i)
+        s.set_title("Single plot of ensemble %s with rule %s" % (i, self.rule))
         s.set_xlabel("%s Cells" % self.cells)
-        s.set_ylabel("%s Timesteps" % self.count)
+        s.set_ylabel("%s Timesteps" % len(self.raw[i]))
+        return s
 
     def plot_data(self, ax=None):
 

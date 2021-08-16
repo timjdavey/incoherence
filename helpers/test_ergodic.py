@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from .ergodic import ErgodicEnsemble
+from .ergodic import ErgodicEnsemble, binr, BinError
 
 
 class TestEntropy(unittest.TestCase):
@@ -30,14 +30,40 @@ class TestEntropy(unittest.TestCase):
 
             # should be about 0 complexity as they're all power or uniform
             np.testing.assert_almost_equal(ee.complexity, 0.0, 2)
-            # sigmoid_complexity slightly better at getting to 0.00
-            np.testing.assert_almost_equal(ee.sigmoid, 0.0, 3)
 
+    def test_bins(self):
 
-            # test do they run
-            #ee.plot()
-            #ee.stats()
+        # need more than one dimensional observations
+        with self.assertRaises(ValueError):
+            binr([1,2,3])
+        # minimum too high
+        with self.assertRaises(BinError):
+            binr([[1,2,3],[1,2,3]], minimum=5)
+        # maximum too low
+        with self.assertRaises(BinError):
+            binr([[1,2,3],[1,2,3]], maximum=2)
 
+        cases = [
+            # defaults
+            (binr([[0,1,3],[0,5]]),
+                [0,1,2,3,4,5,6]),
+            (binr([[1,3],[5]]),
+                [1,2,3,4,5,6]),
+
+            # minimums
+            (binr([[1,3],[5]], minimum=0),
+                [0,1,2,3,4,5,6]),
+
+            # maximums
+            (binr([[1,3],[5]], minimum=0, maximum=8),
+                [0,1,2,3,4,5,6,7,8,9]),
+
+            # count
+            (binr([[1,10],[10]], count=2),
+                [1,6,11])
+        ]
+        for created, expected in cases:
+            self.assertEqual(list(created), expected)
 
 
 if __name__ == '__main__':

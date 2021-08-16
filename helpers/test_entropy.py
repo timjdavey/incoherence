@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from .entropy import shannon_entropy, int_entropy, complexity, sigmoid_complexity
+from .entropy import shannon_entropy, int_entropy, complexity
 
 
 
@@ -10,12 +10,11 @@ class TestEntropy(unittest.TestCase):
     def test_shannon_entropy(self):
         # pre-normalised
         cases = [
-            (0.0, [1]),
             (0.0, [1, 0, 0]),
             (1.0, [0.5, 0.5, 0]),
             (2.0, [0.25, 0.25, 0.25, 0.25]),
             # float error rounding
-            (0.0, [1.0000001]), #7
+            (0.0, [0,1.0000001]), #7
         ]
         for entropy, observations in cases:
             np.testing.assert_almost_equal(shannon_entropy(observations), entropy)
@@ -73,8 +72,6 @@ class TestEntropy(unittest.TestCase):
         for c in cases:
             comp = complexity(c[0], c[1])
             self.assertEqual(comp, c[2])
-            self.assertEqual(sigmoid_complexity(comp), c[3])
-            #print("(%s, %s, %s, %s)," % (c[0], c[1], comp, sigmoid_complexity(comp)))
 
 
 
