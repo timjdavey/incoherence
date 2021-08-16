@@ -13,9 +13,9 @@ def shannon_entropy(pmf, normalise=False, unit='bits'):
     """
     pmf = np.array(pmf)
 
-    if len(pmf) < 2:
+    if pmf.size < 2:
         raise ValueError('len(pmf) is < 2 %s' % pmf)
-
+    
     # setting the base
     if unit == 'bits':
         log = np.log2
@@ -41,6 +41,14 @@ def shannon_entropy(pmf, normalise=False, unit='bits'):
     return -np.sum(pmf * log(pmf)) + 0
 
 
+def ensemble_entropy(pmfs, normalise=True, units='bits'):
+    """
+    For a given array of pmfs
+    Returns the ensemble entropy (the mean of the entropy for pmfs)
+    """
+    return np.mean([shannon_entropy(p, normalise, units) for p in pmfs])
+
+
 def ergodic_entropy(pmfs, normalise=True, units='bits'):
     """
     For a given array of pmfs
@@ -49,8 +57,8 @@ def ergodic_entropy(pmfs, normalise=True, units='bits'):
     return shannon_entropy(np.mean(pmfs, axis=0), normalise, units)
 
 
-def complexity(avg_ensemble_entropy, ergodic_entropy):
-    """ This function might change, which is why it's encapsulated """
+def complexity_from_averages(avg_ensemble_entropy, ergodic_entropy):
+    """ Basic function for handling zero errors """
     # handle zero division error
     # since erg should be > ensemble always
     # checking for erg is 0 means ensemble is zero too 
@@ -59,13 +67,12 @@ def complexity(avg_ensemble_entropy, ergodic_entropy):
     else:
         return 1 - (avg_ensemble_entropy / ergodic_entropy)
 
-def int_entropy(observations):
-    """
-    Work out entropy for a given set of observations
-    Using a bin strategy of int bounds
-    """
-    observations = np.array(observations)
-    bins = np.arange(observations.max()+2)
-    pmf, nbins = np.histogram(observations, bins=bins)
-    return shannon_entropy(pmf, True)
+def measures(pmfs, normalise=True, units='bits'):
+    """ Returns all metrics """
+    ensemble = ensemble_entropy(pmfs, normalise, units)
+    ergodic = ergodic_entropy(pmfs, normalise, units)
+    divergence = ergodic - ensemble
+    complexity = complexity_from_averages(ensemble, ergodic)
+    return ensemble, ergodic, divergence, complexity
+
 

@@ -1,53 +1,9 @@
 import numpy as np
 from functools import cached_property
 
-from .entropy import shannon_entropy, complexity
+from .entropy import measures
+from .bins import list_observations, binr
 
-
-class BinError(ValueError):
-    """ When checking good bin structure """
-    pass
-
-
-def binr(observations, count=None, minimum=None, maximum=None):
-    """
-    Generates a set of bins given a list of observations
-    
-    :observations: list or dict of observations
-    :count: the number of bins you want, leave None to use integers
-    :minimum: the minimum value typically 0, leave None to use minimum found in observations
-    :maximum: maximum is the max observed, adds +1 to catch upper bound
-    """ 
-    all_observations = np.concatenate(observations)
-    
-    amin = all_observations.min()
-    amax = all_observations.max()
-    
-    if minimum is None:
-        minimum = amin
-    elif minimum > amin:
-        raise BinError("minimum %s > observed min %s" % (minimum, amin))
-    
-    if maximum is None:
-        maximum = amax
-    elif maximum < amax:
-        raise BinError("maximum %s < observed max %s" % (maximum, amax))
-
-    if count is None:
-        count = maximum-minimum+1
-    
-    return np.linspace(minimum, maximum+1, count+1)
-
-
-def list_observations(observations):
-    """ Given observations, returns the list and labels """
-    if isinstance(observations, (list, np.ndarray)):
-        return (observations, None)
-    elif isinstance(observations, dict):
-        return (list(observations.values()), observations.keys())
-    else:
-        raise TypeError(
-            "`observations` is of type %s not list or dict" % type(observations))
 
 
 class ErgodicEnsemble:
@@ -63,7 +19,7 @@ class ErgodicEnsemble:
     e.g. [[0,0,1,0], [0,1,0]] or {'UK':[0,0,1,0], 'US':[0,1,0]}
     if pass a dict, the keys will be used as a legend in the ensemble plots
     
-    :bins: the bins to be used for the data e.g. np.linspace(data.min(), data.max(), 20)
+    :bins: _None_. the bins to be used for the data, suggest using ep.binr
     :ensemble_name: the name of the ensemble to be used plots
     :dist_name: the name of the distribution variable
 
@@ -78,8 +34,18 @@ class ErgodicEnsemble:
     :ridge: plots a ridge plot of the ensemble histograms
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins, 
+    def __init__(self, observations, bins=None, 
             ensemble_name='ensemble', dist_name='value', units='bits'):
+
+        # observations by dict or list
+        self.raw = observations
+        self.observations, self.labels = list_observations(observations)
+
+        # auto create bins
+        if bins is None:
+            self.bins = binr(observations=observations)
+        else:
+            self.bins = bins
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
@@ -88,41 +54,47 @@ class ErgodicEnsemble:
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
 
-        # observations by dict or list
-        self.raw = observations
-        self.observations, self.labels = list_observations(observations)
-
-        # error check bins must be constructed correctly
-        lbin = len(bins)-1
-        if lbin < 2:
-            raise BinError("%s bins is too small" % bins)
-        else:
-            self.bins = bins
-
 
     """
-    Calculations & metrics
+    Essential calculations & metrics
     
     """
     @cached_property
+    def histograms(self):
+        """ List of histograms of each ensemble """
+        histograms = []
+        for obs in self.observations:
+            # ignore erroroneous ensembles with no observations
+            if len(obs) > 0:
+                hist, nbins = np.histogram(obs, bins=self.bins)
+                histograms.append(hist)
+        return np.array(histograms)
+
+    @cached_property
+    def measures(self):
+        self._ensemble, self._ergodic, self._divergence, self._complexity = \
+            measures(self.histograms, True, self.units)
+        return self._ensemble, self._ergodic, self._divergence, self._complexity
+
+    @property
     def ensemble(self):
         """ The average (mean) ensemble entropy """
-        return np.mean(self.entropies)
+        return self.measures[0]
 
-    @cached_property
+    @property
     def ergodic(self):
         """ The entropy of the ergodic distribution """
-        return shannon_entropy(self.ergodic_histogram, True, self.units)
+        return self.measures[1]
 
-    @cached_property
+    @property
     def divergence(self):
         """ A simplier version of the formula """
-        return self.ergodic - self.ensemble
+        return self.measures[2]
 
-    @cached_property
+    @property
     def complexity(self):
         """ A simplier version of the formula """
-        return complexity(self.ensemble, self.ergodic)
+        return self.measures[3]
 
 
     """
@@ -149,29 +121,6 @@ class ErgodicEnsemble:
     Data processing
     
     """
-    @cached_property
-    def histograms(self):
-        """ List of histograms of each ensemble """
-        histograms = []
-        for obs in self.observations:
-            # ignore erroroneous ensembles with no observations
-            if len(obs) > 0:
-                hist, nbins = np.histogram(obs, bins=self.bins)
-                histograms.append(hist)
-        return np.array(histograms)
-
-    @cached_property
-    def ergodic_histogram(self):
-        """ Histogram of the ergodic observations """
-        return np.mean(self.histograms, axis=0)
-
-    @cached_property
-    def entropies(self):
-        """ Array of entropies for each ensemble """
-        entropies = []
-        for hist in self.histograms:
-            entropies.append(shannon_entropy(hist, True, self.units))
-        return np.array(entropies)
     
     @cached_property
     def obs_counts(self):
@@ -186,13 +135,18 @@ class ErgodicEnsemble:
     @cached_property
     def ensemble_count(self):
         """ Total number of ensembles """
-        return len(self.entropies)
+        return len(self.observations)
 
 
     """
     Plots & displays
     
     """
+
+    @cached_property
+    def ergodic_observations(self):
+        """ All the observations as one """
+        return np.concatenate(self.observations)
 
     @cached_property
     def ensemble_melt(self):
@@ -231,7 +185,7 @@ class ErgodicEnsemble:
         if self.ensemble_name is not None:
             msg += "%s\n" % self.ensemble_name
         msg += "%.1f%% ergodic complexity\n" % (self.complexity*100)
-        msg += "%.1f%% sigmoid complexity\n" % (self.sigmoid*100)
+        msg += "%.3f%% divergence\n" % (self.divergence)
         msg += "%.3f (%.3f) average ensemble (ergodic)\n" % (self.ensemble, self.ergodic)
         msg += "From %s ensembles\n" % self.ensemble_count
         msg += "With bins %s from %s to %s.\n" % (len(self.bins)-1, self.bins[0], self.bins[-1])
