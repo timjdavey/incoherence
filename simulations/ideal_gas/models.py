@@ -1,11 +1,10 @@
 import numpy as np
+import ergodicpy as ep
 
 from mesa import Agent, Model
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
 from mesa.space import ContinuousSpace
-
-from helpers.entropy import int_entropy
 
 
 class Particle(Agent):
@@ -40,7 +39,6 @@ class Particle(Agent):
     def y(self): return self.pos[1]
 
 
-
 class IsolatedBox(Model):
     """ An isolated box with an ideal gas inside """
 
@@ -51,6 +49,7 @@ class IsolatedBox(Model):
 
         self.schedule = RandomActivation(self)
         self.space = ContinuousSpace(width, height, True)
+        self.bins = ep.binr(0, width) # int bins of width
 
         for i in range(N):
             # placement
@@ -62,14 +61,18 @@ class IsolatedBox(Model):
             self.schedule.add(p)
         
         self.datacollector = DataCollector(
-            model_reporters = {'entropy':'entropy_x'},
+            model_reporters = {'entropy': 'entropy_x'},
             agent_reporters = {'x':'x','y':'y'}
         )
     
     @property
+    def observations(self):
+        return [a.x for a in self.schedule.agents]
+
+    @property
     def entropy_x(self):
         "entropy of just the x axis as a simplified proxy"
-        return int_entropy([a.x for a in self.schedule.agents])
+        return ep.entropy_from_obs(self.observations, bins=self.bins)
     
     def step(self):
         self.datacollector.collect(self)
@@ -78,7 +81,6 @@ class IsolatedBox(Model):
     def simulate(self, distance):
         for i in range(distance):
             self.step()
-
 
     def plot(self, trace=True):
         import seaborn as sns

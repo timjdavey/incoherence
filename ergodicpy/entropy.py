@@ -1,6 +1,6 @@
 import numpy as np
 
-def shannon_entropy(pmf, normalise=False, units='nats'):
+def shannon_entropy(pmf, normalise=False, units=None):
     """
     Calculates the Shannon entropy for a
     discrete probability mass function.
@@ -9,7 +9,7 @@ def shannon_entropy(pmf, normalise=False, units='nats'):
     Performs various checks.
 
     :normalise: _False_. Will automatically normalize the pmf for you.
-    :units: _'bits'_ (or _'nats'_). The unit of entropy to be returned.
+    :units: _'nats'_ (or _'bits'_). The unit of entropy to be returned.
     """
     pmf = np.array(pmf)
 
@@ -19,7 +19,7 @@ def shannon_entropy(pmf, normalise=False, units='nats'):
     # setting the base
     if units == 'bits':
         log = np.log2
-    elif units == 'nats':
+    elif units == 'nats' or units is None: # nats is default
         log = np.log
     else:
         raise ValueError('Please specify a `unit` of `bits` or `nats`')
@@ -40,16 +40,25 @@ def shannon_entropy(pmf, normalise=False, units='nats'):
     # add 0 as workaround to avoid -0.0
     return -np.sum(pmf * log(pmf)) + 0
 
+def entropy_from_obs(observations, bins, units=None):
+    """ Simple function wrap np.histogram """
+    hist, _ = np.histogram(observations, bins=bins)
+    return shannon_entropy(hist, True, units)
 
-def ensemble_entropy(pmfs, normalise=True, units='bits'):
+def entropies(pmfs, normalise=True, units=None):
+    """ Returns an array of entropies, given array of pmfs"""
+    return [shannon_entropy(p, normalise, units) for p in pmfs]
+
+
+def ensemble_entropy(pmfs, normalise=True, units=None):
     """
     For a given array of pmfs
     Returns the ensemble entropy (the mean of the entropy for pmfs)
     """
-    return np.mean([shannon_entropy(p, normalise, units) for p in pmfs])
+    return np.mean(entropies(pmfs, normalise, units))
 
 
-def ergodic_entropy(pmfs, normalise=True, units='bits'):
+def ergodic_entropy(pmfs, normalise=True, units=None):
     """
     For a given array of pmfs
     Returns the ergodic pmf, i.e. the mean
@@ -67,12 +76,13 @@ def complexity_from_averages(avg_ensemble_entropy, ergodic_entropy):
     else:
         return 1 - (avg_ensemble_entropy / ergodic_entropy)
 
-def measures(pmfs, normalise=True, units='bits'):
+def measures(pmfs, normalise=True, units=None):
     """ Returns all metrics """
-    ensemble = ensemble_entropy(pmfs, normalise, units)
+    ents = entropies(pmfs, normalise, units)
+    ensemble = np.mean(ents)
     ergodic = ergodic_entropy(pmfs, normalise, units)
     divergence = ergodic - ensemble
     complexity = complexity_from_averages(ensemble, ergodic)
-    return ensemble, ergodic, divergence, complexity
+    return ensemble, ergodic, divergence, complexity, ents
 
 

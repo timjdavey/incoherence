@@ -20,7 +20,7 @@ class TestErgodic(unittest.TestCase):
 
         for observations, measures in cases:
             ee = ErgodicEnsemble(observations)
-            np.testing.assert_array_equal(ee.measures, measures)
+            np.testing.assert_array_equal(ee.measures[:4], measures)
             self.assertEqual(ee.ensemble, measures[0])
             self.assertEqual(ee.ergodic, measures[1])
             self.assertEqual(ee.divergence, measures[2])
@@ -39,7 +39,7 @@ class TestErgodic(unittest.TestCase):
         measures = (2.4834567735889754, 2.5164994680414767, 0.0330426944525013, 0.013130419804228133)
         ee = ErgodicEnsemble(obs)
         self.assertEqual(list(ee.labels), ['first', 'second'])
-        np.testing.assert_array_equal(ee.measures, measures)
+        np.testing.assert_array_equal(ee.measures[:4], measures)
         self.assertEqual(ee.ensemble_count, 2)
         np.testing.assert_array_equal(ee.obs_counts, (200, 400.0, 600))
 

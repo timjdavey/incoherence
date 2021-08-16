@@ -35,7 +35,7 @@ class ErgodicEnsemble:
     :stats: prints all the stats in an easy to read format
     """
     def __init__(self, observations, bins=None, 
-            ensemble_name='ensemble', dist_name='value', units='nats'):
+            ensemble_name='ensemble', dist_name='value', units=None):
 
         # observations by dict or list
         self.raw = observations
@@ -72,9 +72,7 @@ class ErgodicEnsemble:
 
     @cached_property
     def measures(self):
-        self._ensemble, self._ergodic, self._divergence, self._complexity = \
-            measures(self.histograms, True, self.units)
-        return self._ensemble, self._ergodic, self._divergence, self._complexity
+        return measures(self.histograms, True, self.units)
 
     @property
     def ensemble(self):
@@ -96,6 +94,10 @@ class ErgodicEnsemble:
         """ A simplier version of the formula """
         return self.measures[3]
 
+    @property
+    def entropies(self):
+        """ The entropies as array of all the ensembles """
+        return self.measures[4]
 
     """
     Exotic alternative calculations

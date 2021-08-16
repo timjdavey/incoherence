@@ -26,10 +26,14 @@ def binr(minimum=None, maximum=None, count=None, observations=None, ratio=20):
     :maximum: _None_. maximum is the max observed, adds +1 to catch upper bound
     :observations: _None_. list or dict of observations
     """
+
+    if type(minimum) not in (float, int, type(None)):
+        raise TypeError("minimum must be a float or int %s" % minimum)
+
     if observations is not None:
         observations, _ = list_observations(observations)
         observations = np.array(observations)
-        all_observations = np.concatenate(observations)
+        all_observations = np.hstack(observations)
         
         amin = all_observations.min()
         amax = all_observations.max()
