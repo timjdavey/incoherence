@@ -16,7 +16,7 @@ class TestSeries(unittest.TestCase):
                     y = [[np.random.power(5,samples)*10 for _ in range(ensembles)] for _ in range(steps)]
                     ees = ErgodicSeries(x=range(steps), y=y)
                     self.assertEqual(ees.entropies.shape, (steps, ensembles))
-                    self.assertEqual(len(ees.bins), max(int(samples/20), 2)+1)
+                    self.assertEqual(len(ees.bins), max(int(samples/10), 2)+1)
                     self.assertTrue(ees.complexity_max < 1)
                     self.assertTrue(ees.complexity_mean < 1)
                     self.assertTrue(ees.complexity_trend < 1)

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
-        tidy_variable='ensemble', tidy_value='value', palette='flare', tidy_h='h'):
+        tidy_variable='ensemble', tidy_value='value', palette='flare', tidy_h='h', title=None):
     
     """ Plots the histograms overlaid & the ergodic frequency plot """
 
@@ -19,7 +19,9 @@ def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(15,5))
 
     # Ensembles
-    axes[0].set_title('Distributions by %s' % tidy_variable)
+    if title is None:
+        title = 'Distributions by %s' % tidy_variable
+    axes[0].set_title(title)
     # Colours - reverse colours
     g = sns.histplot(ax=axes[0],
         data=tidy_ensembles, bins=bins,

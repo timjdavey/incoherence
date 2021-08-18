@@ -50,7 +50,7 @@ class TestBins(unittest.TestCase):
 
             # ratios
             (binr(observations=[np.zeros(100),np.ones(100)]),
-                np.linspace(0,1,6)),
+                np.linspace(0,1,11)),
             (binr(observations=[np.zeros(100),np.ones(100)], ratio=50),
                 [0. , 0.5, 1. ]),
 

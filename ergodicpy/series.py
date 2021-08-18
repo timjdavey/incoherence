@@ -25,48 +25,39 @@ class ErgodicSeries:
         """
         # need to make sure bins are consistent across all of series
         if self.bins is None:
-            # horrible mess of a transformation
-            ny = np.stack(np.hstack(np.stack(self.y, axis=2)),axis=1)
-            self.bins = binr(observations=ny)
-        
-        ees = []
-        entropies = []
-        measures = []
-        
-        # stored across all steps
-        for timestep_obs in self.y:
+            self.bins = binr(series=self.y)
+
+        # analyse and store across all steps
+        ees, entropies, measures, raw = [], [], [], []
+        for i, timestep_obs in enumerate(self.y):
+            # attach
             ee = ErgodicEnsemble(timestep_obs, self.bins)
             ees.append(ee)
             entropies.append(ee.entropies)
-            measures.append(ee.measures[:4])
+
+            # analyse
+            ms = ee.measures
+            measures.append(list(ms.values()))
+            raw.append(ms)
         
         # numpy'd
         self.ees = ees
+        self.titles = list(ees[0].measures.keys())[:5]
         self.entropies = np.array(entropies)
-        self.ensembles, self.ergodics, self.divergences, self.complexities = np.stack(np.array(measures), axis=1)
-    
-    @property
-    def complexity_max(self):
-        return self.complexities.max()
+        self.ensembles, self.ergodics, self.divergences,\
+            self.complexities, self.div_complexities \
+                = np.stack(np.array(measures), axis=1)
+        self.raw = raw
 
-    @property
-    def complexity_mean(self):
-        return self.complexities.mean()
+    def dataframe(self):
+        import pandas as pd
+        df = pd.DataFrame(data=self.raw)
+        df[self.x_label] = self.x
+        return df
 
-    @property
-    def complexity_trend(self):
-        trend = int(len(self.x)*0.1)
-        return self.complexities[-trend:].mean()
+    def bin_stats(self):
+        return "%s bins from %s to %s" % (len(self.bins)-1, self.bins[0], self.bins[-1])
 
-    def stats(self):
-        """ Prints out basic summary statistics """
-        msg = ""
-        msg += "%.1f%% maximum " % (self.complexity_max*100)
-        msg += "%.1f%% mean " % (self.complexity_mean*100)
-        msg += "%.1f%% trending " % (self.complexity_trend*100)
-        print(msg)
-        return msg
-    
     def plot(self):
         """ Plots the evolution of the entropies & complexities over time """
         import seaborn as sns
@@ -74,34 +65,50 @@ class ErgodicSeries:
 
         fig, axes = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(15,5))
         
+        #
+        # First plot
+        #
+
         # ensembles
         for e in np.stack(self.entropies, axis=1):
             sns.lineplot(x=self.x, y=e, alpha=0.15, ax=axes[0])
 
         # ensemble mean
-        sns.lineplot(x=self.x, y=self.ensembles, ax=axes[0], label="Mean ensemble Entropy")
+        sns.lineplot(x=self.x, y=self.ensembles, ax=axes[0],
+            label="Mean ensemble Entropy", color="green")
         
         # ergodic
-        g = sns.lineplot(x=self.x, y=self.ergodics, ax=axes[0], label="Ergodic entropy")
+        g = sns.lineplot(x=self.x, y=self.ergodics, ax=axes[0],
+            label="Ergodic entropy", color="red")
+
         g.set(ylim=(0,None))
         g.set_xlabel(self.x_label)
         g.set_ylabel("Entropy")
         g.set_title("Entropies (incl semi-transparent individual ensembles)")
         
+
+        #
+        # Second plot
+        #
+
         # complexities
         ax2 = axes[1].twinx()
-        h = sns.lineplot(x=self.x, y=self.complexities, ax=ax2, label="Ergodic complexity")
+        h = sns.lineplot(x=self.x, y=self.complexities, ax=axes[1],
+            color="slateblue", label="Ergodic Complexity (2nd moment)")
+        h = sns.lineplot(x=self.x, y=self.div_complexities, ax=axes[1],
+            color="skyblue", label="Ergodic Complexity (1st moment)")
         h.set(ylim=(0,1))
         h.set_ylabel("Ergodic Complexity")
 
         # divergence
-        f = sns.lineplot(x=self.x, y=self.divergences, ax=axes[1], color="orange", label="Ergodic divergence")
-        f.set(ylim=(0,None))
+        f = sns.lineplot(x=self.x, y=self.divergences, ax=ax2,
+            color="orange", label="Ergodic divergence")
+        f.set(ylim=(0,1))
         f.set_xlabel(self.x_label)
         f.set_ylabel("Ergodic Divergence")
         f.set_title(self.title if self.title else "Evolution of ergodic complexity and divergence")
 
-        # legend box combined
+        # combine legend box
         h1, l1 = axes[1].get_legend_handles_labels()
         h2, l2 = ax2.get_legend_handles_labels()
         axes[1].legend(h1+h2, l1+l2, loc=2)
@@ -109,7 +116,30 @@ class ErgodicSeries:
         
         return fig
 
-    def report(self):
-        self.stats()
-        return self.plot()
+    def step_plot(self, index, comment=""):
+        title = "%s=%s, step=%s (%s)" % (self.x_label, self.x[index], index, comment)
+        self.ees[index].plot(title)
+
+    def results(self, detailed=False):
+        """ Outputs most of the really interesting analysis """
+        self.plot()
+        df = self.dataframe()
+        print("Measures at final %s=%s" % (self.x_label, self.x[-1]))
+        print(df.iloc[-1])
+
+        if detailed:
+            # first results
+            self.step_plot(0, "first")
+            # first maximum plot
+            max_pos = np.where(self.complexities == np.amax(self.complexities))[0][0]
+            self.step_plot(max_pos, "max complexity")
+    
+            # last results
+            self.step_plot(-1, "last")
+
+            # extend stats
+            print("\n\nMeans")
+            print(df.mean())
+            print("\n\nMax's")
+            print(df.max())
 

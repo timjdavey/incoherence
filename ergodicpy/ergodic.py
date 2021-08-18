@@ -72,55 +72,23 @@ class ErgodicEnsemble:
 
     @cached_property
     def measures(self):
-        return measures(self.histograms, True, self.units)
-
-    @property
-    def ensemble(self):
-        """ The average (mean) ensemble entropy """
-        return self.measures[0]
-
-    @property
-    def ergodic(self):
-        """ The entropy of the ergodic distribution """
-        return self.measures[1]
-
-    @property
-    def divergence(self):
-        """ A simplier version of the formula """
-        return self.measures[2]
+        ms = measures(self.histograms, True, self.units, with_entropies=True)
+        self._entropies = ms['entropies of ensembles']
+        del ms['entropies of ensembles']
+        return ms
 
     @property
     def complexity(self):
-        """ A simplier version of the formula """
-        return self.measures[3]
+        return self.measures['ergodic complexity (2)']
 
     @property
     def entropies(self):
-        """ The entropies as array of all the ensembles """
-        return self.measures[4]
-
-    """
-    Exotic alternative calculations
-    
-    """
-
-    @cached_property
-    def complexity2(self):
-        return sum([(self.ergodic - e)**2 for e in self.entropies])/self.ergodic
-
-    @cached_property
-    def chisquare(self):
-        from scipy.stats import chi2_contingency
-        try:
-            chi2, p, dof, expected = chi2_contingency(self.histograms)
-        except ValueError: # if a bin is zero
-            return None
-        else:
-            return chi2, p
+        self.measures # is cached
+        return self._entropies
 
 
     """
-    Data processing
+    Key metrics
     
     """
     
@@ -128,17 +96,32 @@ class ErgodicEnsemble:
     def obs_counts(self):
         """ The min, mean and max observations across ensembles """
         # store data about observation counts across ensembles
-        # can't use shape, as different lengths, hence doing this
-        obs_counts = []
-        for o in self.observations:
-            obs_counts.append(len(o))
-        return (np.amin(obs_counts), np.mean(obs_counts), np.amax(obs_counts))
+        # can't use shape, as can be different lengths
+        obs_counts = [obs_counts.append(len(o)) for o in self.observations]
+        return {
+            'minimum':np.amin(obs_counts),
+            'mean': np.mean(obs_counts),
+            'max': np.amax(obs_counts),
+        }
 
     @cached_property
     def ensemble_count(self):
         """ Total number of ensembles """
         return len(self.observations)
 
+
+    def stats(self):
+        measures = self.measures
+        meaasures['ensembles'] = {
+            'count': self.ensemble_count,
+            'entropies': self.entropies,
+        }
+        measures['bins'] = {
+            'count': len(self.bins)-1,
+            'actual': self.bins,
+        }
+        measures['observations'] = self.obs_counts
+        return measures
 
     """
     Plots & displays
@@ -165,12 +148,12 @@ class ErgodicEnsemble:
             self.dist_name:self.ergodic_observations,
             self.ensemble_name:'h',})
 
-    def plot(self):
-        # in function import so doesn't require
+    def plot(self, title=None):
+        # import in function import so doesn't require
         # pandas or seaborn to use above
         from .plots import dual
         dual(self.ensemble_melt, self.ergodic_melt, self.bins, self.labels,
-            tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
+            tidy_variable=self.ensemble_name, tidy_value=self.dist_name, title=title)
 
     def ridge(self):
         from .plots import ridge
@@ -181,14 +164,3 @@ class ErgodicEnsemble:
         from .plots import scatter
         scatter(self.ensemble_melt, self.bins,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
-    
-    def stats(self):
-        msg = ""
-        if self.ensemble_name is not None:
-            msg += "%s\n" % self.ensemble_name
-        msg += "%.1f%% ergodic complexity\n" % (self.complexity*100)
-        msg += "%.3f%% divergence\n" % (self.divergence)
-        msg += "%.3f (%.3f) average ensemble (ergodic)\n" % (self.ensemble, self.ergodic)
-        msg += "From %s ensembles\n" % self.ensemble_count
-        msg += "With bins %s from %s to %s.\n" % (len(self.bins)-1, self.bins[0], self.bins[-1])
-        print(msg)

@@ -16,7 +16,7 @@ def list_observations(observations):
             "`observations` is of type %s not list or dict" % type(observations))
 
 
-def binr(minimum=None, maximum=None, count=None, observations=None, ratio=20):
+def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=10, log=False):
     """
     Generates a set of bins given a list of observations.
     See test cases for examples.
@@ -26,6 +26,12 @@ def binr(minimum=None, maximum=None, count=None, observations=None, ratio=20):
     :maximum: _None_. maximum is the max observed, adds +1 to catch upper bound
     :observations: _None_. list or dict of observations
     """
+    if observations is not None and series is not None:
+        raise InputError("Must only specify series or observations")
+    elif series is not None:
+        # horrible mess of a transformation
+        # but simulates as if all steps in the series are just ensembles
+        observations = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
 
     if type(minimum) not in (float, int, type(None)):
         raise TypeError("minimum must be a float or int %s" % minimum)
@@ -63,6 +69,20 @@ def binr(minimum=None, maximum=None, count=None, observations=None, ratio=20):
     # obviously need at least 2 bin states to calculate entropy
     if count < 2:
         raise BinError("Count %s < 2, need at least 2 bins" % count)
+    else:
+        # we're dealing with edges so need to add +1 to the final edge with count
+        count += 1
     
-    # we're dealing with edges so need to add the final edge with count
-    return np.linspace(minimum, maximum, count+1)
+    # for handling power law distributions better
+    if log:
+        # doesn't accept 0 as an input, so fudge first bin
+        if minimum == 0:
+            arr = np.geomspace(0.1, maximum, count)
+            arr[0] -= 0.1
+            return arr
+        else:
+            return np.geomspace(minimum, maximum, count)
+    else:
+        return np.linspace(minimum, maximum, count)
+
+
