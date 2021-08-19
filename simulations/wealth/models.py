@@ -14,28 +14,28 @@ class MoneyAgent(Agent):
 
 
     def step(self):
-        # if don't have enough to give, do nothing
-        if self.wealth > 0:
+        # how much to transfer
+        perc = self.model.percent
+        if perc is None:
+            transfer = 1
+        else:
+            transfer = int(self.wealth*perc)
 
-            # how much to transfer
-            perc = self.model.percent
-            if perc is None:
-                transfer = 1
-            else:
-                transfer = int(self.wealth*perc)
+        # if have enough to transfer
+        if self.wealth > transfer:
     
             # choose an agent
             agents = self.model.schedule.agents
             ran = self.random.random()
             thres = self.model.threshold
-
+    
             if self.gave_to and thres is not None and \
                 ran > (len(self.gave_to)/len(agents))/thres:
                 other_agent = self.random.choice(self.gave_to)
             else:
                 other_agent = self.random.choice(self.model.schedule.agents)
-    
-            # then transfer
+        
+            # do the transfer
             other_agent.wealth += transfer
             other_agent.received_from.append(self)
             self.wealth -= transfer

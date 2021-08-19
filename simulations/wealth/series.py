@@ -2,13 +2,32 @@ import ergodicpy as ep
 import numpy as np
 from .models import MoneyModel
 
+def series(agents=100, level=5, ensembles=20, steps=200,
+        percent=None, threshold=None, initial=None, output=None, log=True, step_plots=False):
+    """
+    Simple function to generate results for boltzmann wealth abm
 
-def series(agents=100, level=5, ensembles=20, steps=200, percent=None, threshold=None):
-    """ Simple function to generate results for boltzmann wealth """
+    :agents: number of agents
+    :level: the total wealth of the system which it's normalised to
+    :ensembles: the number of ensembles to generate
+    :steps: how many steps to run for
+    :percent: the percentage wealth for the agents to transfer. None for 1 unit.
+    :threshold: how complex you want the system to be. None for not at all.
+    :initial: the 2D array of initial agent wealths (each row is an ensemble).
+    :output: for printing progress e.g. print or nb.cp
+    :log: if you need to use a log bin strategy, useful for large distribution spreads.
+
+    :returns: an ep.ErgodicSeries objects
+    """
     x, y, models = [], [], []
     
-    for _ in range(ensembles):
-        models.append(MoneyModel(np.ones(agents), level, percent, threshold))
+    # set default initial
+    if initial is None:
+        initial = [np.ones(agents) for _ in range(ensembles)]
+
+    # initialise models
+    for i in range(ensembles):
+        models.append(MoneyModel(initial[i], level, percent, threshold))
     
     # record initial positions
     x.append(0)
@@ -16,11 +35,14 @@ def series(agents=100, level=5, ensembles=20, steps=200, percent=None, threshold
     
     # then step and record
     for i in range(1,steps+1):
+        if output is not None: output(steps-i)
         x.append(i)
         y.append([m.step() for m in models])
         
-    # use log bins
-    bins = ep.binr(minimum=0, series=y, log=True, ratio=2)
+    if output is not None: output("")
+
+    # use log bins as for percent it becomes a powerlaw
+    bins = ep.binr(minimum=0, series=y, log=log, ratio=2)
     ees = ep.ErgodicSeries(x=x, y=y, x_label='timesteps', bins=bins)
-    ees.results()
+    ees.results(step_plots)
     return ees

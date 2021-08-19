@@ -97,7 +97,7 @@ class ErgodicEnsemble:
         """ The min, mean and max observations across ensembles """
         # store data about observation counts across ensembles
         # can't use shape, as can be different lengths
-        obs_counts = [obs_counts.append(len(o)) for o in self.observations]
+        obs_counts = [len(o) for o in self.observations]
         return {
             'minimum':np.amin(obs_counts),
             'mean': np.mean(obs_counts),
@@ -110,18 +110,18 @@ class ErgodicEnsemble:
         return len(self.observations)
 
 
-    def stats(self):
+    def stats(self, display=False):
         measures = self.measures
-        meaasures['ensembles'] = {
-            'count': self.ensemble_count,
-            'entropies': self.entropies,
-        }
-        measures['bins'] = {
-            'count': len(self.bins)-1,
-            'actual': self.bins,
-        }
+        measures['ensembles count'] = self.ensemble_count
+        measures['entropies'] = self.entropies
+        measures['bins count'] = len(self.bins)-1
+        measures['bins range'] = (self.bins[0], self.bins[-1])
         measures['observations'] = self.obs_counts
-        return measures
+        if display:
+            for k,v in measures.items():
+                print(v,k)
+        else:
+            return measures
 
     """
     Plots & displays

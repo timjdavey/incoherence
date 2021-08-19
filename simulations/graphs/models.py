@@ -20,3 +20,7 @@ class ERGraph(Graph):
     @property
     def var(self):
         return self.p*(1-self.p)
+
+    @property
+    def connected(self):
+        return nx.is_connected(self.graph)
