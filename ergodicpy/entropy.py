@@ -76,9 +76,12 @@ def zero_divide(numerator, demoniator):
 def complexity(ergodic_entropy, entropies, moment=2):
     """
     Ergodic complexity calculation
+
     :ergodic_entropy: can use `ergodic_entropy()` to calc
     :entropies: can use `entropies()` to calc
     :moment: _2_ which moment of the complexity required, usually this is just 1 or 2
+
+    Complexity is unitless, however, the entropies passed must all be of the same unit
     """
     divs = [(ergodic_entropy - e)**moment for e in entropies]
     return zero_divide(np.mean(divs)**(1/moment), ergodic_entropy)

@@ -239,19 +239,19 @@ class CA1DEnsemble:
 
     def _analyse_complexity(self):
 
-        # Store standard complexity
-        c = {}
-        c['Initial'] = ""
-        c['Kind'] = "complexity"
+        # Store complexities
+        for moment in [1,2]:
+            data = {}
+            data['Initial'] = ""
+            data['Kind'] = "complexity (%s)" % moment
+    
+            ensemble_data = self.get_analysis("ensemble")
+            ergodic_data = self.get_analysis("ergodic")
 
-        ensemble_data = self.get_analysis('ensemble').mean().to_dict()
-        ergodic_data = self.get_analysis('ergodic').mean().to_dict()
-        
-        # calc basic complexity value
-        for k, v in ensemble_data.items():
-            c[k] = ep.complexity(v, ergodic_data[k])
-        
-        self._raw_analysis.append(c)
+            for key in ensemble_data:
+                data[key] = ep.complexity(list(ergodic_data[key])[0], list(ensemble_data[key]), moment)
+            
+            self._raw_analysis.append(data)
 
 
     """

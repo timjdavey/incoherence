@@ -18,7 +18,7 @@ class TestAutomata(unittest.TestCase):
             pmf, bins = np.histogram(c, bins=[0,1,2])
             # is my shannon_entropy calculator the same as the cpl calc
             # while testing the r2e which uses the cpl version
-            np.testing.assert_almost_equal(ep.shannon_entropy(pmf, True), r2e(c))
+            np.testing.assert_almost_equal(ep.shannon_entropy(pmf, True, units='bits'), r2e(c))
 
     def test_creation(self):
 
