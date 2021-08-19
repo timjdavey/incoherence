@@ -13,18 +13,17 @@ class TestErgodic(unittest.TestCase):
 
         cases = [
             ([np.random.power(5,samples)*10 for c in range(ensembles)], 
-                [3.1734469592390404, 3.1961886445549688, 0.02274168531592835, 0.007115251271126]),
+                [3.844483389200944, 3.889014934030624, 0.044531544829680136, 0.013213745920266874, 0.01145059753821194]),
             ([np.random.uniform(0,10,samples) for c in range(ensembles)], 
-                [3.8873204834587227, 3.912005774742179, 0.024685291283456312, 0.006310136718825077]),
+                [4.554780388320652, 4.605119956305231, 0.050339567984578615, 0.011033121337602255, 0.010931217527928881]),
         ]
 
         for observations, measures in cases:
             ee = ErgodicEnsemble(observations)
-            np.testing.assert_array_equal(ee.measures[:4], measures)
-            self.assertEqual(ee.ensemble, measures[0])
-            self.assertEqual(ee.ergodic, measures[1])
-            self.assertEqual(ee.divergence, measures[2])
+            np.testing.assert_array_equal(list(ee.measures.values()), measures)
             self.assertEqual(ee.complexity, measures[3])
+            self.assertEqual(len(ee.entropies), ensembles)
+            ee.stats()
 
     def test_dicts(self):
         np.random.seed(19680800)
@@ -36,12 +35,10 @@ class TestErgodic(unittest.TestCase):
                 'first': np.random.power(5,first_samples)*10,
                 'second': np.random.power(5,second_samples)*10,
             }
-        measures = (2.4834567735889754, 2.5164994680414767, 0.0330426944525013, 0.013130419804228133)
+        measures = [3.125397481164248, 3.198293599997641, 0.07289611883339298, 0.031897034274177456, 0.0227921910713409]
         ee = ErgodicEnsemble(obs)
         self.assertEqual(list(ee.labels), ['first', 'second'])
-        np.testing.assert_array_equal(ee.measures[:4], measures)
-        self.assertEqual(ee.ensemble_count, 2)
-        np.testing.assert_array_equal(ee.obs_counts, (200, 400.0, 600))
+        np.testing.assert_array_equal(list(ee.measures.values()), measures)
 
 
 if __name__ == '__main__':

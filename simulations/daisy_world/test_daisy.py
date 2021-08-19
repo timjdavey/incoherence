@@ -40,10 +40,12 @@ class TestDaisy(unittest.TestCase):
             for key, expected in case.items():
                 m = means[key]
                 e = expected
-                self.assertTrue(e*0.9 <= m <= e*1.1,
+                self.assertTrue(e*0.8 <= m <= e*1.2,
                     "%slum %s %s != %s" % (case['luminosity'], key, m, e))
 
 
 
 
 
+if __name__ == '__main__':
+    unittest.main()

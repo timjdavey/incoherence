@@ -2,6 +2,15 @@ import ergodicpy as ep
 import numpy as np
 from .models import MoneyModel
 
+def generate(agents=100, level=5, ensembles=20, percent=None, threshold=None, initial=None):
+    """ Generates the models """
+    # set default initial
+    if initial is None:
+        initial = [np.ones(agents) for _ in range(ensembles)]
+    
+    return [MoneyModel(initial[i], level, percent, threshold) for i in range(ensembles)]
+
+
 def series(agents=100, level=5, ensembles=20, steps=200,
         percent=None, threshold=None, initial=None, output=None, log=True, step_plots=False):
     """
@@ -19,15 +28,8 @@ def series(agents=100, level=5, ensembles=20, steps=200,
 
     :returns: an ep.ErgodicSeries objects
     """
-    x, y, models = [], [], []
-    
-    # set default initial
-    if initial is None:
-        initial = [np.ones(agents) for _ in range(ensembles)]
-
-    # initialise models
-    for i in range(ensembles):
-        models.append(MoneyModel(initial[i], level, percent, threshold))
+    x, y = [], []
+    models = generate(agents, level, ensembles, percent, threshold, initial)
     
     # record initial positions
     x.append(0)

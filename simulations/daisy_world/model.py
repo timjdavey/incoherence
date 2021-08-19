@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from functools import cached_property
 
-from helpers.entropy import shannon_entropy
+import ergodicpy as ep
 
 from .agent import Daisy
 from mesa import Model
@@ -327,7 +327,7 @@ class DaisyWorld(Model):
     @cached_property
     def entropy(self):
         """ Returns current entropy of the world """
-        return shannon_entropy(self.histogram, True)
+        return ep.shannon_entropy(self.histogram, True)
     
     @cached_property
     def temperature(self):

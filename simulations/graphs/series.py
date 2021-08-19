@@ -31,7 +31,7 @@ def plot(nodes, ensembles, x, ax, cp, log):
         h.set_title("Ergodic Divergence of ER graphs  (%s nodes, %s ensembles)" % (nodes, ensembles))
 
 
-def series(nodes, ensembles=50, steps=100, log=False, cp=None):
+def series(nodes, ensembles=200, steps=100, log=False, cp=None):
     # two figs for log and not log
     fig, axes = plt.subplots(1, 2, sharex=False, sharey=True, figsize=(15,5))
 

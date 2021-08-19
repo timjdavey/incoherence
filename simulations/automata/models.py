@@ -4,8 +4,9 @@ import cellpylib as cpl
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import ergodicpy as ep
+
 from cellpylib.entropy import shannon_entropy
-from helpers.entropy import complexity
 
 
 def r2e(row):
@@ -248,7 +249,7 @@ class CA1DEnsemble:
         
         # calc basic complexity value
         for k, v in ensemble_data.items():
-            c[k] = complexity(v, ergodic_data[k])
+            c[k] = ep.complexity(v, ergodic_data[k])
         
         self._raw_analysis.append(c)
 

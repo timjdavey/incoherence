@@ -43,9 +43,6 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         
         amin = all_observations.min()
         amax = all_observations.max()
-
-        if observations.shape[0] < 2:
-            raise BinError("Need more than 1 ensemble in observations %s" % observations)
         
         if minimum is None:
             minimum = amin

@@ -21,14 +21,14 @@ class TestWealth(unittest.TestCase):
             self.assertEqual(len(agent_wealths), count)
     
             # total wealth in system is consistent with expected
-            self.assertEqual(int(agent_wealths.sum()), int(level*count))
+            self.assertTrue(agent_wealths.sum() - level*count < 1)
     
             m.step()
     
             new_agent_wealths = np.array([a.wealth for a in m.schedule.agents])
     
             # same total wealth in system
-            self.assertEqual(int(new_agent_wealths.sum()), int(level*count))
+            self.assertTrue(new_agent_wealths.sum() - level*count < 1) # < 1 to handle float errors
 
             # wealth has moved about
             np.testing.assert_raises(AssertionError,

@@ -45,7 +45,7 @@ class TestEntropy(unittest.TestCase):
             ([[0,1],[0.5,0.5],[1,0]], [0.23104906018664842, 0.6931471805599453, 0.4620981203732969, 0.816496580927726, 0.6666666666666666, [0.0, 0.6931471805599453, 0.0]]),
         ]
         for pmfs, expected in cases:
-            mms = list(measures(pmfs, entropies=True).values())
+            mms = list(measures(pmfs, with_entropies=True).values())
             for i, e in enumerate(expected):
                 self.assertEqual(mms[i], e)
 

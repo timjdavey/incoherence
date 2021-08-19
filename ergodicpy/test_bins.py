@@ -7,11 +7,6 @@ from .bins import binr, BinError
 class TestBins(unittest.TestCase):
 
     def test_errors(self):
-
-        # need more than one dimensional observations
-        with self.assertRaises(ValueError):
-            binr(observations=[1,2,3])
-
         # minimum too high
         with self.assertRaises(BinError):
             binr(observations=[[1,2,3],[1,2,3]], minimum=5)
