@@ -324,6 +324,10 @@ class CA1DEnsemble:
         ax.set_ylim([0,1])
         ax.set_title("Ergodic (higher) & Mean (lower) entropy values")
         
-
+    def show(self, steps):
+        self.run(steps)
+        self.analyse()
+        self.plot()
+        return self
 
 
