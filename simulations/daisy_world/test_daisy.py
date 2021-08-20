@@ -1,5 +1,5 @@
 import unittest
-from .model import DaisyWorld, POP_DEFAULT
+from .models import DaisyWorld, POP_DEFAULT
 
 
 

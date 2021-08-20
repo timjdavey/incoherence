@@ -93,7 +93,7 @@ def measures(pmfs, normalise=True, units=None, with_entropies=False):
     ergodic = ergodic_entropy(pmfs, normalise, units)
 
     metrics = {
-        'mean ensemble entropy': ensemble,
+        'ensemble entropy': ensemble,
         'ergodic entropy': ergodic,
         'ergodic divergence': ergodic - ensemble,
         'ergodic complexity (2)': complexity(ergodic, ents),

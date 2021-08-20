@@ -182,7 +182,7 @@ class DaisyWorld(Model):
     Running the model
     """
 
-    def step(self):
+    def step(self, observations=False):
         """ Move the model one step on """
         # adjust the temperature
         self._update_global_temperature()
@@ -193,6 +193,10 @@ class DaisyWorld(Model):
         
         # store variables
         self._collect()
+
+        # optionally return obs on each step
+        if observations:
+            return self.observations()
         
         
     def simulate(self, ticks):
@@ -279,7 +283,7 @@ class DaisyWorld(Model):
         Use `.legend` to see what population element corresponds to each number.
         """
         # initialise to empties
-        data = np.zeros((self.size, self.size))
+        data = np.zeros((self.size, self.size), dtype='uint8')
         
         # for each of the agents
         for a in self.schedule.agents:
@@ -288,6 +292,9 @@ class DaisyWorld(Model):
 
         return data
     
+    def observations(self):
+        return self.grid_as_numpy().flatten()
+
     @property
     def histogram(self):
         """ Returns a histogram of the current counts """
