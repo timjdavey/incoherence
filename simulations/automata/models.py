@@ -194,9 +194,9 @@ class CA1DEnsemble:
         timesteps = len(e)
         stable = e[int(timesteps/2):]
         return {
-             'Avg Cell Entropy' : cpl.average_cell_entropy(e),
+             #'Avg Cell Entropy' : cpl.average_cell_entropy(e),
              'Avg Stable Cell Entropy' : cpl.average_cell_entropy(stable),
-             'Last Cell Entropy' : r2e(e[-1]),
+             #'Last Cell Entropy' : r2e(e[-1]),
              'Stable diag LR': diagnol_entropies(stable).mean(),
              'Stable diag RL': diagnol_entropies(stable, True).mean(),
              'Initial' : "".join([str(x) for x in e[0]]),
@@ -224,9 +224,9 @@ class CA1DEnsemble:
         # run analysis
         ergodic_analysis = {
             # Raw ergodic calcs
-            'Avg Cell Entropy': cpl.average_cell_entropy(whole),
+            #'Avg Cell Entropy': cpl.average_cell_entropy(whole),
             'Avg Stable Cell Entropy': cpl.average_cell_entropy(half),
-            'Last Cell Entropy': r2e(last),
+            #'Last Cell Entropy': r2e(last),
             'Stable diag LR': diagnol_entropies(half).mean(),
             'Stable diag RL': diagnol_entropies(half, True).mean(),
             'Initial' : "",
@@ -235,23 +235,22 @@ class CA1DEnsemble:
         self._raw_analysis.append(ergodic_analysis)
     
     def get_analysis(self, kind='ensemble'):
-        return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:5]]
+        return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:3]]
 
     def _analyse_complexity(self):
 
         # Store complexities
-        for moment in [1,2]:
-            data = {}
-            data['Initial'] = ""
-            data['Kind'] = "complexity (%s)" % moment
+        data = {}
+        data['Initial'] = ""
+        data['Kind'] = "complexity"
     
-            ensemble_data = self.get_analysis("ensemble")
-            ergodic_data = self.get_analysis("ergodic")
+        ensemble_data = self.get_analysis("ensemble")
+        ergodic_data = self.get_analysis("ergodic")
 
-            for key in ensemble_data:
-                data[key] = ep.complexity(list(ergodic_data[key])[0], list(ensemble_data[key]), moment)
-            
-            self._raw_analysis.append(data)
+        for key in ensemble_data:
+            data[key] = ep.complexity(list(ergodic_data[key])[0], list(ensemble_data[key]))
+        
+        self._raw_analysis.append(data)
 
 
     """

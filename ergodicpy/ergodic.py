@@ -24,18 +24,24 @@ class ErgodicEnsemble:
     :dist_name: the name of the distribution variable
 
     properties
+    :measures: all the four measures below, which are also assigned as properties
     :ensemble: the average ensemble entropy
     :ergodic: the entropy of the ergodic distribution
     :divergence: the divergence metric
-    :complexity: divergence divided by ergodic
+    :complexity: the complexity metric
+
+    :histograms: the histograms of each ensemble
+    :entropies: the entropy for each histogram
 
     functions
+    :stats: a dict of the key statistics
     :plot: plots the ensemble & ergodic histograms
     :ridge: plots a ridge plot of the ensemble histograms
+    :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
     def __init__(self, observations, bins=None, 
-            ensemble_name='ensemble', dist_name='value', units=None):
+            ensemble_name='ensemble', dist_name='value', units=None, lazy=False):
 
         # observations by dict or list
         self.raw = observations
@@ -54,6 +60,10 @@ class ErgodicEnsemble:
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
 
+        # do analysis
+        if not lazy:
+            self.analyse()
+
 
     """
     Essential calculations & metrics
@@ -70,22 +80,12 @@ class ErgodicEnsemble:
                 histograms.append(hist)
         return np.array(histograms)
 
-    @cached_property
-    def measures(self):
+    def analyse(self):
         ms = measures(self.histograms, True, self.units, with_entropies=True)
-        self._entropies = ms['entropies of ensembles']
-        del ms['entropies of ensembles']
-        return ms
-
-    @property
-    def complexity(self):
-        return self.measures['ergodic complexity (2)']
-
-    @property
-    def entropies(self):
-        self.measures # is cached
-        return self._entropies
-
+        for k, v in ms.items():
+            setattr(self, k, v)
+        del ms['entropies']
+        self.measures = ms
 
     """
     Key metrics

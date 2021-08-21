@@ -33,14 +33,14 @@ class TestDaisy(unittest.TestCase):
         ]
 
         for case in cases:
-            world = DaisyWorld(POP_DEFAULT, luminosity=case['luminosity'])
+            world = DaisyWorld(POP_DEFAULT, luminosity=case['luminosity'], vary_age=False)
             world.simulate(500)
             means = world.df[-20:].mean()
 
             for key, expected in case.items():
                 m = means[key]
                 e = expected
-                self.assertTrue(e*0.8 <= m <= e*1.2,
+                self.assertTrue(e*0.85 <= m <= e*1.15,
                     "%slum %s %s != %s" % (case['luminosity'], key, m, e))
 
 

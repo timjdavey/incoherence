@@ -11,7 +11,7 @@ def scan(luminosities=np.linspace(0.4, 1.8, 50), *args, **kwargs):
     ess = [series(luminosity=lum, *args, **kwargs) for lum in luminosities]
 
     # plot using normal scan
-    sss = ep.ErgodicScan(x=luminosities, y=ess)
+    sss = ep.ErgodicScan(x=luminosities, y=ess, trend=0.5)
     return sss, sss.plot()
 
 

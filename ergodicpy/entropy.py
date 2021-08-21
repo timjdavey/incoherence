@@ -73,18 +73,28 @@ def zero_divide(numerator, demoniator):
     else:
         return numerator/demoniator
 
-def complexity(ergodic_entropy, entropies, moment=2):
+def complexity(ergodic_entropy, entropies):
     """
     Ergodic complexity calculation
 
     :ergodic_entropy: can use `ergodic_entropy()` to calc
     :entropies: can use `entropies()` to calc
-    :moment: _2_ which moment of the complexity required, usually this is just 1 or 2
 
     Complexity is unitless, however, the entropies passed must all be of the same unit
     """
-    divs = [(ergodic_entropy - e)**moment for e in entropies]
-    return zero_divide(np.mean(divs)**(1/moment), ergodic_entropy)
+    if ergodic_entropy == 0:
+        return 0.0
+    else:
+        divs = [(ergodic_entropy - e)**2 for e in entropies]
+        return (np.mean(divs) / ergodic_entropy)**0.5
+
+LEGEND = {
+    'ensemble': {'verbose': 'Ensemble Mean Entropy (<H>)', 'color': 'orange'},
+    'ergodic': {'verbose': 'Ergodic Entropy (H_e)', 'color': 'red'},
+    'divergence': {'verbose': 'Ergodic Divergence (D_e)', 'color': 'darkgreen', 'alt': 'mediumseagreen'},
+    'complexity': {'verbose': 'Ergodic Complexity (C_e)', 'color': 'darkorange', 'alt': 'firebrick'},
+    'entropies': {'verbose': 'Entropies of individual ensembles'}
+}
 
 def measures(pmfs, normalise=True, units=None, with_entropies=False):
     """ Returns all metrics """
@@ -93,14 +103,13 @@ def measures(pmfs, normalise=True, units=None, with_entropies=False):
     ergodic = ergodic_entropy(pmfs, normalise, units)
 
     metrics = {
-        'ensemble entropy': ensemble,
-        'ergodic entropy': ergodic,
-        'ergodic divergence': ergodic - ensemble,
-        'ergodic complexity (2)': complexity(ergodic, ents),
-        'ergodic complexity (1st moment)': complexity(ergodic, ents, 1),
+        'ensemble': ensemble,
+        'ergodic': ergodic,
+        'divergence': ergodic - ensemble,
+        'complexity': complexity(ergodic, ents),
     }
     if with_entropies:
-        metrics['entropies of ensembles'] = ents
+        metrics['entropies'] = ents
     return metrics
 
 

@@ -69,9 +69,9 @@ class TestAutomata(unittest.TestCase):
 
         # these values will be the same for ergodic as just 1 frame
         ensemble_data = {
-            'Avg Cell Entropy': 0.9249603170398115,
+            #'Avg Cell Entropy': 0.9249603170398115,
             'Avg Stable Cell Entropy': 0.8713415946277461,
-            'Last Cell Entropy': 0.9709505944546686,
+            #'Last Cell Entropy': 0.9709505944546686,
             'Stable diag LR': 0.6959999571987501,
             'Stable diag RL': 0.5353554929439425,
         }

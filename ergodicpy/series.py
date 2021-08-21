@@ -2,17 +2,7 @@ import numpy as np
 
 from .bins import binr
 from .ergodic import ErgodicEnsemble
-
-
-LEFT_GRAPH = (
-    ("ergodic entropy", "red"),
-    ("ensemble entropy", "orange"))
-
-RIGHT_GRAPH = (
-    ('ergodic divergence', 'mediumseagreen', "darkgreen"),
-    ('ergodic complexity (1st moment)', 'mediumturquoise', "darkturquoise"),
-    ('ergodic complexity (2)', 'darkorange', "firebrick"))
-
+from .entropy import LEGEND
 
 
 class ErgodicSeries:
@@ -60,12 +50,6 @@ class ErgodicSeries:
         stacked = np.stack(np.array(measures), axis=1)
         for i, k in enumerate(ees[0].measures.keys()):
             self.measures[k] = stacked[i]
-        
-
-    @property
-    def complexities(self):
-        return self.measures['ergodic complexity (2)']
-    
 
     """
     Statistics & analysing data
@@ -80,6 +64,10 @@ class ErgodicSeries:
     def bin_stats(self):
         """ Stats about the bins which were used """
         return "%s bins from %s to %s" % (len(self.bins)-1, self.bins[0], self.bins[-1])
+
+    @property
+    def peaks(self):
+        return np.where(self.measures['complexity'] == np.amax(self.measures['complexity']))[0]
 
     def print_stats(self):
         """ Prints the common stats using pandas """
@@ -99,8 +87,7 @@ class ErgodicSeries:
             # first results
             self.step_plot(0, "first")
             # first maximum plot
-            max_pos = np.where(self.complexities == np.amax(self.complexities))[0][0]
-            self.step_plot(max_pos, "max complexity")
+            self.step_plot(self.peaks[0], "max complexity")
         
             # last results
             self.step_plot(-1, "last")     
@@ -108,7 +95,7 @@ class ErgodicSeries:
     """
     Plotting
     """
-    def plot(self, left_lines=LEFT_GRAPH, right_lines=RIGHT_GRAPH):
+    def plot(self, legend=LEGEND):
         """ Plots the evolution of the entropies & complexities over time """
         import seaborn as sns
         import matplotlib.pyplot as plt
@@ -131,9 +118,9 @@ class ErgodicSeries:
             sns.lineplot(x=self.x, y=e, alpha=alpha, ax=axes[0], color=palette[i])
 
         # ergodic & ensemble
-        for name, color in left_lines:
-            g = sns.lineplot(x=self.x, y=self.measures[name], ax=axes[0],
-                label=name, color=color)
+        for key in ('ensemble', 'ergodic'):
+            g = sns.lineplot(x=self.x, y=self.measures[key], ax=axes[0],
+                label=legend[key]['verbose'], color=legend[key]['color'])
 
         g.set(ylim=(0,None))
         g.set_xlabel(self.x_label)
@@ -144,9 +131,9 @@ class ErgodicSeries:
         #
         # Second plot
         #
-        for name, color, alt_color in right_lines:
-            h = sns.lineplot(x=self.x, y=self.measures[name], ax=axes[1],
-                color=color, label=name)
+        for key in ('divergence', 'complexity'):
+            h = sns.lineplot(x=self.x, y=self.measures[key], ax=axes[1],
+                label=legend[key]['verbose'], color=legend[key]['color'])
 
         h.set(ylim=(0,1))
         h.set_xlabel(self.x_label)

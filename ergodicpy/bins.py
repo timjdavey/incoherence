@@ -38,7 +38,12 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
 
     if observations is not None:
         observations, _ = list_observations(observations)
-        observations = np.array(observations)
+
+        # makes sure they're all the same length
+        if len(set([len(o) for o in observations])) != 1:
+            observations = np.array(observations, dtype=object)
+        else:
+            observations = np.array(observations)
         all_observations = np.hstack(observations)
         
         amin = all_observations.min()

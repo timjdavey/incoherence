@@ -17,9 +17,8 @@ class TestSeries(unittest.TestCase):
                     ees = ErgodicSeries(x=range(steps), y=y)
                     self.assertEqual(ees.entropies.shape, (steps, ensembles))
                     self.assertEqual(len(ees.bins), max(int(samples/10), 2)+1)
-                    self.assertEqual(len(ees.complexities), steps)
-                    self.assertEqual(len(ees.ergodics), steps)
-                    self.assertEqual(len(ees.divergences), steps)
+                    for k, v in ees.measures.items():
+                        self.assertEqual(len(v), steps)
                     ees.dataframe()
                     
 

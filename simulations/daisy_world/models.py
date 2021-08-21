@@ -52,6 +52,8 @@ class DaisyWorld(Model):
             # mutate variables
             mutate_p=0.0,
             mutate_a=0.05,
+            # varies max_age so doesn't boom / bust
+            vary_age=True,
             # store data in datacollector or not
             store=True): 
 
@@ -67,6 +69,9 @@ class DaisyWorld(Model):
         # mutation
         self.mutate_p = mutate_p
         self.mutate_a = mutate_a
+
+        # age
+        self.vary_age = vary_age
         
         # keep counts consistent
         self.agents_ever = 0
@@ -75,10 +80,11 @@ class DaisyWorld(Model):
         # you'd want to turn off storing
         # for minor performance gains        
         if store:
-            self.datacollector = DataCollector(model_reporters = {
-                        'entropy':'entropy',
-                        'temperature': 'temperature',
-                        'luminosity': 'luminosity',
+            self.datacollector = DataCollector(
+                model_reporters = {
+                    'entropy':'entropy',
+                    'temperature': 'temperature',
+                    'luminosity': 'luminosity',
             })
         else:
             self.datacollector = None
@@ -161,7 +167,12 @@ class DaisyWorld(Model):
         :name: type of daisy e.g. white or black
         :albedo: the albedo of the daisy
         """
-        agent = Daisy(self.agents_ever, self, name, albedo)
+        if self.vary_age:
+            lifespan = 20 + np.random.randint(10)
+        else:
+            lifespan = 25
+        
+        agent = Daisy(self.agents_ever, self, name, albedo, lifespan)
         self.grid.place_agent(agent, pos)
         self.schedule.add(agent)
         self.agents_ever += 1
