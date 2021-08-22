@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from .series import ErgodicSeries
+from ..series import ErgodicSeries
 
 class TestSeries(unittest.TestCase):
 
@@ -20,6 +20,8 @@ class TestSeries(unittest.TestCase):
                     for k, v in ees.measures.items():
                         self.assertEqual(len(v), steps)
                     ees.dataframe()
+                    for key, value in ees.max().items():
+                        self.assertTrue(value >= ees.trend()[key])
                     
 
 if __name__ == '__main__':

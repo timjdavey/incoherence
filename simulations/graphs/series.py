@@ -12,16 +12,20 @@ def generate(nodes, ensembles, p_range, cp):
         if cp is not None: cp(p)
         obs = np.array([[ERGraph(nodes, p).connected] for i in range(ensembles)], dtype='uint8')
         y.append(obs)
-        divs.append(ep.ErgodicEnsemble(obs, [0,1,2]).measures['ergodic divergence'])
+        divs.append(ep.ErgodicEnsemble(obs, [0,1,2]).measures['divergence'])
     return y, divs
 
 
 def plot(nodes, ensembles, x, ax, cp, log):
     y, divs = generate(nodes, ensembles, x, cp)
 
+    # divergence
     h = sns.lineplot(x=x, y=divs, ax=ax, label='Divergence')
+    # ln(n)/n
     ax.axvline(x=np.log(nodes)/nodes, color='r')
+    # percentage
     sns.lineplot(x=x, y=np.hstack(np.sum(y, axis=1)/ensembles), ax=ax, label='Percentage', color='orange')
+    
     h.set(ylim=(0,1))
     h.set_xlabel("p")
     if log:

@@ -1,8 +1,8 @@
 import numpy as np
 import unittest
 
-from .entropy import shannon_entropy, measures, complexity
-from .bins import binr
+from ..entropy import shannon_entropy, measures, complexity
+from ..bins import binr
 
 
 class TestEntropy(unittest.TestCase):
@@ -38,16 +38,15 @@ class TestEntropy(unittest.TestCase):
     def test_measures(self):
         cases = [
             ([[0,1],[0,1]], [0.0, 0.0, 0.0, 0.0, [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 0.6931471805599453, 0.6931471805599453, 0.8325546111576977, [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 0.6931471805599453, 0.6931471805599453, 0.8325546111576977, [0.0, 0.0]]),
-            ([[0.5,0.5],[0.5,0.5]], [0.6931471805599453, 0.6931471805599453, 0.0, 0.0, [0.6931471805599453, 0.6931471805599453]]),
-            ([[0,1],[1,0],[1,0]], [0.0, 0.6365141682948128, 0.6365141682948128, 0.7978183805195345, [0.0, 0.0, 0.0]]),
-            ([[0,1],[0.5,0.5],[1,0]], [0.23104906018664842, 0.6931471805599453, 0.4620981203732969, 0.6797779934458726, [0.0, 0.6931471805599453, 0.0]]),
+            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, [0.0, 0.0]]),
+            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, [0.0, 0.0]]),
+            ([[0.5,0.5],[0.5,0.5]], [1.0, 1.0, 0.0, 0.0, [1.0, 1.0]]),
+            ([[0,1],[1,0],[1,0]], [0.0, 0.9182958340544896, 0.9182958340544896, 0.9182958340544896, [0.0, 0.0, 0.0]]),
+            ([[0,1],[0.5,0.5],[1,0]], [0.3333333333333333, 1.0, 0.6666666666666667, 0.6666666666666666, [0.0, 1.0, 0.0]]),
         ]
         for pmfs, expected in cases:
-            mms = list(measures(pmfs, with_entropies=True).values())
+            mms = list(measures(pmfs, with_entropies=True, units='bits').values())
             for i, e in enumerate(expected):
-                print()
                 self.assertEqual(mms[i], e)
 
         with self.assertRaises(ValueError):

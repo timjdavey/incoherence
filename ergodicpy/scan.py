@@ -1,8 +1,9 @@
-import seaborn as sns
+import numpy as np
+
 from .entropy import LEGEND
 
 
-class ErgodicScan:
+class ErgodicScan(dict):
     """
     Plots the maximum & trend complexities for a series of variables.
     This is a kind of a 3D plot (but more helpful as contains multiple surfaces).
@@ -15,48 +16,87 @@ class ErgodicScan:
     
     :x: the x axis variables which were altered.
     :y: a list of ErgodicSeries.
+    :x_label: for the plot access.
+    :title: for the plot.
     :trend: "0.1" percentage of final observations to take as trend.
+    :max_min: Same as trend, what final observations should you take to find max.
     
     .plot() :returns: the figure so you can adjust limits, title etc.
 
     :returns: is a dict class, so can access individual series through keys
     """
-    legend_keys = ('divergence', 'complexity')
 
-    def __init__(self, x, y, trend=0.1):
-        self.x = x
-        self.y = y
+    def __init__(self, x, y, x_label='x', title=None, trend=0.1, max_trend=1.0):
+        self.x = np.array(x)
+        self.x_label = x_label
+        self.title = title
+        self.y = np.array(y)
         self.trend = trend
-        self.lines = []
+        self.max_trend = max_trend
+        self.measures = {}
 
-        self.analyse()
+        # store the key measures
+        for key in ('ensemble', 'ergodic', 'divergence', 'complexity'):
+            self.measures['%s max' % key] = [e.max(max_trend)[key] for e in self.y]
+            self.measures['%s trend' % key] = [e.trend(trend)[key] for e in self.y]
 
-    def analyse(self):
-        for key in self.legend_keys:
-            self.lines['%s max' % key] = [e.measures[key].max() for e in self.y]
-            self.lines['%s trend' % key] = [e.measures[key][self.trend_from:].mean() for e in self.y]
-
-    @property
-    def steps(self):
-        """ For calculating trend"""
-        return len(self.y[0].x)
-
-    @property
-    def trend_from(self):
-        """ The position of the [i:] slice """
-        return int(self.steps*(1-self.trend))
+        # dict access to each ErgodicSeries
+        for i, x in enumerate(self.x):
+            self[x] = self.y[i]
     
+    """
+    Data analysis
+    """
+    def dataframe(self):
+        import pandas as pd
+        return pd.DataFrame(data=self.measures, index=self.x)
 
-    def plot(self, legend=LEGEND):
+    """
+    Plotting
+    """
+    def _lineplot(self, key, ax, ylabel=None, ymaxmin=None):
+        """ Internal function to properly format the lines """
+        import seaborn as sns
+        # trend
+        g = sns.lineplot(x=self.x, y=self.measures["%s trend" % key], ax=ax,
+                label=LEGEND[key][0], color=LEGEND[key][1])
+        # max
+        y = np.array(self.measures["%s max" % key])
+        g = sns.lineplot(x=self.x, y=y, ax=ax,
+                label='%s max' % key, color=LEGEND[key][1], alpha=0.5, linestyle="dotted")
+        
+        # labels
+        g.set_xlabel(self.x_label)
+        g.set_ylabel(ylabel)
+
+        # give reasonable defaults to graphs for sense of scale
+        if ymaxmin:
+            g.set(ylim=(min(-ymaxmin*0.05,y.min()), max(ymaxmin,y.max())))
+        return g
+
+    def plot(self, ymax=0.2):
         """
-        :lines: which measures & colors you want to plot
         :returns: the figure so you can alter title, xlim etc
         """
-        for key in legend_keys:
-            for version, color in ("max", "alt"), ("trend", "color"):
-                fig = sns.lineplot(x=self.x, y=self.lines['%s %s' % (key, version)],
-                    label='%s (%s)' % (legend[key]['verbose'], version), color=color)
+        import matplotlib.pyplot as plt
+        fig, axes = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(15,5))
+
+        # ergodic & ensemble
+        g = self._lineplot('ensemble', axes[0], 'Entropy', 1.0)
+        g = self._lineplot('ergodic', axes[0], 'Entropy', 1.0)
+        g.set_title("Entropies")
         
-        # move legend outside of box, as it's huge
-        fig.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+        # second plot
+        ax2 = axes[1].twinx()
+        h = self._lineplot('complexity', axes[1], 'Complexity', ymax)
+        j = self._lineplot('divergence', ax2, 'Divergence', ymax)
+        j.set_title(self.title if self.title else "Ergodic complexity and divergence")
+
+        # combine legends
+        h1, l1 = axes[1].get_legend_handles_labels()
+        h2, l2 = ax2.get_legend_handles_labels()
+        axes[1].legend(h1+h2, l1+l2, loc=0)
+        ax2.get_legend().remove()
         return fig
+

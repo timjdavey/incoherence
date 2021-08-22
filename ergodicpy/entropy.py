@@ -86,27 +86,29 @@ def complexity(ergodic_entropy, entropies):
         return 0.0
     else:
         divs = [(ergodic_entropy - e)**2 for e in entropies]
-        return (np.mean(divs) / ergodic_entropy)**0.5
+        return (np.mean(divs) / ergodic_entropy)
 
 LEGEND = {
-    'ensemble': {'verbose': 'Ensemble Mean Entropy (<H>)', 'color': 'orange'},
-    'ergodic': {'verbose': 'Ergodic Entropy (H_e)', 'color': 'red'},
-    'divergence': {'verbose': 'Ergodic Divergence (D_e)', 'color': 'darkgreen', 'alt': 'mediumseagreen'},
-    'complexity': {'verbose': 'Ergodic Complexity (C_e)', 'color': 'darkorange', 'alt': 'firebrick'},
-    'entropies': {'verbose': 'Entropies of individual ensembles'}
+    'ensemble': ('Ensemble entropy','orange'),
+    'ergodic': ('Ergodic entropy','firebrick'),
+    'divergence': ('Erogodic divergence','forestgreen'),
+    'complexity': ('Ergodic complexity','blueviolet'),
+    'entropies': ('Entropies of individual ensembles','crest'),
 }
+
 
 def measures(pmfs, normalise=True, units=None, with_entropies=False):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, normalise, units)
     ensemble = np.mean(ents)
     ergodic = ergodic_entropy(pmfs, normalise, units)
+    comp = complexity(ergodic, ents)
 
     metrics = {
         'ensemble': ensemble,
         'ergodic': ergodic,
         'divergence': ergodic - ensemble,
-        'complexity': complexity(ergodic, ents),
+        'complexity': comp,
     }
     if with_entropies:
         metrics['entropies'] = ents

@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from .bins import binr, BinError
+from ..bins import binr, BinError
 
 
 class TestBins(unittest.TestCase):

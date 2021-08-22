@@ -1,6 +1,7 @@
 import unittest
 from .models import DaisyWorld, POP_DEFAULT
 
+TEST_ALL = False
 
 
 class TestDaisy(unittest.TestCase):
@@ -32,7 +33,9 @@ class TestDaisy(unittest.TestCase):
             'white': 840.0},
         ]
 
-        for case in cases:
+        test_cases = cases if TEST_ALL else [cases[0],]
+
+        for case in test_cases:
             world = DaisyWorld(POP_DEFAULT, luminosity=case['luminosity'], vary_age=False)
             world.simulate(500)
             means = world.df[-20:].mean()
@@ -44,8 +47,6 @@ class TestDaisy(unittest.TestCase):
                     "%slum %s %s != %s" % (case['luminosity'], key, m, e))
 
 
-
-
-
 if __name__ == '__main__':
+    TEST_ALL = True
     unittest.main()
