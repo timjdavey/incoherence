@@ -79,14 +79,12 @@ def complexity(ergodic_entropy, entropies):
 
     :ergodic_entropy: can use `ergodic_entropy()` to calc
     :entropies: can use `entropies()` to calc
-
-    Complexity is unitless, however, the entropies passed must all be of the same unit
     """
     if ergodic_entropy == 0:
         return 0.0
     else:
         divs = [(ergodic_entropy - e)**2 for e in entropies]
-        return (np.mean(divs) / ergodic_entropy)
+        return (np.mean(divs) / ergodic_entropy)**0.5
 
 LEGEND = {
     'ensemble': ('Ensemble entropy','orange'),

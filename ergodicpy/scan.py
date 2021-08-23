@@ -1,9 +1,11 @@
 import numpy as np
 
 from .entropy import LEGEND
+from .series import ErgodicSeries
 
 
-class ErgodicScan(dict):
+
+class ErgodicScan:
     """
     Plots the maximum & trend complexities for a series of variables.
     This is a kind of a 3D plot (but more helpful as contains multiple surfaces).
@@ -14,6 +16,7 @@ class ErgodicScan(dict):
     Trend here is the mean of the last 10% of observations.
     This is a class so can store variables easier.
     
+    Inputs
     :x: the x axis variables which were altered.
     :y: a list of ErgodicSeries.
     :x_label: for the plot access.
@@ -26,14 +29,25 @@ class ErgodicScan(dict):
     :returns: is a dict class, so can access individual series through keys
     """
 
-    def __init__(self, x, y, x_label='x', title=None, trend=0.1, max_trend=1.0):
+    def __init__(self, x, y=None, x_label='x', title=None, trend=0.1, max_trend=1.0, load=None):
+
+        if load is not None and y is not None:
+            raise InputError("Please only supply `y` or the `load` filename.")
+        elif load is not None:
+            self.y = self.load(load)
+        elif y is not None:
+            self.y = np.array(y)
+        else:
+            raise InputError("Please supply with `y` or the `load` filename.")
+        
         self.x = np.array(x)
         self.x_label = x_label
         self.title = title
-        self.y = np.array(y)
         self.trend = trend
         self.max_trend = max_trend
+
         self.measures = {}
+        self.map = {}
 
         # store the key measures
         for key in ('ensemble', 'ergodic', 'divergence', 'complexity'):
@@ -42,15 +56,38 @@ class ErgodicScan(dict):
 
         # dict access to each ErgodicSeries
         for i, x in enumerate(self.x):
-            self[x] = self.y[i]
+            self.map[x] = self.y[i]
     
     """
     Data analysis
     """
     def dataframe(self):
+        """ Returns the analysis as a dataframe """
         import pandas as pd
         return pd.DataFrame(data=self.measures, index=self.x)
 
+    def to_dict(self, keys=None):
+        if keys is None:
+            keys = ('x', 'x_label', 'title', 'trend', 'max_trend', 'measures') # leaves out y
+        return dict([(k, getattr(self, k)) for k in keys])
+
+    def save(self, filename):
+        """
+        Saves the dataheavy ErgodicSeries data for loading later.
+        Does not save whole ErgodicScan object.
+        """
+        import json
+        data = [s.to_dict() for s in self.y]
+        with open(filename, 'w') as f:
+            json.dump(data, f)
+        return data
+
+    def load(self, filename):
+        """ Loads the ErgodicSeries data """
+        import json
+        data = json.load(open(filename))
+        return np.array([ErgodicSeries(**d) for d in data])
+    
     """
     Plotting
     """

@@ -6,7 +6,7 @@ from .ergodic import ErgodicEnsemble
 from .entropy import LEGEND
 
 
-class ErgodicSeries(dict):
+class ErgodicSeries:
     """
     Simple class to handle the ergodic analysis over a series of values.
     """
@@ -17,6 +17,7 @@ class ErgodicSeries(dict):
         self.y = np.array(y)
         self.units = units
         self.bins = bins
+        self.map = {}
 
         self.analyse()
 
@@ -54,7 +55,7 @@ class ErgodicSeries(dict):
 
         # dict access to each ErgodicEnsemble
         for i, x in enumerate(self.x):
-            self[x] = self.ees[i]
+            self.map[x] = self.ees[i]
 
     """
     Stats
@@ -78,6 +79,17 @@ class ErgodicSeries(dict):
         df = pd.DataFrame(data=self.raw)
         df[self.x_label] = self.x
         return df
+
+    def to_dict(self, keys=None):
+        if keys is None:
+            keys = ('x', 'x_label', 'y', 'title', 'units', 'bins')
+        data = []
+        for key in keys:
+            attr = getattr(self, key)
+            if isinstance(attr, np.ndarray):
+                attr = attr.tolist()
+            data.append((key, attr))
+        return dict(data)
 
     def bin_stats(self):
         """ Stats about the bins which were used """

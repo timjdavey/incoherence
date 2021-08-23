@@ -53,7 +53,7 @@ class DaisyWorld(Model):
             mutate_p=0.0,
             mutate_a=0.05,
             # varies max_age so doesn't boom / bust
-            vary_age=True,
+            vary_age=False,
             # store data in datacollector or not
             store=True): 
 
