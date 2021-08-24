@@ -29,18 +29,16 @@ class ErgodicScan:
     :returns: is a dict class, so can access individual series through keys
     """
 
-    def __init__(self, x, y=None, x_label='x', title=None, trend=0.1, max_trend=1.0, load=None):
+    def __init__(self, x=None, y=None, x_label='x', title=None, trend=0.1, max_trend=1.0):
 
-        if load is not None and y is not None:
-            raise InputError("Please only supply `y` or the `load` filename.")
-        elif load is not None:
-            self.y = self.load(load)
-        elif y is not None:
-            self.y = np.array(y)
+        # check passed values & loading went correctly
+        if not isinstance(y, (list, np.ndarray)) or not isinstance(y[0], (ErgodicSeries)):
+            raise TypeError("`y` should be a `list` of `ErgodicSeries`")
         else:
-            raise InputError("Please supply with `y` or the `load` filename.")
-        
-        self.x = np.array(x)
+            self.y = np.array(y)
+
+        # default x to just a range
+        self.x = range(len(self.y)) if x is None else np.array(x)
         self.x_label = x_label
         self.title = title
         self.trend = trend
@@ -70,23 +68,6 @@ class ErgodicScan:
         if keys is None:
             keys = ('x', 'x_label', 'title', 'trend', 'max_trend', 'measures') # leaves out y
         return dict([(k, getattr(self, k)) for k in keys])
-
-    def save(self, filename):
-        """
-        Saves the dataheavy ErgodicSeries data for loading later.
-        Does not save whole ErgodicScan object.
-        """
-        import json
-        data = [s.to_dict() for s in self.y]
-        with open(filename, 'w') as f:
-            json.dump(data, f)
-        return data
-
-    def load(self, filename):
-        """ Loads the ErgodicSeries data """
-        import json
-        data = json.load(open(filename))
-        return np.array([ErgodicSeries(**d) for d in data])
     
     """
     Plotting

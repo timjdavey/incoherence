@@ -1,6 +1,8 @@
 import numpy as np
 import unittest
 
+from ..bins import binr
+from ..ergodic import ErgodicEnsemble
 from ..series import ErgodicSeries
 
 class TestSeries(unittest.TestCase):
@@ -9,8 +11,8 @@ class TestSeries(unittest.TestCase):
         for ensembles in (2, 10):
             for samples in (10, 100):
                 for steps in (1, 5):
-                    y = [[np.random.power(5,samples)*10 for _ in range(ensembles)] for _ in range(steps)]
-                    ees = ErgodicSeries(x=range(steps), y=y)
+                    obs = [[np.random.power(5,samples)*10 for _ in range(ensembles)] for _ in range(steps)]
+                    ees = ErgodicSeries(x=range(steps), observations=obs)
                     self.assertEqual(ees.entropies.shape, (steps, ensembles))
 
                     # default ratio 10
@@ -41,19 +43,30 @@ class TestSeries(unittest.TestCase):
         x_label = 'tester'
         steps = 2
         ensembles = 5
+        x = range(steps)
 
-        # generate
-        y = [[np.random.power(5,20)*10 for _ in range(ensembles)] for _ in range(steps)]
-        ees = ErgodicSeries(x=range(steps), y=y, x_label=x_label)
-        self.assertEqual(ees.x_label, x_label)
+        # generate from obs vs ensembles
+        observations = [[np.random.power(5,20)*10 for _ in range(ensembles)] for _ in x]
+        
+        # default x is range
+        ees1 = ErgodicSeries(observations=observations)
+        
+        # create from y
+        bins = binr(observations=observations)
+        ees2 = ErgodicSeries(y=[ErgodicEnsemble(obs, bins) for obs in observations])
 
-        # set measures
-        for k, v in ees.measures.items():
-            np.testing.assert_array_almost_equal(list(v), list(measures[k]))
+        for ees in [ees1, ees2]:
+            # test default x gets assigned
+            np.testing.assert_array_equal(ees.x, x)
 
-        np.testing.assert_array_almost_equal(list(ees.max().values()), list(mmax.values()))
-        np.testing.assert_array_almost_equal(list(ees.trend().values()), list(mtrend.values()))
-        np.testing.assert_array_almost_equal(ees.peaks, [1])
+            # are measures created properly
+            for k, v in ees.measures.items():
+                np.testing.assert_array_almost_equal(list(v), list(measures[k]))
+            
+            # max min values
+            np.testing.assert_array_almost_equal(list(ees.max().values()), list(mmax.values()))
+            np.testing.assert_array_almost_equal(list(ees.trend().values()), list(mtrend.values()))
+            np.testing.assert_array_almost_equal(ees.peaks, [1])
 
 
 if __name__ == '__main__':

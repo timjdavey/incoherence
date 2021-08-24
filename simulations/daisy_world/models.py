@@ -353,6 +353,29 @@ class DaisyWorld(Model):
         return self.temperatures.mean()
     
     """
+    Perturbation
+    """
+    def plague(self, percent=0.5, name=None):
+        """
+        Causes a sudden number of agents to die
+        
+        :percent: 0.5 percentage of that type which should die
+        :name: optionally if only want a certain type to die
+        """
+        agents = self.schedule.agents
+
+        # filter if type is supplied
+        if name:
+            agents = list(filter(lambda a: a.name == name, agents))
+
+        num_to_die = int(len(agents)*percent)
+        
+        # then kill them
+        for a in np.random.choice(agents, num_to_die, replace=False):
+            a.die()
+
+
+    """
     Plots
     """
     

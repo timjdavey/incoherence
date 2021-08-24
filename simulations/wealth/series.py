@@ -11,8 +11,8 @@ def generate(agents=100, level=5, ensembles=20, percent=None, threshold=None, in
     return [MoneyModel(initial[i], level, percent, threshold) for i in range(ensembles)]
 
 
-def series(agents=100, level=5, ensembles=20, steps=200,
-        percent=None, threshold=None, initial=None, cp=None, log=True, results=True, step_plots=False):
+def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
+        percent=None, threshold=None, initial=None, cp=None, plot=True, step_plots=False):
     """
     Simple function to generate results for boltzmann wealth abm
 
@@ -43,11 +43,12 @@ def series(agents=100, level=5, ensembles=20, steps=200,
         
     if cp is not None: cp("")
 
-    # use log bins as for percent it becomes a powerlaw
-    bins = ep.binr(minimum=0, series=y, log=log, ratio=2)
-    ees = ep.ErgodicSeries(x=x, y=y, x_label='timesteps', bins=bins)
+    # use log bins when using percent mode, as distribution becomes powerlaw
+    log = percent is not None
+    bins = ep.binr(minimum=0, series=y, log=log, ratio=ratio)
+    ees = ep.ErgodicSeries(x=x, observations=y, x_label='timesteps', bins=bins)
     
     # only plot results if you need them
-    if results:
-        ees.results(step_plots)
+    if plot:
+        ees.plot()
     return ees

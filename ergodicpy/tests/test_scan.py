@@ -19,8 +19,8 @@ class TestScan(unittest.TestCase):
         ys = []
         x = range(2)
         for i in x:
-            y = [[np.random.power(5,20)*10 for _ in range(ensembles)] for _ in range(steps)]
-            ys.append(ErgodicSeries(x=range(steps), y=y, x_label=x_label))
+            obs = [[np.random.power(5,20)*10 for _ in range(ensembles)] for _ in range(steps)]
+            ys.append(ErgodicSeries(x=range(steps), observations=obs, x_label=x_label))
 
         scan = ErgodicScan(x=x, y=ys)
         for k in measures.keys():

@@ -20,7 +20,7 @@ def plot(nodes, ensembles, x, ax, cp, log):
     y, divs = generate(nodes, ensembles, x, cp)
 
     # divergence
-    h = sns.lineplot(x=x, y=divs, ax=ax, label='Divergence')
+    h = sns.lineplot(x=x, y=divs, ax=ax, color='forestgreen', label='Divergence')
     # ln(n)/n
     ax.axvline(x=np.log(nodes)/nodes, color='r')
     # percentage

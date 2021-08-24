@@ -10,13 +10,18 @@ class ErgodicSeries:
     """
     Simple class to handle the ergodic analysis over a series of values.
     """
-    def __init__(self, x, y, x_label='x', title=None, bins=None, units='nats'):
-        self.x = np.array(x)
+    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, units='nats', models=None):
+        self.x = x
         self.x_label = x_label
+
+        # either or, checked later
+        self.y = y
+        self.observations = observations
+
         self.title = title
-        self.y = np.array(y)
         self.units = units
         self.bins = bins
+        self.models = models
         self.map = {}
 
         self.analyse()
@@ -26,36 +31,49 @@ class ErgodicSeries:
         Creates ErgodicEnsembles for each series (typically time)
         and stores the analysis for plotting
         """
-        # need to make sure bins are consistent across all of series
-        if self.bins is None:
-            self.bins = binr(series=self.y)
+        
+        # type check
+        if self.y is None and self.observations is None:
+            raise InputError("Please supply a list of ErgodicEnsembles through `y` or raw `observations`")
+        
+        # create ergodics if needed
+        elif self.observations is not None:
+            # ideally bins are consistent across all of series
+            if self.bins is None:
+                self.bins = binr(series=self.observations)
+            self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
+
+        # type check y otherwise
+        elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (ErgodicEnsemble)):
+            raise TypeError("`y` should be a `list` of `ErgodicEnsemble`")
+
+        # create x if needed, defaulted to just a count
+        if self.x is None:
+            self.x = range(len(self.y))
+
 
         # analyse and store across all steps
-        ees, entropies, measures, raw = [], [], [], []
-        for i, timestep_obs in enumerate(self.y):
-            # attach
-            ee = ErgodicEnsemble(timestep_obs, self.bins)
-            ees.append(ee)
-            entropies.append(ee.entropies)
-
+        entropies, measures, raw = [], [], []
+        for ee in self.y:
             # analyse
             ms = ee.measures
             measures.append(list(ms.values()))
             raw.append(ms)
+            entropies.append(ee.entropies)
         
         # store
-        self.ees = ees
         self.entropies = np.array(entropies)
         self.raw = raw
         
+        # store measures as columns of {[],[]}
         self.measures = {}
         stacked = np.stack(np.array(measures), axis=1)
-        for i, k in enumerate(ees[0].measures.keys()):
+        for i, k in enumerate(self.y[0].measures.keys()):
             self.measures[k] = stacked[i]
 
         # dict access to each ErgodicEnsemble
         for i, x in enumerate(self.x):
-            self.map[x] = self.ees[i]
+            self.map[x] = self.y[i]
 
     """
     Stats
@@ -82,7 +100,7 @@ class ErgodicSeries:
 
     def to_dict(self, keys=None):
         if keys is None:
-            keys = ('x', 'x_label', 'y', 'title', 'units', 'bins')
+            keys = ('x', 'x_label', 'title', 'units', 'bins') # no y
         data = []
         for key in keys:
             attr = getattr(self, key)
@@ -130,7 +148,7 @@ class ErgodicSeries:
             g.set(ylim=(min(-ymaxmin*0.05,y.min()), max(ymaxmin,y.max())))
         return g
 
-    def plot(self, ymax=0.2):
+    def plot(self, ymax=0.5):
         """ Plots the evolution of the entropies & complexities over time """
         import seaborn as sns
         import matplotlib.pyplot as plt
@@ -141,11 +159,9 @@ class ErgodicSeries:
 
         # rotate through mako colours, as not using pandas dataframe doing manually
         ncolors = ensemble_entropies.shape[0]
-        palette = sns.color_palette(LEGEND['entropies'][1], ncolors)
-        # adjust alphas, so more ensembles don't overload image
-        alpha = 3.0/ncolors 
+        palette = sns.light_palette("skyblue", ncolors, reverse=True)
         for i, e in enumerate(ensemble_entropies):
-            sns.lineplot(x=self.x, y=e, alpha=min(alpha, 0.9), ax=axes[0], color=palette[i])
+            sns.lineplot(x=self.x, y=e, ax=axes[0], color=palette[i])
 
         # ergodic & ensemble
         g = self._lineplot('ensemble', axes[0], 'Entropy (%s)' % self.units, 1.0)
@@ -170,4 +186,4 @@ class ErgodicSeries:
     def step_plot(self, index, comment=""):
         """ Plot a specific ErgodicEnsemble step """
         title = "%s=%s, step=%s (%s)" % (self.x_label, self.x[index], index, comment)
-        self.ees[index].plot(title)
+        self.y[index].plot(title)

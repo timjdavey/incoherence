@@ -64,9 +64,12 @@ class MoneyModel(Model):
         wealths *= level
         
         # Create agents
-        for i, w in enumerate(wealths):
-            a = MoneyAgent(i, self, w)
-            self.schedule.add(a)
+        for w in wealths:
+            self.add_agent(w)
+
+    def add_agent(self, wealth):
+        uid = len(self.schedule.agents)
+        self.schedule.add(MoneyAgent(uid, self, wealth))
 
     def observations(self):
         return [a.wealth for a in self.schedule.agents]
