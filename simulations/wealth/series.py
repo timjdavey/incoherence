@@ -12,7 +12,7 @@ def generate(agents=100, level=5, ensembles=20, percent=None, threshold=None, in
 
 
 def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
-        percent=None, threshold=None, initial=None, cp=None, plot=True, step_plots=False):
+        percent=None, threshold=None, initial=None, cp=None, plot=True, log=None, step_plots=False):
     """
     Simple function to generate results for boltzmann wealth abm
 
@@ -44,7 +44,8 @@ def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
     if cp is not None: cp("")
 
     # use log bins when using percent mode, as distribution becomes powerlaw
-    log = percent is not None
+    if log is None:
+        log = percent is not None
     bins = ep.binr(minimum=0, series=y, log=log, ratio=ratio)
     ees = ep.ErgodicSeries(x=x, observations=y, x_label='timesteps', bins=bins)
     
