@@ -171,8 +171,8 @@ class ErgodicSeries:
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Complexity (%s)' % self.units, ymax)
-        j = self._lineplot('divergence', ax2, 'Divergence (%s)' % self.units, ymax)
+        h = self._lineplot('complexity', axes[1], 'Ergodic complexity', ymax)
+        j = self._lineplot('divergence', ax2, 'Ergodic divergence', ymax)
         j.set_title(self.title if self.title else "Ergodic complexity and divergence")
 
         # combine legends
