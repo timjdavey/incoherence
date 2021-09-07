@@ -2,7 +2,7 @@ import numpy as np
 from functools import cached_property
 
 from .entropy import measures
-from .bins import list_observations, binr
+from .bins import binr
 
 
 
@@ -20,8 +20,11 @@ class ErgodicEnsemble:
     if pass a dict, the keys will be used as a legend in the ensemble plots
     
     :bins: _None_. the bins to be used for the data, suggest using ep.binr
+    :labels: the names of the ensembles for plotting
     :ensemble_name: the name of the ensemble to be used plots
     :dist_name: the name of the distribution variable
+    :units: 'bits' or 'nats' of entropy
+    :lazy: _False_ will calculate measures on creation if False, otherwise need to call `analyse()`
 
     properties
     :measures: all the four measures below, which are also assigned as properties
@@ -40,14 +43,11 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, 
+    def __init__(self, observations, bins=None, labels=None,
             ensemble_name='ensemble', dist_name='value', units=None, lazy=False):
 
-        # observations by dict or list
-        self.raw = observations
-        self.observations, self.labels = list_observations(observations)
-
         # auto create bins
+        self.observations = observations
         if bins is None:
             self.bins = binr(observations=observations)
         else:
@@ -57,6 +57,7 @@ class ErgodicEnsemble:
         self.units = units
 
         # naming for plots
+        self.labels = labels
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
 
@@ -87,11 +88,11 @@ class ErgodicEnsemble:
         del ms['entropies']
         self.measures = ms
 
+
     """
-    Key metrics
+    Metrics
     
     """
-    
     @cached_property
     def obs_counts(self):
         """ The min, mean and max observations across ensembles """

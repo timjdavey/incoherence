@@ -3,3 +3,4 @@ from .bins import binr, BinError
 from .ergodic import ErgodicEnsemble
 from .series import ErgodicSeries
 from .scan import ErgodicScan
+from .correlation import ErgodicCorrelation

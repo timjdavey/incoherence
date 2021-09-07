@@ -24,21 +24,6 @@ class TestErgodic(unittest.TestCase):
             self.assertEqual(len(ee.entropies), ensembles)
             ee.stats()
 
-    def test_dicts(self):
-        np.random.seed(19680800)
-
-        first_samples = 200
-        second_samples = 600
-
-        obs = {
-                'first': np.random.power(5,first_samples)*10,
-                'second': np.random.power(5,second_samples)*10,
-            }
-        measures = [3.125397481164248, 3.198293599997641, 0.07289611883339298, 0.057043934109718836]
-        ee = ErgodicEnsemble(obs)
-        self.assertEqual(list(ee.labels), ['first', 'second'])
-        np.testing.assert_array_equal(list(ee.measures.values()), measures)
-
 
 if __name__ == '__main__':
     unittest.main()

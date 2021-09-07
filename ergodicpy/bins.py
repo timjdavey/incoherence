@@ -5,17 +5,6 @@ class BinError(ValueError):
     pass
 
 
-def list_observations(observations):
-    """ Given observations, returns the list and labels """
-    if isinstance(observations, (list, np.ndarray)):
-        return (observations, None)
-    elif isinstance(observations, dict):
-        return (list(observations.values()), observations.keys())
-    else:
-        raise TypeError(
-            "`observations` is of type %s not list or dict" % type(observations))
-
-
 def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=10, log=False):
     """
     Generates a set of bins given a list of observations.
@@ -33,12 +22,15 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         # but simulates as if all steps in the series are just ensembles
         observations = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
 
-    if type(minimum) not in (float, int, type(None)):
-        raise TypeError("minimum must be a float or int %s" % minimum)
+    # make sure don't pass observations to minimum
+    try:
+        iter(minimum)
+    except TypeError:
+        pass
+    else:
+        raise TypeError("minimum must be a float or int %s %s" % (minimum, type(minimum)))
 
     if observations is not None:
-        observations, _ = list_observations(observations)
-
         # makes sure they're all the same length
         if len(set([len(o) for o in observations])) != 1:
             observations = np.array(observations, dtype=object)
@@ -63,10 +55,13 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
     if count is None and observations is None:
         count = maximum-minimum
 
-    # at least 20 per bin seems to reliable numbers as a default
+    # at least 10 per bin seems to reliable numbers as a default
     elif count is None and observations is not None:
         avg_per_ensemble = len(all_observations)/len(observations)
         count = max(int(avg_per_ensemble/ratio), 2)
+
+    elif type(count) is not int:
+        raise TypeError("Count must be int")
 
     # obviously need at least 2 bin states to calculate entropy
     if count < 2:
@@ -85,6 +80,6 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         else:
             return np.geomspace(minimum, maximum, count)
     else:
-        return np.linspace(minimum, maximum, count)
+        return np.linspace(minimum, maximum, int(count))
 
 
