@@ -125,6 +125,24 @@ class ErgodicEnsemble:
             return measures
 
     """
+    Comparison metrics
+    """
+    def chi2(self, ignore=True):
+        from scipy.stats import chi2_contingency
+        try:
+            return chi2_contingency(self.histograms)
+        # throws exception when there's a zero in histogram
+        # this is surprisingly often
+        except ValueError:
+            # rather than halting the programme
+            # return None and handle seperately
+            if ignore:
+                return (None, None, None, None)
+            else:
+                raise ValueError(e)
+
+
+    """
     Plots & displays
     
     """

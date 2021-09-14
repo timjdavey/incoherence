@@ -2,7 +2,7 @@ import numpy as np
 
 from .entropy import LEGEND
 from .series import ErgodicSeries
-
+from .plots import combine_legends
 
 
 class ErgodicScan:
@@ -112,9 +112,7 @@ class ErgodicScan:
         j.set_title(self.title if self.title else "Ergodic complexity and divergence")
 
         # combine legends
-        h1, l1 = axes[1].get_legend_handles_labels()
-        h2, l2 = ax2.get_legend_handles_labels()
-        axes[1].legend(h1+h2, l1+l2, loc=0)
-        ax2.get_legend().remove()
+        combine_legends(axes[1], ax2)
+
         return fig
 

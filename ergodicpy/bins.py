@@ -5,7 +5,7 @@ class BinError(ValueError):
     pass
 
 
-def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=10, log=False):
+def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=1, log=False):
     """
     Generates a set of bins given a list of observations.
     See test cases for examples.
@@ -15,6 +15,10 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
     :maximum: _None_. maximum is the max observed, adds +1 to catch upper bound
     :observations: _None_. list or dict of observations
     """
+
+    #
+    # handle series inputs
+    #
     if observations is not None and series is not None:
         raise InputError("Must only specify series or observations")
     elif series is not None:
@@ -22,7 +26,9 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         # but simulates as if all steps in the series are just ensembles
         observations = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
 
+    #
     # make sure don't pass observations to minimum
+    #
     try:
         iter(minimum)
     except TypeError:
@@ -30,13 +36,18 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
     else:
         raise TypeError("minimum must be a float or int %s %s" % (minimum, type(minimum)))
 
+    #
+    # generating min, max
+    #
     if observations is not None:
-        # makes sure they're all the same length
+
+        # handle ragged stacks
         if len(set([len(o) for o in observations])) != 1:
             observations = np.array(observations, dtype=object)
         else:
             observations = np.array(observations)
         all_observations = np.hstack(observations)
+        avg_per_ensemble = len(all_observations)/len(observations)
         
         amin = all_observations.min()
         amax = all_observations.max()
@@ -51,26 +62,37 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         elif maximum < amax:
             raise BinError("maximum %s < observed max %s" % (maximum, amax))
 
-    # if count is None then have int bin widths, so add just one more int bin
-    if count is None and observations is None:
-        count = maximum-minimum
+    #
+    # generating count
+    #
+    if count is None:
 
-    # at least 10 per bin seems to reliable numbers as a default
-    elif count is None and observations is not None:
-        avg_per_ensemble = len(all_observations)/len(observations)
-        count = max(int(avg_per_ensemble/ratio), 2)
+        # if no observations, then use int steps
+        if observations is None:
+            count = int(maximum-minimum)
+        
+        # otherwise default behaviour
+        # using log of observations
+        # with a multipier for particularly volitle situations
+        else:
+            count = int(np.log(avg_per_ensemble)*ratio)
 
-    elif type(count) is not int:
+    #
+    # error check count
+    #
+    if type(count) is not int:
         raise TypeError("Count must be int")
 
-    # obviously need at least 2 bin states to calculate entropy
+    # + obviously need at least 2 bin states to calculate entropy
     if count < 2:
         raise BinError("Count %s < 2, need at least 2 bins" % count)
     else:
         # we're dealing with edges so need to add +1 to the final edge with count
         count += 1
     
+    #
     # for handling power law distributions better
+    #
     if log:
         # doesn't accept 0 as an input, so fudge first bin
         if minimum == 0:
@@ -80,6 +102,6 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         else:
             return np.geomspace(minimum, maximum, count)
     else:
-        return np.linspace(minimum, maximum, int(count))
+        return np.linspace(minimum, maximum, count)
 
 

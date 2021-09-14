@@ -5,19 +5,6 @@ from .bins import binr
 from .ergodic import ErgodicEnsemble
 
 
-def bin_suggestion(total, ratio=20, ensembles=(5,10), bins=(3,10)):
-    """
-    Creates a reasonable suggested number of default bins.
-    Where ideally we have at least `ratio` (i.e. 20) observations per bin grid (i.e. ensemble*bin).
-    So to enable the the "at least" mode, we give a maximum number of ensembles + bins (10 & 10).
-    But give reasonable base level of ensembles & bins (5 & 3).
-    """
-    suggested = (total/ratio)**0.5
-    ensemble_count = min(max(suggested, ensembles[0]), ensembles[1])
-    bin_count = min(max(suggested, bins[0]), bins[1])
-    return int(ensemble_count), int(bin_count)
-
-
 def cont_to_disc(X, Y, count):
     """
     Continous to Discrete
@@ -66,9 +53,10 @@ class ErgodicCorrelation(ErgodicEnsemble):
         self.x = np.array(x)
         self.y = np.array(y)
                 
-        # create sensible bins
+        # create sensible bins based on same log scheme
         if counts is None:
-            ensemble_count, bin_count = bin_suggestion(len(self.x))
+            ensemble_count = int(np.log(len(self.x)))
+            bin_count = ensemble_count
         else:
             ensemble_count, bin_count = counts
         

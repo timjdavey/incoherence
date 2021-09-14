@@ -87,5 +87,12 @@ def scatter(tidy_ensembles, bins, tidy_variable='ensemble', tidy_value='value',
 
 
 
+def combine_legends(ax1, ax2):
+    """ When you twin axis, this helpfully combines the legends into a single legend """
+    h1, l1 = ax1.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax1.legend(h1+h2, l1+l2, loc=0)
+    ax2.get_legend().remove()
+
 
 
