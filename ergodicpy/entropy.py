@@ -59,13 +59,22 @@ def ensemble_entropy(pmfs, normalise=True, units=None):
     """
     return np.mean(ensemble_entropies(pmfs, normalise, units))
 
+def weights_craft(weights):
+    """
+    Sets default weight and normalises
+    """
+    if weights is None:
+        np.ones(len(entropies)) # default to mean
+    weights = np.array(weights)
+    return weights/weights.sum() # normalise
 
-def ergodic_entropy(pmfs, normalise=True, units=None):
+def ergodic_entropy(pmfs, normalise=True, units=None, weights=None):
     """
     For a given array of pmfs
     Returns the ergodic pmf, i.e. the mean
     """
-    return shannon_entropy(np.mean(pmfs, axis=0), normalise, units)
+    wpmf = np.average(pmfs, axis=0, weights=weights)
+    return shannon_entropy(wpmf, normalise, units)
 
 def zero_divide(numerator, demoniator):
     if demoniator == 0:
@@ -73,7 +82,11 @@ def zero_divide(numerator, demoniator):
     else:
         return numerator/demoniator
 
-def complexity(ergodic_entropy, entropies):
+def divergence(ergodic_entropy, entropies, weights=None):
+    divs = [ergodic_entropy - e for e in entropies]
+    return np.average(divs, weights=weights)
+
+def complexity(ergodic_entropy, entropies, weights=None):
     """
     Ergodic complexity calculation
 
@@ -84,7 +97,8 @@ def complexity(ergodic_entropy, entropies):
         return 0.0
     else:
         divs = [(ergodic_entropy - e)**2 for e in entropies]
-        return (np.mean(divs) / ergodic_entropy)**0.5
+        return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
+
 
 LEGEND = {
     'ensemble': ('Ensemble entropy','orange'),
@@ -95,18 +109,17 @@ LEGEND = {
 }
 
 
-def measures(pmfs, normalise=True, units=None, with_entropies=False):
+def measures(pmfs, normalise=True, units=None, weights=None, with_entropies=False):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, normalise, units)
     ensemble = np.mean(ents)
     ergodic = ergodic_entropy(pmfs, normalise, units)
-    comp = complexity(ergodic, ents)
 
     metrics = {
         'ensemble': ensemble,
         'ergodic': ergodic,
-        'divergence': ergodic - ensemble,
-        'complexity': comp,
+        'divergence': divergence(ergodic, ents, weights),
+        'complexity': complexity(ergodic, ents, weights),
     }
     if with_entropies:
         metrics['entropies'] = ents

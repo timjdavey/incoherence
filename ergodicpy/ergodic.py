@@ -2,7 +2,7 @@ import numpy as np
 from functools import cached_property
 
 from .entropy import measures
-from .bins import binr
+from .bins import binr, binm
 
 
 
@@ -43,15 +43,17 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, labels=None,
+    def __init__(self, observations, bins=None, labels=None, weights=None,
             ensemble_name='ensemble', dist_name='value', units=None, lazy=False):
 
         # auto create bins
         self.observations = observations
         if bins is None:
-            self.bins = binr(observations=observations)
+            self.bins = binm(observations=observations)
         else:
             self.bins = bins
+
+        self.weights = weights
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
@@ -82,7 +84,9 @@ class ErgodicEnsemble:
         return np.array(histograms)
 
     def analyse(self):
-        ms = measures(self.histograms, True, self.units, with_entropies=True)
+        ms = measures(self.histograms, True,
+            self.units, with_entropies=True, weights=self.weights)
+
         for k, v in ms.items():
             setattr(self, k, v)
         del ms['entropies']
@@ -130,6 +134,7 @@ class ErgodicEnsemble:
     def chi2(self, ignore=True):
         from scipy.stats import chi2_contingency
         try:
+            # returns (chi2, p, dof, expected)
             return chi2_contingency(self.histograms)
         # throws exception when there's a zero in histogram
         # this is surprisingly often

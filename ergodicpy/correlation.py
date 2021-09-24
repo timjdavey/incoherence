@@ -1,7 +1,7 @@
 import numpy as np
 from functools import cached_property
 
-from .bins import binr
+from .bins import binr, binm
 from .ergodic import ErgodicEnsemble
 
 
@@ -62,7 +62,9 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         # turn the continous data into discrete ensembles
         obs, labels = cont_to_disc(self.x, self.y, ensemble_count)
-        bins = binr(self.y.min(), self.y.max(), bin_count)
+        bins = binm(observations=obs)
+        #print(len(x), len(bins))
+        #bins = binr(self.y.min(), self.y.max(), bin_count)
         
         # create an ErgodicEnsemble standard
         super().__init__(obs, bins, labels=labels, *args, **kwargs)

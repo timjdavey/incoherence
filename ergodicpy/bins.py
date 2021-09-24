@@ -5,8 +5,39 @@ class BinError(ValueError):
     pass
 
 
+def observations_from_series(observations=None, series=None):
+    """ Takes observations and series,
+    Returns series as a set of observations.
+    """
+    if observations is not None and series is not None:
+        raise InputError("Must only specify series or observations")
+    elif series is not None:
+        # horrible mess of a transformation
+        # but simulates as if all steps in the series are just ensembles
+        return np.stack(np.hstack(np.stack(series, axis=2)),axis=1), len(series)
+    elif observations is not None:
+        return observations, len(observations)
+    else:
+        return None, None
+
+
+def binm(observations=None, series=None, ratio=1):
+    """
+    Bin magic.
+
+    Creates bins based on the ergodic observations.
+    """
+    observations, ensembles = observations_from_series(observations, series)
+    srtd = np.sort(np.hstack(observations))
+    count = int(np.log2(len(srtd)/(ensembles))/ratio)
+    indxs = np.linspace(0, len(srtd)-1, max(count,3))
+    return [srtd[int(i)] for i in indxs]
+
+
 def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=1, log=False):
     """
+    Bin regular.
+
     Generates a set of bins given a list of observations.
     See test cases for examples.
     
@@ -19,13 +50,8 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
     #
     # handle series inputs
     #
-    if observations is not None and series is not None:
-        raise InputError("Must only specify series or observations")
-    elif series is not None:
-        # horrible mess of a transformation
-        # but simulates as if all steps in the series are just ensembles
-        observations = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
-
+    observations, _ = observations_from_series(observations, series)
+    
     #
     # make sure don't pass observations to minimum
     #
