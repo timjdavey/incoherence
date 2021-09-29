@@ -47,8 +47,7 @@ def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
     if log is None:
         log = percent is not None
     
-    bins = ep.binm(series=y)
-    #bins = ep.binr(minimum=0, series=y, log=log, ratio=ratio)
+    bins = ep.binr(minimum=0, series=y, log=log, ratio=ratio)
     ees = ep.ErgodicSeries(x=x, observations=y, x_label='timesteps', bins=bins)
     
     # only plot results if you need them

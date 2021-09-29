@@ -24,6 +24,31 @@ class TestErgodic(unittest.TestCase):
             self.assertEqual(len(ee.entropies), ensembles)
             ee.stats()
 
+    def test_stablize(self):
+
+        for samples in [100,1000]:
+            obs = [np.random.power(i, size=samples) for i in np.linspace(2, 3, 20)]
+    
+            ee = ep.ErgodicEnsemble(obs)
+    
+            legacy = len(ee.bins)
+    
+            # do full scan & leave legacy bins
+            scan = ee.stablize(optimized=False, update=False)
+            self.assertEqual(legacy, len(ee.bins))
+    
+            # optimized & updates bins by default
+            opti = ee.stablize() 
+            self.assertEqual(opti[1][opti[0]][0], len(ee.bins)-1)
+    
+            opti_complexity = scan[1][scan[0]][1]
+            scan_complexity = opti[1][opti[0]][1]
+    
+            # do they find the same complexity level
+            # doesn't matter entirely about the exact bins
+            np.testing.assert_almost_equal(opti_complexity, scan_complexity, 3)
+
+
 
 if __name__ == '__main__':
     unittest.main()

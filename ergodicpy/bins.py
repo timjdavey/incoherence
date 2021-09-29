@@ -12,8 +12,6 @@ def observations_from_series(observations=None, series=None):
     if observations is not None and series is not None:
         raise InputError("Must only specify series or observations")
     elif series is not None:
-        # horrible mess of a transformation
-        # but simulates as if all steps in the series are just ensembles
         return np.stack(np.hstack(np.stack(series, axis=2)),axis=1), len(series)
     elif observations is not None:
         return observations, len(observations)
@@ -34,7 +32,61 @@ def binm(observations=None, series=None, ratio=1):
     return [srtd[int(i)] for i in indxs]
 
 
-def binr(minimum=None, maximum=None, count=None, observations=None, series=None, ratio=1, log=False):
+def binc(series, count, log=False):
+    """
+    Wrapper to build bind based on a series of observations
+
+    Same inputs as `bino` but with series inputed rather than obs
+    """
+    # horrible mess of a transformation
+    # but simulates as if all steps in the series are just ensembles
+    obs = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
+    return bino(obs, count, log)
+
+
+def bino(observations, count, log=False):
+    """
+    Wrapper to build bins based on observations
+
+    :observations: 2d list of obs
+    :count: the number of bins
+    :log: _False_, if you want the bins in log format
+    """
+    # handle ragged stacks
+    if len(set([len(o) for o in observations])) != 1:
+        observations = np.array(observations, dtype=object)
+    else:
+        observations = np.array(observations)
+    all_observations = np.hstack(observations)
+    
+    # find min & max
+    minimum = all_observations.min()
+    maximum = all_observations.max()
+
+    # adjust count as dealing with edges
+    count = int(count)+1
+
+    if log:
+        # doesn't accept 0 as an input, so fudge first bin
+        if minimum == 0:
+            arr = np.geomspace(0.1, maximum, count)
+            arr[0] -= 0.1
+            return arr
+        else:
+            return np.geomspace(minimum, maximum, count)
+    else:
+        return np.linspace(minimum, maximum, count)
+
+
+def bini(minimum, maximum):
+    """
+    Creates integer bins
+    """
+    return np.arange(minimum, maximum+1)
+
+
+def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
+                boost=2, log=False, min_default=3, max_default=20):
     """
     Bin regular.
 
@@ -67,17 +119,11 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
     #
     if observations is not None:
 
-        # handle ragged stacks
-        if len(set([len(o) for o in observations])) != 1:
-            observations = np.array(observations, dtype=object)
-        else:
-            observations = np.array(observations)
-        all_observations = np.hstack(observations)
-        avg_per_ensemble = len(all_observations)/len(observations)
         
-        amin = all_observations.min()
-        amax = all_observations.max()
         
+
+        # min & max
+
         if minimum is None:
             minimum = amin
         elif minimum > amin:
@@ -88,33 +134,24 @@ def binr(minimum=None, maximum=None, count=None, observations=None, series=None,
         elif maximum < amax:
             raise BinError("maximum %s < observed max %s" % (maximum, amax))
 
-    #
-    # generating count
-    #
-    if count is None:
 
-        # if no observations, then use int steps
-        if observations is None:
+        # default count based on observations
+        if count is None:
+            count = np.round(np.log(avg_per_ensemble*boost))
+            count = max(min_default, count) # standard minimum 3 bins
+            count = min(max_default, count) # standard maximum 20 bins
+
+    else:
+        # default is ints
+        if count is None:
             count = int(maximum-minimum)
-        
-        # otherwise default behaviour
-        # using log of observations
-        # with a multipier for particularly volitle situations
-        else:
-            count = int(np.log(avg_per_ensemble)*ratio)
-
-    #
-    # error check count
-    #
-    if type(count) is not int:
-        raise TypeError("Count must be int")
 
     # + obviously need at least 2 bin states to calculate entropy
     if count < 2:
         raise BinError("Count %s < 2, need at least 2 bins" % count)
     else:
         # we're dealing with edges so need to add +1 to the final edge with count
-        count += 1
+        count = int(count) + 1
     
     #
     # for handling power law distributions better

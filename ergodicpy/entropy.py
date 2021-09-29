@@ -1,6 +1,8 @@
 import numpy as np
 
-def shannon_entropy(pmf, normalise=False, units=None):
+DEFAULT_UNITS = 'nats'
+
+def shannon_entropy(pmf, normalise=True, units=DEFAULT_UNITS):
     """
     Calculates the Shannon entropy for a
     discrete probability mass function.
@@ -38,55 +40,36 @@ def shannon_entropy(pmf, normalise=False, units=None):
     # could use nansum below, but rightly gives runtime warnings
 
     # add 0 as workaround to avoid -0.0
-    return -np.sum(pmf * log(pmf)) + 0
+    entropy = -np.sum(pmf * log(pmf)) + 0
+
+    return entropy
 
 
-def entropy_from_obs(observations, bins, units=None):
+def entropy_from_obs(observations, bins, **kwargs):
     """ Simple function wrap np.histogram """
     hist, _ = np.histogram(observations, bins=bins)
-    return shannon_entropy(hist, True, units)
+    return shannon_entropy(hist, **kwargs)
 
 
-def ensemble_entropies(pmfs, normalise=True, units=None):
+def ensemble_entropies(pmfs, **kwargs):
     """ Returns an array of entropies, given array of pmfs"""
-    return [shannon_entropy(p, normalise, units) for p in pmfs]
+    return [shannon_entropy(p, **kwargs) for p in pmfs]
 
 
-def ensemble_entropy(pmfs, normalise=True, units=None):
-    """
-    For a given array of pmfs
-    Returns the ensemble entropy (the mean of the entropy for pmfs)
-    """
-    return np.mean(ensemble_entropies(pmfs, normalise, units))
-
-def weights_craft(weights):
-    """
-    Sets default weight and normalises
-    """
-    if weights is None:
-        np.ones(len(entropies)) # default to mean
-    weights = np.array(weights)
-    return weights/weights.sum() # normalise
-
-def ergodic_entropy(pmfs, normalise=True, units=None, weights=None):
+def ergodic_entropy(pmfs, **kwargs):
     """
     For a given array of pmfs
     Returns the ergodic pmf, i.e. the mean
     """
-    wpmf = np.average(pmfs, axis=0, weights=weights)
-    return shannon_entropy(wpmf, normalise, units)
+    return shannon_entropy(np.sum(pmfs, axis=0), **kwargs)
 
-def zero_divide(numerator, demoniator):
-    if demoniator == 0:
-        return 0.0
-    else:
-        return numerator/demoniator
 
-def divergence(ergodic_entropy, entropies, weights=None):
+def divergence(ergodic_entropy, entropies, weights):
     divs = [ergodic_entropy - e for e in entropies]
     return np.average(divs, weights=weights)
 
-def complexity(ergodic_entropy, entropies, weights=None):
+
+def complexity(ergodic_entropy, entropies, weights):
     """
     Ergodic complexity calculation
 
@@ -96,12 +79,15 @@ def complexity(ergodic_entropy, entropies, weights=None):
     if ergodic_entropy == 0:
         return 0.0
     else:
+#        divs = [(1 - e/ergodic_entropy)**2 for e in entropies]
+#        return (np.average(divs, weights=weights))**0.5
+
         divs = [(ergodic_entropy - e)**2 for e in entropies]
         return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
 
 
 LEGEND = {
-    'ensemble': ('Ensemble entropy','orange'),
+    'ensemble': ('Mean esemble entropy','orange'),
     'ergodic': ('Ergodic entropy','firebrick'),
     'divergence': ('Erogodic divergence','forestgreen'),
     'complexity': ('Ergodic complexity','blueviolet'),
@@ -109,11 +95,11 @@ LEGEND = {
 }
 
 
-def measures(pmfs, normalise=True, units=None, weights=None, with_entropies=False):
+def measures(pmfs, weights=None, with_entropies=False, **kwargs):
     """ Returns all metrics """
-    ents = ensemble_entropies(pmfs, normalise, units)
+    ents = ensemble_entropies(pmfs, **kwargs)
     ensemble = np.mean(ents)
-    ergodic = ergodic_entropy(pmfs, normalise, units)
+    ergodic = ergodic_entropy(pmfs, **kwargs)
 
     metrics = {
         'ensemble': ensemble,

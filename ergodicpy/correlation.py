@@ -49,25 +49,23 @@ class ErgodicCorrelation(ErgodicEnsemble):
     functions
     :metrics: results a dict of common correlation metrics
     """    
-    def __init__(self, x, y, counts=None, *args, **kwargs):
+    def __init__(self, x, y, ensembles=None, lazy=False, *args, **kwargs):
         self.x = np.array(x)
         self.y = np.array(y)
-                
-        # create sensible bins based on same log scheme
-        if counts is None:
-            ensemble_count = int(np.log(len(self.x)))
-            bin_count = ensemble_count
-        else:
-            ensemble_count, bin_count = counts
+        
+        # create sensible ensembles count
+        if ensembles is None:
+            ensembles = np.round(np.log(len(self.x)))
         
         # turn the continous data into discrete ensembles
-        obs, labels = cont_to_disc(self.x, self.y, ensemble_count)
-        bins = binm(observations=obs)
-        #print(len(x), len(bins))
-        #bins = binr(self.y.min(), self.y.max(), bin_count)
+        obs, labels = cont_to_disc(self.x, self.y, ensembles)
         
         # create an ErgodicEnsemble standard
-        super().__init__(obs, bins, labels=labels, *args, **kwargs)
+        super().__init__(obs, labels=labels, *args, **kwargs)
+        
+        # find the lowest complexity
+        if not lazy:
+            self.stablize()
     
     @cached_property
     def correlations(self):
