@@ -40,10 +40,10 @@ def series(nodes, ensembles=200, steps=100, log=False, cp=None):
     fig, axes = plt.subplots(1, 2, sharex=False, sharey=True, figsize=(15,5))
 
     # plot normal
-    plot(nodes, ensembles, np.linspace(0.0, 1.0, steps+1), axes[0], cp, False)
+    plot(nodes, ensembles, ep.binspace(0.0, 1.0, steps), axes[0], cp, False)
 
     # plot log
-    plot(nodes, ensembles, np.geomspace(steps**-1, 1.0, steps+1), axes[1], cp, True)
+    plot(nodes, ensembles, ep.binspace(steps**-1, 1.0, steps, log=True), axes[1], cp, True)
 
     cp("")
     return fig

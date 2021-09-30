@@ -79,11 +79,23 @@ def complexity(ergodic_entropy, entropies, weights):
     if ergodic_entropy == 0:
         return 0.0
     else:
-#        divs = [(1 - e/ergodic_entropy)**2 for e in entropies]
-#        return (np.average(divs, weights=weights))**0.5
-
         divs = [(ergodic_entropy - e)**2 for e in entropies]
         return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
+
+
+DEFAULT_BOOST = 2000
+
+def tau2(comp, states, boost=DEFAULT_BOOST):
+    """
+    Calculates the ergodic complexity measures, transformed for use with
+    a Chi-Square distribution.
+
+    :returns: tau2 measure and tau-p as tuple of floats
+    """
+    import scipy as sp
+    tau = (comp**2)*states*boost
+    tau_p = 1 - sp.stats.chi2.cdf(tau, states)
+    return tau, tau_p
 
 
 LEGEND = {
@@ -91,21 +103,28 @@ LEGEND = {
     'ergodic': ('Ergodic entropy','firebrick'),
     'divergence': ('Erogodic divergence','forestgreen'),
     'complexity': ('Ergodic complexity','blueviolet'),
+    'tau2': ('tau2 Conversion of ergodic complexity', 'gold'),
+    'tau2p': ('tau2 p-value', 'cyan'),
     'entropies': ('Entropies of individual ensembles','crest'),
 }
 
 
-def measures(pmfs, weights=None, with_entropies=False, **kwargs):
+def measures(pmfs, weights=None, with_entropies=False, boost=DEFAULT_BOOST, **kwargs):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, **kwargs)
     ensemble = np.mean(ents)
     ergodic = ergodic_entropy(pmfs, **kwargs)
+    diver = divergence(ergodic, ents, weights)
+    comp = complexity(ergodic, ents, weights)
+    tau2p = tau2(comp, len(pmfs)-1, boost)
 
     metrics = {
         'ensemble': ensemble,
         'ergodic': ergodic,
-        'divergence': divergence(ergodic, ents, weights),
-        'complexity': complexity(ergodic, ents, weights),
+        'divergence': diver,
+        'complexity': comp,
+        'tau2': tau2p[0],
+        'tau2p': tau2p[1],
     }
     if with_entropies:
         metrics['entropies'] = ents

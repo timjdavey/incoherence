@@ -1,7 +1,20 @@
 import numpy as np
 
 from .entropy import measures
-from .bins import bino
+from .bins import binspace, binint
+
+
+def ergodic_obs(observations):
+    """
+    Given a set of observations, returns the ergodic version.
+
+    Handled ragged stacks, when the observations count isn't consistent across ensemble.
+    """
+    if len(set([len(o) for o in observations])) != 1:
+        observations = np.array(observations, dtype=object)
+    else:
+        observations = np.array(observations)
+    return np.hstack(observations)
 
 
 
@@ -44,21 +57,26 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, labels=None, weights=None,
-            ensemble_name='ensemble', dist_name='value', units=None, lazy=False):
+    def __init__(self, observations, bins=None,
+                weights=None, obs_min=None, obs_max=None, log=False,
+                labels=None, ensemble_name='ensemble', dist_name='value',
+                    units=None, lazy=False):
 
-        # auto create bins
-        self.observations = observations
-        self.ergodic_observations = np.concatenate(observations)
-        
+        # handle observations
+        self.observations = np.array(observations)
+        self.ergodic_observations = ergodic_obs(self.observations)
+
+        # if distribution is continuous and need to define bins here
+        self.bins = bins # these are set properly later using stabilize
+        self.obs_min = obs_min if obs_min is not None else self.ergodic_observations.min()
+        self.obs_max = obs_max if obs_min is not None else self.ergodic_observations.max()
+        self.log = log
+
         # default weights of N_k / N
         if weights is None:
             total = len(self.ergodic_observations)
             weights = [len(e)/total for e in observations]
         self.weights = weights
-
-        # default bins set in binr
-        self.bins = bins # these are set properly later
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
@@ -71,7 +89,7 @@ class ErgodicEnsemble:
         # do analysis
         if not lazy:
             if bins is None:
-                self.stablize()
+                self.bin_minimize()
             else:
                 self.analyse()
 
@@ -108,6 +126,12 @@ class ErgodicEnsemble:
         del ms['entropies']
         self.measures = ms
 
+
+    """
+    Finding optimum bins for continuous entropy distributions
+    
+    """
+
     def _bin_search(self, xs):
         """
         For a given bin count range `xs`
@@ -116,8 +140,7 @@ class ErgodicEnsemble:
         indx = []
 
         for x in xs:
-            self.bins = bino(self.observations, x)
-            self.analyse()
+            self.update_bins(x)
             indx.append([x,self.complexity])
 
         indx = np.array(indx)
@@ -125,60 +148,89 @@ class ErgodicEnsemble:
         optimum_index = np.where(ys==ys.min())[0][0]
         return optimum_index, indx
 
-    def _bin_optimize(self, minimum, maximum, spread, depth, iteration=0):
+    def _bin_optimize(self, minimum, maximum, spread, depth, iteration=0, base_threshold=0.0001):
         """
         A faster, recursive approach to finding optimum bins than searching through entire range.
         Doesn't have to be perfect, since complexity levels off for such a large range.
         """
-        xs = np.unique([int(i) for i in np.linspace(minimum,maximum,spread)])
+        xs = binint(minimum, maximum, spread)
         optimum_index, indx = self._bin_search(xs)
-
-        if iteration < depth:
-            try:
-                return self._bin_optimize(indx[optimum_index-1][0], indx[optimum_index+1][0], spread, depth, iteration+1)
-            except IndexError:
-                return optimum_index, indx
-        else:
+        optimum_bin = indx[optimum_index][0]
+        upper_index = len(indx)-1
+        
+        # return if reached max depth
+            # or complexity is basically zero
+                # or the difference is basically zero
+                    # you're looking at nearest neighbours
+        if iteration >= depth \
+            or indx[optimum_index][1] < base_threshold \
+                or np.abs(indx[optimum_index-1][1] - indx[optimum_index+1][1]) < base_threshold \
+                    or (optimum_index > 0 and indx[optimum_index-1][0] == optimum_bin-1) \
+                        or (optimum_index < upper_index and indx[optimum_index+1][0] == optimum_bin+1):
+            
             return optimum_index, indx
+        else:
+            # use the lowest & highest available
+            lower = 0 if optimum_index == 0 else optimum_index-1
+            upper = optimum_index if optimum_index == upper_index else optimum_index+1
+            return self._bin_optimize(indx[lower][0], indx[upper][0],
+                spread, depth, iteration+1, base_threshold=base_threshold)
+            
 
-    def stablize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=20, depth=20):
+    def bin_minimize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=4, depth=10):
         """
         If dealing with a continuous distribution,
         finds the optimum bin count.
 
         :minimum: 3, minimum bin range to explore from
         :maximum: observations/20 of the range to explore
-        :reset: 
+        :update: _True_ update to the optimimum bins or return to current
+        :optimized: _True_ use a faster search version
+        :plot: _False_ plot a figure of bin number against complexity at that bin
+        :spread: 4, the number of bins to try during optimised
+        :depth: 10, the max number of depth searches to be used during optimised search
         """
         legacy = self.bins
 
         # set defaults
-        # need minmum 3 bins (small & odd)
-        if minimum is None: minimum = 3
-        # need at least 7 per bin
-        if maximum is None: maximum = max(4,int(self.obs_counts['mean']/7))
+        # need minmum 2 bins
+        if minimum is None: minimum = 2
+        # need at least 7 per bin or 2 bins
+        if maximum is None: maximum = max(3,int(self.obs_counts['mean']/5))
 
         # explore entire bin range for scan
         if plot or not optimized:
-            optimum_index, indx = self._bin_search(range(minimum,maximum))
+            optimum_index, indx = self._bin_search(binint(minimum,maximum))
         else:
             optimum_index, indx = self._bin_optimize(minimum, maximum, spread, depth)
 
         # update the bins or reset to original
-        if update:
-            self.bins = bino(self.observations, indx[optimum_index][0])
+        if update or legacy is None:
+            self.update_bins(indx[optimum_index][0])
         else:
-            self.bins = legacy
-        self.analyse()
+            self.update_bins(len(legacy)-1)
 
         # plot the results if needed
         if plot:
             import seaborn as sns
             sns.lineplot(x=indx[:,0], y=indx[:,1])
 
+        # get optimum bins by indx[optimum_index][0] or len(self.bins)-1
         return optimum_index, indx
 
 
+    def update_bins(self, bin_count, obs_min=None, obs_max=None, log=None):
+        """
+        Resets the bins to a specific count
+        """
+        if obs_min is None: obs_min = self.obs_min
+        if obs_max is None: obs_max = self.obs_max
+        if log is None: log = self.log
+        self.bins = binspace(obs_min, obs_max, bin_count, log=log)
+        self.analyse()
+        return self
+
+    
     """
     Metrics
     
@@ -201,37 +253,14 @@ class ErgodicEnsemble:
         return len(self.observations)
 
 
-    def stats(self, display=False):
-        measures = self.measures
-        measures['ensembles count'] = self.ensemble_count
-        measures['entropies'] = self.entropies
-        measures['bins count'] = len(self.bins)-1
-        measures['bins range'] = (self.bins[0], self.bins[-1])
-        measures['observations'] = self.obs_counts
-        if display:
-            for k,v in measures.items():
-                print(v,k)
-        else:
-            return measures
-
     """
     Comparison metrics
-    """
-    def chi2(self, ignore=True):
-        from scipy.stats import chi2_contingency
-        try:
-            # returns (chi2, p, dof, expected)
-            return chi2_contingency(self.histograms)
-        # throws exception when there's a zero in histogram
-        # this is surprisingly often
-        except ValueError:
-            # rather than halting the programme
-            # return None and handle seperately
-            if ignore:
-                return (None, None, None, None)
-            else:
-                raise ValueError(e)
 
+    """
+    def chi2(self):
+        from scipy.stats import chi2_contingency
+        # returns (chi2, p, dof, expected)
+        return chi2_contingency(self.histograms)
 
     """
     Plots & displays

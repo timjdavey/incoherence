@@ -38,6 +38,6 @@ def series(ensembles=20, steps=200, luminosity=1.0, population=POP_DEFAULT, muta
     observations = np.array(observations)
 
     # bins count species, so just the ints
-    bins = ep.binr(0,observations.max()+1)
+    bins = ep.binint(0,observations.max())
     es = ep.ErgodicSeries(x=x, observations=observations, bins=bins, x_label='Timesteps', models=worlds)
     return es

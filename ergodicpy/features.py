@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from .ergodic import ErgodicEnsemble
-from .bins import binm
 
 class ErgodicFeatures:
 

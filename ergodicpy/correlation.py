@@ -1,7 +1,7 @@
 import numpy as np
 from functools import cached_property
 
-from .bins import binr, binm
+from .bins import binspace
 from .ergodic import ErgodicEnsemble
 
 
@@ -19,7 +19,7 @@ def cont_to_disc(X, Y, count):
     if len(X) != len(Y):
         raise IndexError("Length of X & Y must match %s != %s" % (len(X), len(Y)))
     
-    ensembles = binr(X.min(), X.max(), int(count))
+    ensembles = binspace(X.min(), X.max(), int(count))
     
     # group using a dict
     obs = dict([(str(b), []) for b in ensembles[:-1]])
@@ -55,7 +55,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         # create sensible ensembles count
         if ensembles is None:
-            ensembles = np.round(np.log(len(self.x)))
+            ensembles = np.round(np.log(len(self.x))/2)
         
         # turn the continous data into discrete ensembles
         obs, labels = cont_to_disc(self.x, self.y, ensembles)
@@ -75,4 +75,5 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
+            "tau2p": self.tau2p,
         }

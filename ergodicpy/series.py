@@ -1,22 +1,38 @@
 import numpy as np
 from functools import cached_property
 
-from .bins import binr
-from .ergodic import ErgodicEnsemble
+from .bins import binspace
+from .ergodic import ErgodicEnsemble, ergodic_obs
 from .entropy import LEGEND
+
+
+def ergodic_series(series):
+    """ Given a series, returns the ergodic collection of all data """
+    obs = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
+    return ergodic_obs(obs)
 
 
 class ErgodicSeries:
     """
     Simple class to handle the ergodic analysis over a series of values.
+    
+    :x: array-like, the x values of the graph (the series evolution) e.g. timesteps or % values or luminosity etc
+    :y: array-like, the ergodic ensembles for the corresponding x-values
+    :observations: array-like, 3d, the observations for each x-step in a 2d array of ensembles
+    :x_label: 'x', what is x?
+    :title: _None_ of the graph
+    :bins: _None_ specific states of the model if they exist
+    :units: 'nats', the units of entropy
+    :models: array-like, the models that generated the data
     """
-    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, units='nats', models=None):
+    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, units=None, models=None, log=False):
         self.x = x
         self.x_label = x_label
 
         # either or, checked later
         self.y = y
-        self.observations = observations
+        self.observations = np.array(observations)
+        self.log = log
 
         self.title = title
         self.units = units
@@ -38,10 +54,30 @@ class ErgodicSeries:
         
         # create ergodics if needed
         elif self.observations is not None:
-            # ideally bins are consistent across all of series
+            
+            # if continuous distribution
+            # bins need to be the maximum of the stablized series
+            # to ensure the detail is captured
             if self.bins is None:
-                self.bins = binr(series=self.observations)
-            self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
+                # need min & max to be consistent across whole series
+                # assume that all observations in series are same length
+                self.ergodic_series = ergodic_series(self.observations)
+                amin = self.ergodic_series.min()
+                amax = self.ergodic_series.max()
+                
+                # find the maximum bin across all stablizations
+                bin_max = 0
+                y = []
+                for i, obs in enumerate(self.observations):
+                    ee = ErgodicEnsemble(obs, obs_min=amin, obs_max=amax, dist_name=self.x[i], log=self.log)
+                    bin_max = max(bin_max, len(ee.bins)-1)
+                    y.append(ee)
+
+                self.bins = binspace(amin, amax, bin_max, log=self.log)
+                self.y = [ee.reset_bins(bin_max) for ee in y]
+            # if given bins
+            else:
+                self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
 
         # type check y otherwise
         elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (ErgodicEnsemble)):

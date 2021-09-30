@@ -1,8 +1,7 @@
 import numpy as np
 import unittest
 
-from ..entropy import shannon_entropy, measures, complexity
-from ..bins import binr
+from ..entropy import shannon_entropy, measures, complexity, LEGEND
 
 
 class TestEntropy(unittest.TestCase):
@@ -26,28 +25,22 @@ class TestEntropy(unittest.TestCase):
         with self.assertRaises(ValueError):
             shannon_entropy([])
 
-        # not normalised
-        with self.assertRaises(ValueError):
-            shannon_entropy([2,1])
-
-        # rounding error catch
-        with self.assertRaises(ValueError):
-            shannon_entropy([1.000001]) #6 vs .7's
-
 
     def test_measures(self):
+        boost=2000
+
         cases = [
-            ([[0,1],[0,1]], [0.0, 0.0, 0.0, 0.0, [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, [0.0, 0.0]]),
-            ([[0.5,0.5],[0.5,0.5]], [1.0, 1.0, 0.0, 0.0, [1.0, 1.0]]),
-            ([[0,1],[1,0],[1,0]], [0.0, 0.9182958340544896, 0.9182958340544896, 0.9582775349837277, [0.0, 0.0, 0.0]]),
-            ([[0,1],[0.5,0.5],[1,0]], [0.3333333333333333, 1.0, 0.6666666666666667, 0.816496580927726, [0.0, 1.0, 0.0]]),
+            ([[0,1],[0,1]], [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, [0.0, 0.0]]),
+            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, 2000.0, 0.0, [0.0, 0.0]]),
+            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, 2000.0, 0.0, [0.0, 0.0]]),
+            ([[0.5,0.5],[0.5,0.5]], [1.0, 1.0, 0.0, 0.0, 0.0, 1.0, [1.0, 1.0]]),
+            ([[0,1],[1,0],[1,0]], [0.0, 0.9182958340544896, 0.9182958340544896, 0.9582775349837277, 3673.1833362179577, 0.0, [0.0, 0.0, 0.0]]),
+            ([[0,1],[0.5,0.5],[1,0]], [0.3333333333333333, 1.0, 0.6666666666666666, 0.816496580927726, 2666.6666666666665, 0.0, [0.0, 1.0, 0.0]]),
         ]
         for pmfs, expected in cases:
-            mms = list(measures(pmfs, with_entropies=True, units='bits').values())
-            for i, e in enumerate(expected):
-                self.assertEqual(mms[i], e)
+            mms = measures(pmfs, with_entropies=True, units='bits', boost=boost)
+            for i, key in enumerate(LEGEND.keys()):
+                self.assertEqual(mms[key], expected[i])
 
         with self.assertRaises(ValueError):
             measures([])
