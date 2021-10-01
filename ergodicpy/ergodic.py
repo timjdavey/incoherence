@@ -60,7 +60,7 @@ class ErgodicEnsemble:
     def __init__(self, observations, bins=None,
                 weights=None, obs_min=None, obs_max=None, log=False,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                    units=None, lazy=False):
+                    units=None, tau_boost=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -80,11 +80,13 @@ class ErgodicEnsemble:
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
+        self.tau_boost = tau_boost
 
         # naming for plots
         self.labels = labels
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
+        
 
         # do analysis
         if not lazy:
@@ -120,7 +122,7 @@ class ErgodicEnsemble:
 
         # get measures
         ms = measures(self.histograms, weights=self.weights,
-            units=self.units, with_entropies=True)
+            units=self.units, boost=self.tau_boost, with_entropies=True)
 
         for k, v in ms.items():
             setattr(self, k, v)
@@ -178,7 +180,7 @@ class ErgodicEnsemble:
                 spread, depth, iteration+1, base_threshold=base_threshold)
             
 
-    def stabilize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=4, depth=10):
+    def stabilize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=4, depth=10, cheat=True):
         """
         If dealing with a continuous distribution,
         finds the optimum bin count.
@@ -190,18 +192,20 @@ class ErgodicEnsemble:
         :plot: _False_ plot a figure of bin number against complexity at that bin
         :spread: 4, the number of bins to try during optimised
         :depth: 10, the max number of depth searches to be used during optimised search
+        :cheat: _True_, cheat mode which just uses obs/5 bins
         """
-
-        if False:
-            self.update_bins(int(self.obs_counts['mean']/5))
-
-        legacy = self.bins
-
         # set defaults
         # need minmum 3 bins (lowest odd)
         if minimum is None: minimum = 3
         # need at least 5 per bin or 4 bins
         if maximum is None: maximum = max(4,int(self.obs_counts['mean']/5))
+        
+        # obs/5 is a pretty good proxy, in most cases can just cheat
+        # rather than doing full work up
+        if cheat:
+            self.update_bins(maximum)
+
+        legacy = self.bins
 
         # explore entire bin range for scan
         if plot or not optimized:

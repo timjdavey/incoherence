@@ -83,9 +83,9 @@ def complexity(ergodic_entropy, entropies, weights):
         return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
 
 
-TAU_BOOST = 500
+TAU_BOOST = 350
 
-def tau2(comp, states, boost=TAU_BOOST):
+def tau2(comp, states, boost=None):
     """
     Calculates the ergodic complexity measures, transformed for use with
     a Chi-Square distribution.
@@ -93,6 +93,7 @@ def tau2(comp, states, boost=TAU_BOOST):
     :returns: tau2 measure and tau-p as tuple of floats
     """
     import scipy as sp
+    if boost is None: boost = TAU_BOOST
     tau = (comp**2)*states*boost
     tau_p = 1 - sp.stats.chi2.cdf(tau, states)
     return tau, tau_p
@@ -109,7 +110,7 @@ LEGEND = {
 }
 
 
-def measures(pmfs, weights=None, with_entropies=False, boost=TAU_BOOST, **kwargs):
+def measures(pmfs, weights=None, with_entropies=False, boost=None, **kwargs):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, **kwargs)
     ensemble = np.mean(ents)

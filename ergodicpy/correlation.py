@@ -4,7 +4,6 @@ from functools import cached_property
 from .bins import binspace
 from .ergodic import ErgodicEnsemble
 
-
 def digitize(X, Y, count):
     """
     Continous to Discrete
@@ -49,7 +48,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
     functions
     :metrics: results a dict of common correlation metrics
     """    
-    def __init__(self, x, y, ensembles=None, lazy=False, *args, **kwargs):
+    def __init__(self, x, y, ensembles=None, *args, **kwargs):
         self.x = np.array(x)
         self.y = np.array(y)
         
