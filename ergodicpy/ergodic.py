@@ -1,6 +1,6 @@
 import numpy as np
 
-from .entropy import measures
+from .entropy import measures, LEGEND
 from .bins import binspace, binint
 
 
@@ -63,7 +63,7 @@ class ErgodicEnsemble:
                     units=None, lazy=False):
 
         # handle observations
-        self.observations = np.array(observations)
+        self.observations = observations
         self.ergodic_observations = ergodic_obs(self.observations)
 
         # if distribution is continuous and need to define bins here
@@ -89,7 +89,8 @@ class ErgodicEnsemble:
         # do analysis
         if not lazy:
             if bins is None:
-                self.bin_minimize()
+                #self.analyse_continuous()
+                self.stabilize()
             else:
                 self.analyse()
 
@@ -123,9 +124,10 @@ class ErgodicEnsemble:
 
         for k, v in ms.items():
             setattr(self, k, v)
+
         del ms['entropies']
         self.measures = ms
-
+        
 
     """
     Finding optimum bins for continuous entropy distributions
@@ -164,9 +166,8 @@ class ErgodicEnsemble:
                     # you're looking at nearest neighbours
         if iteration >= depth \
             or indx[optimum_index][1] < base_threshold \
-                or np.abs(indx[optimum_index-1][1] - indx[optimum_index+1][1]) < base_threshold \
-                    or (optimum_index > 0 and indx[optimum_index-1][0] == optimum_bin-1) \
-                        or (optimum_index < upper_index and indx[optimum_index+1][0] == optimum_bin+1):
+                or (optimum_index > 0 and indx[optimum_index-1][0] == optimum_bin-1) \
+                    or (optimum_index < upper_index and indx[optimum_index+1][0] == optimum_bin+1):
             
             return optimum_index, indx
         else:
@@ -177,26 +178,30 @@ class ErgodicEnsemble:
                 spread, depth, iteration+1, base_threshold=base_threshold)
             
 
-    def bin_minimize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=4, depth=10):
+    def stabilize(self, minimum=None, maximum=None, update=True, optimized=True, plot=False, spread=4, depth=10):
         """
         If dealing with a continuous distribution,
         finds the optimum bin count.
 
         :minimum: 3, minimum bin range to explore from
-        :maximum: observations/20 of the range to explore
+        :maximum: observations/5 of the range to explore
         :update: _True_ update to the optimimum bins or return to current
         :optimized: _True_ use a faster search version
         :plot: _False_ plot a figure of bin number against complexity at that bin
         :spread: 4, the number of bins to try during optimised
         :depth: 10, the max number of depth searches to be used during optimised search
         """
+
+        if False:
+            self.update_bins(int(self.obs_counts['mean']/5))
+
         legacy = self.bins
 
         # set defaults
-        # need minmum 2 bins
-        if minimum is None: minimum = 2
-        # need at least 7 per bin or 2 bins
-        if maximum is None: maximum = max(3,int(self.obs_counts['mean']/5))
+        # need minmum 3 bins (lowest odd)
+        if minimum is None: minimum = 3
+        # need at least 5 per bin or 4 bins
+        if maximum is None: maximum = max(4,int(self.obs_counts['mean']/5))
 
         # explore entire bin range for scan
         if plot or not optimized:
@@ -218,7 +223,6 @@ class ErgodicEnsemble:
         # get optimum bins by indx[optimum_index][0] or len(self.bins)-1
         return optimum_index, indx
 
-
     def update_bins(self, bin_count, obs_min=None, obs_max=None, log=None):
         """
         Resets the bins to a specific count
@@ -229,7 +233,6 @@ class ErgodicEnsemble:
         self.bins = binspace(obs_min, obs_max, bin_count, log=log)
         self.analyse()
         return self
-
     
     """
     Metrics

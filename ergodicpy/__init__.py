@@ -3,5 +3,5 @@ from .bins import binint, binspace
 from .ergodic import ErgodicEnsemble
 from .series import ErgodicSeries
 from .scan import ErgodicScan
-from .correlation import ErgodicCorrelation
+from .correlation import ErgodicCorrelation, digitize
 from .features import ErgodicFeatures

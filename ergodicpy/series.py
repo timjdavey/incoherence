@@ -31,7 +31,7 @@ class ErgodicSeries:
 
         # either or, checked later
         self.y = y
-        self.observations = np.array(observations)
+        self.observations = observations
         self.log = log
 
         self.title = title
@@ -74,7 +74,7 @@ class ErgodicSeries:
                     y.append(ee)
 
                 self.bins = binspace(amin, amax, bin_max, log=self.log)
-                self.y = [ee.reset_bins(bin_max) for ee in y]
+                self.y = [ee.update_bins(bin_max) for ee in y]
             # if given bins
             else:
                 self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]

@@ -5,7 +5,7 @@ from .bins import binspace
 from .ergodic import ErgodicEnsemble
 
 
-def cont_to_disc(X, Y, count):
+def digitize(X, Y, count):
     """
     Continous to Discrete
     
@@ -55,17 +55,13 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         # create sensible ensembles count
         if ensembles is None:
-            ensembles = np.round(np.log(len(self.x))/2)
+            ensembles = np.int(np.log(len(self.x)))
         
         # turn the continous data into discrete ensembles
-        obs, labels = cont_to_disc(self.x, self.y, ensembles)
+        obs, labels = digitize(self.x, self.y, ensembles)
         
         # create an ErgodicEnsemble standard
         super().__init__(obs, labels=labels, *args, **kwargs)
-        
-        # find the lowest complexity
-        if not lazy:
-            self.stablize()
     
     @cached_property
     def correlations(self):

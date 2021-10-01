@@ -28,6 +28,6 @@ def binint(minimum, maximum, count=None, log=False):
     if count is None:
         return np.arange(minimum, maximum+1)
     else:
-        return np.unique([int(i) for i in binspace(minimum, maximum, count)])
+        return np.unique([int(i) for i in binspace(minimum, maximum, count, log)])
 
 

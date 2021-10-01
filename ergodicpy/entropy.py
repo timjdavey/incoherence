@@ -83,9 +83,9 @@ def complexity(ergodic_entropy, entropies, weights):
         return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
 
 
-DEFAULT_BOOST = 2000
+TAU_BOOST = 500
 
-def tau2(comp, states, boost=DEFAULT_BOOST):
+def tau2(comp, states, boost=TAU_BOOST):
     """
     Calculates the ergodic complexity measures, transformed for use with
     a Chi-Square distribution.
@@ -109,14 +109,14 @@ LEGEND = {
 }
 
 
-def measures(pmfs, weights=None, with_entropies=False, boost=DEFAULT_BOOST, **kwargs):
+def measures(pmfs, weights=None, with_entropies=False, boost=TAU_BOOST, **kwargs):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, **kwargs)
     ensemble = np.mean(ents)
     ergodic = ergodic_entropy(pmfs, **kwargs)
     diver = divergence(ergodic, ents, weights)
     comp = complexity(ergodic, ents, weights)
-    tau2p = tau2(comp, len(pmfs)-1, boost)
+    tau2p = tau2(comp, len(pmfs), boost)
 
     metrics = {
         'ensemble': ensemble,
