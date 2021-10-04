@@ -1,15 +1,9 @@
 import numpy as np
 from functools import cached_property
 
-from .bins import binspace
-from .ergodic import ErgodicEnsemble, ergodic_obs
+from .bins import binseries
+from .ergodic import ErgodicEnsemble
 from .entropy import LEGEND
-
-
-def ergodic_series(series):
-    """ Given a series, returns the ergodic collection of all data """
-    obs = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
-    return ergodic_obs(obs)
 
 
 class ErgodicSeries:
@@ -59,25 +53,10 @@ class ErgodicSeries:
             # bins need to be the maximum of the stablized series
             # to ensure the detail is captured
             if self.bins is None:
-                # need min & max to be consistent across whole series
-                # assume that all observations in series are same length
-                self.ergodic_series = ergodic_series(self.observations)
-                amin = self.ergodic_series.min()
-                amax = self.ergodic_series.max()
-                
-                # find the maximum bin across all stablizations
-                bin_max = 0
-                y = []
-                for i, obs in enumerate(self.observations):
-                    ee = ErgodicEnsemble(obs, obs_min=amin, obs_max=amax, dist_name=self.x[i], log=self.log)
-                    bin_max = max(bin_max, len(ee.bins)-1)
-                    y.append(ee)
+                self.bins = binseries(self.observations)
 
-                self.bins = binspace(amin, amax, bin_max, log=self.log)
-                self.y = [ee.update_bins(bin_max) for ee in y]
-            # if given bins
-            else:
-                self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
+            # then create ensembles
+            self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
 
         # type check y otherwise
         elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (ErgodicEnsemble)):

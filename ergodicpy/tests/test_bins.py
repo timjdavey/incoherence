@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from ..bins import binspace, binint
+from ..bins import *
 
 
 class TestBins(unittest.TestCase):
@@ -18,6 +18,15 @@ class TestBins(unittest.TestCase):
         np.testing.assert_array_equal(binint(0,10,2), [0,5,10])
         np.testing.assert_array_equal(binint(0,5,10), [0,1,2,3,4,5])
         np.testing.assert_array_equal(binint(0,5,8), [0,1,2,3,4,5])
+
+    def test_ergs(self):
+        obs = [[1,2],[3,4,5]]
+        np.testing.assert_array_equal(ergodic_obs(obs), [1,2,3,4,5])
+        np.testing.assert_array_equal(binobs(obs), [1,2,3,5])
+
+        series = [[[1,2],[3,4]],[[6,7],[8,9]]]
+        np.testing.assert_array_equal(ergodic_series(series), [[1,2],[3,4,5],[6,7],[8,9]])
+        np.testing.assert_array_equal(binseries(series), [1, 3, 6, 9])
 
 if __name__ == '__main__':
     unittest.main()

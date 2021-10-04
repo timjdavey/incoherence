@@ -56,15 +56,39 @@ def ensemble_entropies(pmfs, **kwargs):
     return [shannon_entropy(p, **kwargs) for p in pmfs]
 
 
-def ergodic_entropy(pmfs, **kwargs):
+def ergodic_entropy(pmfs, weights, **kwargs):
     """
     For a given array of pmfs
     Returns the ergodic pmf, i.e. the mean
     """
-    return shannon_entropy(np.sum(pmfs, axis=0), **kwargs)
+    return shannon_entropy(np.average(pmfs, weights=weights, axis=0), **kwargs)
 
+
+def observation_weights(hists, weights=None):
+    """
+    Default weight strategy of N_k/N
+
+    :hists: histograms of each distribution
+    :weights: can pass weights which if exist,
+        returns those so can use this function as a default mechanism
+    """
+    if weights is None or True:
+        # N_k/N default
+        counts = np.array([np.sum(row) for row in hists])
+        return counts/counts.sum()
+    elif weights is False:
+        # actively set it to turn off
+        # then have them equal weight
+        return np.ones(len(hists))/len(hists)
+    else:
+        # if specified
+        # make sure they're normalized
+        weights = np.array(weights)
+        return weights/weights.sum()
+        
 
 def divergence(ergodic_entropy, entropies, weights):
+    """ Shannon Jenson Divergence """
     divs = [ergodic_entropy - e for e in entropies]
     return np.average(divs, weights=weights)
 
@@ -83,7 +107,7 @@ def complexity(ergodic_entropy, entropies, weights):
         return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
 
 
-TAU_BOOST = 350
+TAU_BOOST = 200
 
 def tau2(comp, states, boost=None):
     """
@@ -92,10 +116,14 @@ def tau2(comp, states, boost=None):
 
     :returns: tau2 measure and tau-p as tuple of floats
     """
-    import scipy as sp
+    try:
+        import scipy as sp
+    except ImportError:
+        return None, None
+
     if boost is None: boost = TAU_BOOST
-    tau = (comp**2)*states*boost
-    tau_p = 1 - sp.stats.chi2.cdf(tau, states)
+    tau = (comp**2)*np.log(states)*boost
+    tau_p = 1 - sp.stats.chi2.cdf(tau, 1)
     return tau, tau_p
 
 
@@ -104,20 +132,22 @@ LEGEND = {
     'ergodic': ('Ergodic entropy','firebrick'),
     'divergence': ('Erogodic divergence','forestgreen'),
     'complexity': ('Ergodic complexity','blueviolet'),
+    'weights': ('Weights of each ensemble', 'red'),
     'tau2': ('tau2 Conversion of ergodic complexity', 'gold'),
     'tau2p': ('tau2 p-value', 'cyan'),
     'entropies': ('Entropies of individual ensembles','crest'),
 }
 
 
-def measures(pmfs, weights=None, with_entropies=False, boost=None, **kwargs):
+def measures(pmfs, weights=None, with_meta=False, boost=None, **kwargs):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, **kwargs)
-    ensemble = np.mean(ents)
-    ergodic = ergodic_entropy(pmfs, **kwargs)
+    weights = observation_weights(pmfs, weights)
+    ensemble = np.average(ents, weights=weights)
+    ergodic = ergodic_entropy(pmfs, weights, **kwargs)
     diver = divergence(ergodic, ents, weights)
     comp = complexity(ergodic, ents, weights)
-    tau2p = tau2(comp, len(pmfs), boost)
+    tau2p = tau2(comp, len(pmfs[0]), boost)
 
     metrics = {
         'ensemble': ensemble,
@@ -127,8 +157,9 @@ def measures(pmfs, weights=None, with_entropies=False, boost=None, **kwargs):
         'tau2': tau2p[0],
         'tau2p': tau2p[1],
     }
-    if with_entropies:
+    if with_meta:
         metrics['entropies'] = ents
+        metrics['weights'] = weights
     return metrics
 
 
