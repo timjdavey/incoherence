@@ -3,7 +3,7 @@ from functools import cached_property
 
 from .bins import binseries
 from .ergodic import ErgodicEnsemble
-from .entropy import LEGEND
+from .stats import LEGEND
 
 
 class ErgodicSeries:

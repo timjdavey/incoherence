@@ -28,7 +28,7 @@ def binobs(observations, ratio=5):
     With a count which is average_obs_per_ensemble/`ratio=5`
     """
     ergobs = ergodic_obs(observations)
-    count = max(3, (len(ergobs)/len(observations))/ratio)
+    count = max(4, (len(ergobs)/len(observations))/ratio)
     return binspace(ergobs.min(), ergobs.max(), count)
 
 

@@ -70,6 +70,5 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
-            "tau2": self.tau2,
             "tau2p": self.tau2p,
         }

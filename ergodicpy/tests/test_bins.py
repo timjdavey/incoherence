@@ -22,11 +22,12 @@ class TestBins(unittest.TestCase):
     def test_ergs(self):
         obs = [[1,2],[3,4,5]]
         np.testing.assert_array_equal(ergodic_obs(obs), [1,2,3,4,5])
-        np.testing.assert_array_equal(binobs(obs), [1,2,3,5])
+        np.testing.assert_array_equal(binobs(obs), [1,2,3,4,5])
 
         series = [[[1,2],[3,4]],[[6,7],[8,9]]]
-        np.testing.assert_array_equal(ergodic_series(series), [[1,2],[3,4,5],[6,7],[8,9]])
-        np.testing.assert_array_equal(binseries(series), [1, 3, 6, 9])
+        np.testing.assert_array_equal(ergodic_series(series), [[1,2],[6,7],[3,4],[8,9]])
+        np.testing.assert_array_equal(binseries(series), [1, 3, 5, 7, 9])
+
 
 if __name__ == '__main__':
     unittest.main()

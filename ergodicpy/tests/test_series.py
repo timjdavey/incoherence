@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from ..bins import binr
+from ..bins import binobs
 from ..ergodic import ErgodicEnsemble
 from ..series import ErgodicSeries
 
@@ -14,9 +14,6 @@ class TestSeries(unittest.TestCase):
                     obs = [[np.random.power(5,samples)*10 for _ in range(ensembles)] for _ in range(steps)]
                     ees = ErgodicSeries(x=range(steps), observations=obs)
                     self.assertEqual(ees.entropies.shape, (steps, ensembles))
-
-                    # default ratio 10
-                    self.assertEqual(len(ees.bins), max(int(samples/10), 2)+1)
 
                     # measures
                     for k, v in ees.measures.items():
@@ -32,10 +29,7 @@ class TestSeries(unittest.TestCase):
     def test_fixed(self):
         np.random.seed(1283947)
 
-        measures = {'ensemble': [0.30951977, 0.20878668],
-                    'ergodic': [0.32508297, 0.25363895],
-                    'divergence': [0.0155632 , 0.04485226],
-                    'complexity': [0.19652311, 0.38591576]}
+        measures = {'ensemble': ([0.93514933, 0.70948397]), 'ergodic': ([0.97179239, 0.76638377]), 'divergence': ([0.03664307, 0.0568998 ]), 'complexity': ([0.10545047, 0.24092971]), 'tau2': ([ 4.31628893, 22.53171307]), 'tau2p': ([3.77491632e-02, 2.06702846e-06])}
 
         mmax = {'ensemble': 0.30951977140256587, 'ergodic': 0.3250829733914482, 'divergence': 0.04485226313012047, 'complexity': 0.3859157617880867}
         mtrend = {'ensemble': 0.2087866837915709, 'ergodic': 0.25363894692169137, 'divergence': 0.04485226313012047, 'complexity': 0.3859157617880867}
@@ -52,7 +46,7 @@ class TestSeries(unittest.TestCase):
         ees1 = ErgodicSeries(observations=observations)
         
         # create from y
-        bins = binr(observations=observations)
+        bins = binobs(observations=observations)
         ees2 = ErgodicSeries(y=[ErgodicEnsemble(obs, bins) for obs in observations])
 
         for ees in [ees1, ees2]:

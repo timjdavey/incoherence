@@ -13,22 +13,14 @@ class TestErgodic(unittest.TestCase):
 
         cases = [
             ([np.random.power(5,samples)*10 for c in range(ensembles)], 
-                [2.5313980896873165, 2.543260493286989, 0.01749078667811227, 152.96380930961482, 1.0]),
+                [2.568593658512911, 2.5809324563957965, 0.012338797882884089, 0.017490786678111787, 0.28232050665675185, 0.5951842925626938]),
             ([np.random.uniform(0,10,samples) for c in range(ensembles)], 
-                [0.6926254697950226, 0.6931469795819318, 0.0005215097869091837, 0.001349917246302409, 0.9111382859323394, 1.0]),
+                [1.0975842797291155, 1.0986114430311615, 0.0010271633020456057, 0.001349917246302409, 0.000560553121856709, 0.9811110474074441]),
         ]
 
-        'ensemble': ensemble,
-        'ergodic': ergodic,
-        'divergence': diver,
-        'complexity': comp,
-        'tau2': tau2p[0],
-        'tau2p': tau2p[1],
-
         for observations, measures in cases:
-            ee = ErgodicEnsemble(observations)
+            ee = ErgodicEnsemble(observations, tau_boost=280)
             # measures
-            #print(list(ee.measures.values()))
             np.testing.assert_array_equal(list(ee.measures.values()), measures)
             self.assertEqual(len(ee.entropies), ensembles)
 
@@ -40,7 +32,28 @@ class TestErgodic(unittest.TestCase):
             for v in ee.obs_counts.values():
                 self.assertEqual(v, samples)
 
+    def test_minimize(self):
+        ensembles = 20
 
+        for samples in [100,1000]:
+            
+            power_obs = [np.random.power(i, size=samples) for i in np.linspace(2, 3, ensembles)]
+            uni_obs = [np.random.uniform(size=samples) for i in range(ensembles)]
+            
+            for obs in [uni_obs,power_obs]:
+                
+                ee = ErgodicEnsemble(obs, lazy=True)
+        
+                # do full scan & leave legacy bins
+                scan = ee.stabilize(optimized=False, plot=True)
+                opti = ee.stabilize()
+                self.assertEqual(opti[1][opti[0]][0], len(ee.bins)-1)
+        
+                # do they find the same complexity level
+                # doesn't matter entirely about the exact bins
+                opti_complexity = scan[1][scan[0]][1]
+                scan_complexity = opti[1][opti[0]][1]
+                np.testing.assert_almost_equal(opti_complexity, scan_complexity, 3)
 
 
 if __name__ == '__main__':

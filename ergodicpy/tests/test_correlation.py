@@ -27,14 +27,18 @@ class TestCorrelation(unittest.TestCase):
     def test_specific(self):
         np.random.seed(268480)
         o = 1000
+        tau_boost = 280
         x = np.random.random(o)
-        nats = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 1.3938138437785665}
-        bits = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 1.6741410414392122}
+        nats = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 0.9199466575025159, 'tau2p': 0.0}
+        bits = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 1.1049685452144649, 'tau2p': 0.0}
 
         for c, unit in ((nats, None),(bits, 'bits')):
-            ec = ErgodicCorrelation(x,x, units=unit)
+            wec = ErgodicCorrelation(x,x, units=unit, tau_boost=tau_boost)
+            # in this case the same as equally random
+            fec = ErgodicCorrelation(x,x, units=unit, tau_boost=tau_boost, weights=False) 
             for k, v in c.items():
-                self.assertEqual(v, ec.correlations[k])
+                self.assertEqual(v, wec.correlations[k])
+                self.assertEqual(v, fec.correlations[k])
 
 
 

@@ -26,26 +26,6 @@ class TestEntropy(unittest.TestCase):
             shannon_entropy([])
 
 
-    def test_measures(self):
-        boost=2000
-
-        cases = [
-            ([[0,1],[0,1]], [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, [0.5, 0.5], [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, 2000.0, 0.0, [0.5, 0.5], [0.0, 0.0]]),
-            ([[0,1],[1,0]], [0.0, 1.0, 1.0, 1.0, 2000.0, 0.0, [0.5, 0.5], [0.0, 0.0]]),
-            ([[0.5,0.5],[0.5,0.5]], [1.0, 1.0, 0.0, 0.0, 0.0, 1.0, [0.5, 0.5], [1.0, 1.0]]),
-            ([[0,1],[1,0],[1,0]], [0.0, 0.9182958340544896, 0.9182958340544896, 0.9582775349837277, 3673.1833362179577, 0.0, [1/3, 1/3, 1/3], [0.0, 0.0, 0.0]]),
-            ([[0,1],[0.5,0.5],[1,0]], [0.3333333333333333, 1.0, 0.6666666666666666, 0.816496580927726, 2666.6666666666665, 0.0, [1/3, 1/3, 1/3], [0.0, 1.0, 0.0]]),
-        ]
-        for pmfs, expected in cases:
-            mms = measures(pmfs, with_meta=True, units='bits', boost=boost)
-            for i, key in enumerate(LEGEND.keys()):
-                self.assertEqual(mms[key], expected[i])
-
-        with self.assertRaises(ValueError):
-            measures([])
-
-
     def test_weights(self):
         # test returns normalised weights by default if given them
         np.testing.assert_array_equal(observation_weights([], [1,2,3]), [1/6,2/6,3/6])

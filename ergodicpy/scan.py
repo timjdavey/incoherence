@@ -1,6 +1,6 @@
 import numpy as np
 
-from .entropy import LEGEND
+from .stats import LEGEND
 from .series import ErgodicSeries
 from .plots import combine_legends
 
