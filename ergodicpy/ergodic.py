@@ -68,12 +68,8 @@ class ErgodicEnsemble:
 
         # do analysis
         if not lazy:
-            if mode == 'binobs':
-                self.bins = binobs(observations)
-                self.analyse()
-            elif mode == 'averages':
-                self.averages()
-            elif mode == 'stabilize':
+            if bins is None:
+                self.mode = mode
                 self.stabilize()
             else:
                 self.analyse()
@@ -167,7 +163,10 @@ class ErgodicEnsemble:
 
         for x in xs:
             self.update_bins(x)
-            indx.append([x,self.complexity,self.tau2])
+            if self.mode == None:
+                indx.append([x,(self.tau2/np.log(x)),self.tau2])
+            elif self.mode == 1:
+                indx.append([x,self.tau2,self.tau2])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])
@@ -219,7 +218,7 @@ class ErgodicEnsemble:
         # need minmum 3 bins (lowest odd)
         if minimum is None: minimum = 3
         # need at least 5 per bin or 4 bins
-        if maximum is None: maximum = max(10,int(self.obs_counts['mean']/5))
+        if maximum is None: maximum = max(10,int(self.obs_counts['mean']))
 
         # explore entire bin range for scan
         if plot or not optimized:
@@ -251,41 +250,6 @@ class ErgodicEnsemble:
         self.analyse()
         return self
 
-
-    """
-    Average measures strategy for continuous
-    
-    """
-
-    def averages(self, low=None, high=None, sparse=True):
-
-        # defaults
-        if low is None: low = 4
-        if high is None: high = max(5, int(self.obs_counts['mean']))
-        count = np.log(self.obs_counts['mean']) if sparse else None
-        
-        # collect data on all the bin counts
-        data = dict([(key, []) for key in LEGEND.keys()])
-        raw = {}
-        for b in binint(low, high, count):
-            self.update_bins(b)
-            raw[b] = self.measures.copy()
-            for key, value in self.measures.items():
-                data[key].append(value)
-
-        # take the averages
-        avgs = {}
-        for key, values in data.items():
-            avgs[key] = np.mean(values)
-
-        # re-analyse tau2-p
-        import scipy as sp
-        avgs['tau2p'] = 1 - sp.stats.chi2.cdf(avgs['tau2'], 1)
-
-        self.measures = avgs
-        self.raw_dict  = raw
-        self.raw_array = data
-        self.bins = None # no bins
 
     """
     Plots & displays

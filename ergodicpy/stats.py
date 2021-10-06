@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 from .entropy import ensemble_entropies, observation_weights, ergodic_entropy
 
 
@@ -31,15 +32,11 @@ def tau2(comp, states, boost=None):
 
     :returns: tau2 measure and tau-p as tuple of floats
     """
-    try:
-        import scipy as sp
-    except ImportError:
-        return None, None
 
     if boost is None: boost = TAU_BOOST
-    tau = (comp**2)*np.log(states)*boost
-    tau_p = 1 - sp.stats.chi2.cdf(tau, 1)
-    return tau, tau_p
+    t2 = (comp**2)*(np.log(states))*boost
+    t2p = 1 - sp.stats.chi2.cdf(t2, 1)
+    return t2, t2p
 
 
 LEGEND = {
