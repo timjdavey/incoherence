@@ -2,7 +2,7 @@ import numpy as np
 from functools import cached_property
 
 from .stats import measures, LEGEND
-from .bins import binint, binspace, ergodic_obs
+from .bins import binint, binspace, binobs, ergodic_obs
 
 
 class ErgodicEnsemble:
@@ -44,7 +44,7 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, weights=None,
+    def __init__(self, observations, bins=None, weights=None, mode=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
                     units=None, tau_boost=None, lazy=False):
 
@@ -68,7 +68,12 @@ class ErgodicEnsemble:
 
         # do analysis
         if not lazy:
-            if bins is None:
+            if mode == 'binobs':
+                self.bins = binobs(observations)
+                self.analyse()
+            elif mode == 'averages':
+                self.averages()
+            elif mode == 'stabilize':
                 self.stabilize()
             else:
                 self.analyse()
@@ -162,7 +167,7 @@ class ErgodicEnsemble:
 
         for x in xs:
             self.update_bins(x)
-            indx.append([x,self.complexity])
+            indx.append([x,self.complexity,self.tau2])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])
@@ -197,7 +202,7 @@ class ErgodicEnsemble:
                 spread, depth, iteration+1, base_threshold=base_threshold)
             
 
-    def stabilize(self, minimum=None, maximum=None, optimized=True, plot=False, spread=4, depth=10):
+    def stabilize(self, minimum=None, maximum=None, optimized=True, plot=False, spread=4, depth=10, ax=None):
         """
         If dealing with a continuous distribution,
         finds the optimum bin count.
@@ -214,7 +219,7 @@ class ErgodicEnsemble:
         # need minmum 3 bins (lowest odd)
         if minimum is None: minimum = 3
         # need at least 5 per bin or 4 bins
-        if maximum is None: maximum = max(4,int(self.obs_counts['mean']/5))
+        if maximum is None: maximum = max(10,int(self.obs_counts['mean']/5))
 
         # explore entire bin range for scan
         if plot or not optimized:
@@ -228,7 +233,10 @@ class ErgodicEnsemble:
         # plot the results if needed
         if plot:
             import seaborn as sns
-            sns.lineplot(x=indx[:,0], y=indx[:,1])
+            g = sns.lineplot(x=indx[:,0], y=indx[:,1], color='blue', ax=ax)
+            g.set(ylim=(0, None))
+            h = sns.lineplot(x=indx[:,0], y=indx[:,2], color='orange', ax=g.twinx())
+            h.set(ylim=(0, None))
 
         # get optimum bins by indx[optimum_index][0] or len(self.bins)-1
         return optimum_index, indx
@@ -243,6 +251,41 @@ class ErgodicEnsemble:
         self.analyse()
         return self
 
+
+    """
+    Average measures strategy for continuous
+    
+    """
+
+    def averages(self, low=None, high=None, sparse=True):
+
+        # defaults
+        if low is None: low = 4
+        if high is None: high = max(5, int(self.obs_counts['mean']))
+        count = np.log(self.obs_counts['mean']) if sparse else None
+        
+        # collect data on all the bin counts
+        data = dict([(key, []) for key in LEGEND.keys()])
+        raw = {}
+        for b in binint(low, high, count):
+            self.update_bins(b)
+            raw[b] = self.measures.copy()
+            for key, value in self.measures.items():
+                data[key].append(value)
+
+        # take the averages
+        avgs = {}
+        for key, values in data.items():
+            avgs[key] = np.mean(values)
+
+        # re-analyse tau2-p
+        import scipy as sp
+        avgs['tau2p'] = 1 - sp.stats.chi2.cdf(avgs['tau2'], 1)
+
+        self.measures = avgs
+        self.raw_dict  = raw
+        self.raw_array = data
+        self.bins = None # no bins
 
     """
     Plots & displays

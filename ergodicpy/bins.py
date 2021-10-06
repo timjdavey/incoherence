@@ -28,8 +28,10 @@ def binobs(observations, ratio=5):
     With a count which is average_obs_per_ensemble/`ratio=5`
     """
     ergobs = ergodic_obs(observations)
-    count = max(4, (len(ergobs)/len(observations))/ratio)
-    return binspace(ergobs.min(), ergobs.max(), count)
+    avg = len(ergobs)/len(observations)
+    #count = np.log(2*avg)
+    count = max(4, avg/ratio)
+    return binspace(ergobs.min(), ergobs.max(), int(count))
 
 
 def binseries(series, ratio=5):
