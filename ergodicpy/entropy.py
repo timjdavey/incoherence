@@ -50,12 +50,17 @@ def ensemble_entropies(pmfs, **kwargs):
     return [shannon_entropy(p, **kwargs) for p in pmfs]
 
 
-def ergodic_entropy(pmfs, weights, **kwargs):
-    """
-    For a given array of pmfs
-    Returns the ergodic pmf, i.e. the mean
-    """
-    return shannon_entropy(np.average(pmfs, weights=weights, axis=0), **kwargs)
+def ergodic_ensemble(pmfs, weights=None):
+    """ For a given array of pmfs
+    Returns the weighted ergodic pmf """
+    default_weights = observation_weights(pmfs, weights)
+    normed = np.array([row/row.sum() for row in np.array(pmfs)])
+    return np.average(normed, weights=default_weights, axis=0)
+
+
+def ergodic_entropy(pmfs, weights=None, **kwargs):
+    """ Returns the entropy of the ergodic ensemble """
+    return shannon_entropy(ergodic_ensemble(pmfs, weights), **kwargs)
 
 
 def observation_weights(hists, weights=None):
@@ -68,17 +73,14 @@ def observation_weights(hists, weights=None):
     """
     if weights is None:
         # N_k/N default
-        counts = np.array([np.sum(row) for row in hists])
-        return counts/counts.sum()
+        return np.array(hists).sum(axis=1)
     elif weights is False:
         # actively set it to turn off
         # then have them equal weight
         return np.ones(len(hists))/len(hists)
     else:
-        # if specified
-        # make sure they're normalized
-        weights = np.array(weights)
-        return weights/weights.sum()
+        # no need to normalize as np does that
+        return weights
         
 
 

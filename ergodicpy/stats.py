@@ -34,7 +34,7 @@ def tau2(comp, states, boost=None):
     """
 
     if boost is None: boost = TAU_BOOST
-    t2 = (comp**2)*(np.log(states))*boost
+    t2 = (comp**2)*boost
     t2p = 1 - sp.stats.chi2.cdf(t2, 1)
     return t2, t2p
 
