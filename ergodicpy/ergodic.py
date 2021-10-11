@@ -46,7 +46,7 @@ class ErgodicEnsemble:
     """
     def __init__(self, observations, bins=None, weights=None, mode=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                    units=None, tau_boost=None, lazy=False):
+                    units=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -59,7 +59,6 @@ class ErgodicEnsemble:
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
-        self.tau_boost = tau_boost
 
         # naming for plots
         self.labels = labels
@@ -97,7 +96,7 @@ class ErgodicEnsemble:
 
         # get measures
         ms = measures(self.histograms, weights=self.weights,
-            units=self.units, tau_boost=self.tau_boost, with_meta=True)
+            units=self.units, with_meta=True)
 
         for k, v in ms.items():
             setattr(self, k, v)
@@ -163,10 +162,7 @@ class ErgodicEnsemble:
 
         for x in xs:
             self.update_bins(x)
-            if self.mode == None:
-                indx.append([x,(self.tau2/np.log(x)),self.tau2])
-            elif self.mode == 1:
-                indx.append([x,self.tau2,self.tau2])
+            indx.append([x,self.c2,self.alt2])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])

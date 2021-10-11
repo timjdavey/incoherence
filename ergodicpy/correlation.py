@@ -1,5 +1,4 @@
 import numpy as np
-from functools import cached_property
 
 from .bins import binspace
 from .ergodic import ErgodicEnsemble
@@ -62,7 +61,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
         # create an ErgodicEnsemble standard
         super().__init__(obs, labels=labels, *args, **kwargs)
     
-    @cached_property
+    @property
     def correlations(self):
         from scipy.stats import pearsonr, spearmanr, kendalltau
         return {
@@ -70,6 +69,6 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
-            "tau2": self.tau2,
-            "tau2p": self.tau2p,
+            "c2": self.c2,
+            "alt2": self.alt2,
         }
