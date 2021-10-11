@@ -1,6 +1,6 @@
 import numpy as np
 
-from .bins import binspace
+from .bins import binspace, binint
 from .ergodic import ErgodicEnsemble
 
 def digitize(X, Y, count):
@@ -53,10 +53,21 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         # create sensible ensembles count
         if ensembles is None:
-            ensembles = np.int(np.log(len(self.x)))
+            minimum = 3
+            maximum = np.int(np.log(len(self.x)))
+            obs = []
+            labels = []
+            for e in binint(minimum, maximum):
+                obs_i, labels_i = digitize(self.x, self.y, e)
+                # need to add individually, as ragged lengths
+                for row in obs_i:
+                    obs.append(row)
+                for label in labels_i:
+                    labels.append(label)
+        else:
+            # turn the continous data into discrete ensembles
+            obs, labels = digitize(self.x, self.y, ensembles)
         
-        # turn the continous data into discrete ensembles
-        obs, labels = digitize(self.x, self.y, ensembles)
         
         # create an ErgodicEnsemble standard
         super().__init__(obs, labels=labels, *args, **kwargs)
@@ -69,6 +80,4 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
-            "c2": self.c2,
-            "alt2": self.alt2,
         }

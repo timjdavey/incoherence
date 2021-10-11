@@ -44,7 +44,7 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, weights=None, mode=None,
+    def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
                     units=None, lazy=False):
 
@@ -68,7 +68,6 @@ class ErgodicEnsemble:
         # do analysis
         if not lazy:
             if bins is None:
-                self.mode = mode
                 self.stabilize()
             else:
                 self.analyse()
@@ -162,7 +161,7 @@ class ErgodicEnsemble:
 
         for x in xs:
             self.update_bins(x)
-            indx.append([x,self.c2,self.alt2])
+            indx.append([x,self.complexity**2, self.complexity])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])
