@@ -28,23 +28,34 @@ LEGEND = {
     'ergodic': ('Ergodic entropy','firebrick'),
     'divergence': ('Erogodic divergence','forestgreen'),
     'complexity': ('Ergodic complexity','blueviolet'),
+    'is_complex': ('Ergodic complexity greater than threshold', 'cyan'),
     'entropies': ('Entropies of individual ensembles','crest'),
     'weights': ('Weights of each ensemble', 'red'),
 }
 
+THRESHOLD = 0.07
 
-def measures(pmfs, weights=None, with_meta=False, **kwargs):
+def dynamic_threshold(obs_count, bins_count, use_max=True):
+    t = 1/np.log(obs_count/bins_count)**2
+    if use_max:
+        # no higher than pre-set 007
+        return min(THRESHOLD, t)
+    return t
+
+def measures(pmfs, weights=None, with_meta=False, threshold=THRESHOLD, **kwargs):
     """ Returns all metrics """
     ents = ensemble_entropies(pmfs, **kwargs)
     weights = observation_weights(pmfs, weights)
     ensemble = np.average(ents, weights=weights)
     ergodic = ergodic_entropy(pmfs, weights, **kwargs)
+    comp = complexity(ergodic, ents, weights)
 
     metrics = {
         'ensemble': ensemble,
         'ergodic': ergodic,
         'divergence': divergence(ergodic, ents, weights),
-        'complexity': complexity(ergodic, ents, weights),
+        'complexity': comp,
+        'is_complex': 1 if comp > threshold else 0,
     }
     if with_meta:
         metrics['entropies'] = ents

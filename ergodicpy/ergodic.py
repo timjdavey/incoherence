@@ -1,9 +1,8 @@
 import numpy as np
 from functools import cached_property
 
-from .stats import measures, LEGEND
+from .stats import measures, dynamic_threshold, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
-
 
 class ErgodicEnsemble:
     """
@@ -46,7 +45,7 @@ class ErgodicEnsemble:
     """
     def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                    units=None, lazy=False):
+                threshold=THRESHOLD, raw_count=None, units=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -59,6 +58,12 @@ class ErgodicEnsemble:
 
         # 'bits' or 'nats' of shannon entropy
         self.units = units
+
+        # the "complexity" threshold where it is deemed complex
+        self.threshold = threshold
+        # raw counts to override any correlations adjustments
+        # for use with the threshold
+        self._raw_count = raw_count
 
         # naming for plots
         self.labels = labels
@@ -77,6 +82,16 @@ class ErgodicEnsemble:
     Essential calculations & metrics
     
     """
+    @property
+    def dynamic_threshold(self):
+        return dynamic_threshold(self.raw_count, len(self.bins)-1)
+
+    @property
+    def raw_count(self):
+        if self._raw_count is None:
+            self._raw_count = len(self.ergodic_observations)
+        return self._raw_count
+    
 
     def analyse(self):
         """
@@ -95,13 +110,17 @@ class ErgodicEnsemble:
 
         # get measures
         ms = measures(self.histograms, weights=self.weights,
-            units=self.units, with_meta=True)
+                    units=self.units, with_meta=True)
+
+        ms['gt_threshold'] = 1 if ms['complexity'] > self.threshold else 0
+        ms['gt_dynamic'] = 1 if ms['complexity'] > self.dynamic_threshold else 0
 
         for k, v in ms.items():
             setattr(self, k, v)
 
         del ms['entropies']
         del ms['weights']
+
         self.measures = ms
 
     """
@@ -161,7 +180,7 @@ class ErgodicEnsemble:
 
         for x in xs:
             self.update_bins(x)
-            indx.append([x,self.complexity**2, self.complexity])
+            indx.append([x, self.complexity])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])
@@ -212,8 +231,8 @@ class ErgodicEnsemble:
         # set defaults
         # need minmum 3 bins (lowest odd)
         if minimum is None: minimum = 3
-        # need at least 5 per bin or 4 bins
-        if maximum is None: maximum = max(10,int(self.obs_counts['mean']))
+        # need at least 5 per bin or 6 bins
+        if maximum is None: maximum = max(6,int(self.obs_counts['mean']/5))
 
         # explore entire bin range for scan
         if plot or not optimized:
@@ -229,8 +248,6 @@ class ErgodicEnsemble:
             import seaborn as sns
             g = sns.lineplot(x=indx[:,0], y=indx[:,1], color='blue', ax=ax)
             g.set(ylim=(0, None))
-            h = sns.lineplot(x=indx[:,0], y=indx[:,2], color='orange', ax=g.twinx())
-            h.set(ylim=(0, None))
 
         # get optimum bins by indx[optimum_index][0] or len(self.bins)-1
         return optimum_index, indx

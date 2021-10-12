@@ -51,12 +51,19 @@ class ErgodicCorrelation(ErgodicEnsemble):
         self.x = np.array(x)
         self.y = np.array(y)
         
-        # create sensible ensembles count
+        # create a blended set of ensembles
         if ensembles is None:
-            minimum = 3
             maximum = np.int(np.log(len(self.x)))
+            minimum = max(3,maximum-2)
             obs = []
             labels = []
+            # where you create progressively more ensembles
+            # out of the data, but just add them all for
+            # comparison
+            # since they're different sizes
+            # the defaulting weighting system
+            # will count for the various proportioning
+            # into the ergodic ensemble & final calc
             for e in binint(minimum, maximum):
                 obs_i, labels_i = digitize(self.x, self.y, e)
                 # need to add individually, as ragged lengths
@@ -70,7 +77,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         
         # create an ErgodicEnsemble standard
-        super().__init__(obs, labels=labels, *args, **kwargs)
+        super().__init__(obs, labels=labels, raw_count=len(self.x), *args, **kwargs)
     
     @property
     def correlations(self):
@@ -80,4 +87,6 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
+            "gt_threshold": self.gt_threshold,
+            "gt_dynamic": self.gt_dynamic,
         }
