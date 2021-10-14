@@ -45,7 +45,7 @@ class ErgodicEnsemble:
     """
     def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                threshold=THRESHOLD, units=None, lazy=False):
+                threshold=None, units=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -60,7 +60,7 @@ class ErgodicEnsemble:
         self.units = units
 
         # the "complexity" threshold where it is deemed complex
-        self.threshold = threshold
+        self.threshold = THRESHOLD if threshold is None else threshold
 
         # naming for plots
         self.labels = labels

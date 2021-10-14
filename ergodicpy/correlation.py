@@ -54,7 +54,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
         # create a blended set of ensembles
         if ensembles is None:
             maximum = np.int(np.log(len(self.x)))
-            minimum = max(3,maximum-2)
+            minimum = 3 #max(3,maximum-2)
             obs = []
             labels = []
             # where you create progressively more ensembles
