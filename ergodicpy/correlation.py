@@ -77,7 +77,7 @@ class ErgodicCorrelation(ErgodicEnsemble):
         
         
         # create an ErgodicEnsemble standard
-        super().__init__(obs, labels=labels, raw_count=len(self.x), *args, **kwargs)
+        super().__init__(obs, labels=labels, *args, **kwargs)
     
     @property
     def correlations(self):
@@ -87,6 +87,5 @@ class ErgodicCorrelation(ErgodicEnsemble):
             "spearman": spearmanr(self.x, self.y)[0],
             "kendall": kendalltau(self.x, self.y)[0],
             "complexity": self.complexity,
-            "gt_threshold": self.gt_threshold,
-            "gt_dynamic": self.gt_dynamic,
+            "is_complex": self.is_complex,
         }

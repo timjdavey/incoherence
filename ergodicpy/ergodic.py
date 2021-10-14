@@ -1,7 +1,7 @@
 import numpy as np
 from functools import cached_property
 
-from .stats import measures, dynamic_threshold, LEGEND, THRESHOLD
+from .stats import measures, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
 
 class ErgodicEnsemble:
@@ -45,7 +45,7 @@ class ErgodicEnsemble:
     """
     def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                threshold=THRESHOLD, raw_count=None, units=None, lazy=False):
+                threshold=THRESHOLD, units=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -61,9 +61,6 @@ class ErgodicEnsemble:
 
         # the "complexity" threshold where it is deemed complex
         self.threshold = threshold
-        # raw counts to override any correlations adjustments
-        # for use with the threshold
-        self._raw_count = raw_count
 
         # naming for plots
         self.labels = labels
@@ -82,16 +79,6 @@ class ErgodicEnsemble:
     Essential calculations & metrics
     
     """
-    @property
-    def dynamic_threshold(self):
-        return dynamic_threshold(self.raw_count, len(self.bins)-1)
-
-    @property
-    def raw_count(self):
-        if self._raw_count is None:
-            self._raw_count = len(self.ergodic_observations)
-        return self._raw_count
-    
 
     def analyse(self):
         """
@@ -110,10 +97,7 @@ class ErgodicEnsemble:
 
         # get measures
         ms = measures(self.histograms, weights=self.weights,
-                    units=self.units, with_meta=True)
-
-        ms['gt_threshold'] = 1 if ms['complexity'] > self.threshold else 0
-        ms['gt_dynamic'] = 1 if ms['complexity'] > self.dynamic_threshold else 0
+                threshold=self.threshold, units=self.units, with_meta=True)
 
         for k, v in ms.items():
             setattr(self, k, v)

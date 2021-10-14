@@ -20,7 +20,7 @@ def complexity(ergodic_entropy, entropies, weights):
         return 0.0
     else:
         divs = [(ergodic_entropy - e)**2 for e in entropies]
-        return (np.average(divs, weights=weights) / ergodic_entropy)**0.5            
+        return (np.average(divs, weights=weights) / ergodic_entropy)**0.5
 
 
 LEGEND = {
@@ -34,13 +34,6 @@ LEGEND = {
 }
 
 THRESHOLD = 0.07
-
-def dynamic_threshold(obs_count, bins_count, use_max=True):
-    t = 1/np.log(obs_count/bins_count)**2
-    if use_max:
-        # no higher than pre-set 007
-        return min(THRESHOLD, t)
-    return t
 
 def measures(pmfs, weights=None, with_meta=False, threshold=THRESHOLD, **kwargs):
     """ Returns all metrics """
