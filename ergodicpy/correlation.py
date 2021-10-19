@@ -14,10 +14,16 @@ def digitize(X, Y, count):
     :Y: list of numerics
     :count: defaults to having on average 20 observations per ensemble
     """
+    X = np.array(X)
+    Y = np.array(Y)
+
     if len(X) != len(Y):
         raise IndexError("Length of X & Y must match %s != %s" % (len(X), len(Y)))
     
-    ensembles = binspace(X.min(), X.max(), int(count))
+    if isinstance(count, int):
+        ensembles = binspace(X.min(), X.max(), int(count))
+    else:
+        ensembles = count
     
     # group using a dict
     obs = dict([(str(b), []) for b in ensembles[:-1]])

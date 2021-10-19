@@ -126,7 +126,7 @@ class ErgodicEnsemble:
     @cached_property
     def ensemble_count(self):
         """ Total number of ensembles """
-        return len(self.observations)
+        return len(self.histograms)
 
     @cached_property
     def ergodic_observations(self):
