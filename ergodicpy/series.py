@@ -16,10 +16,10 @@ class ErgodicSeries:
     :x_label: 'x', what is x?
     :title: _None_ of the graph
     :bins: _None_ specific states of the model if they exist
-    :units: 'nats', the units of entropy
+    :base: 'None', the units of entropy
     :models: array-like, the models that generated the data
     """
-    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, units=None, models=None, log=False):
+    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, base=None, models=None, log=False):
         self.x = x
         self.x_label = x_label
 
@@ -29,7 +29,7 @@ class ErgodicSeries:
         self.log = log
 
         self.title = title
-        self.units = units
+        self.base = base
         self.bins = bins
         self.models = models
         self.map = {}
@@ -115,7 +115,7 @@ class ErgodicSeries:
 
     def to_dict(self, keys=None):
         if keys is None:
-            keys = ('x', 'x_label', 'title', 'units', 'bins') # no y
+            keys = ('x', 'x_label', 'title', 'base', 'bins') # no y
         data = []
         for key in keys:
             attr = getattr(self, key)
@@ -179,8 +179,8 @@ class ErgodicSeries:
             sns.lineplot(x=self.x, y=e, ax=axes[0], color=palette[i])
 
         # ergodic & ensemble
-        g = self._lineplot('ensemble', axes[0], 'Entropy (%s)' % self.units, 1.0)
-        g = self._lineplot('ergodic', axes[0], 'Entropy (%s)' % self.units, 1.0)
+        g = self._lineplot('ensemble', axes[0], 'Entropy', 1.0)
+        g = self._lineplot('ergodic', axes[0], 'Entropy', 1.0)
         g.set_title("Entropies (incl semi-transparent blue individual ensembles)")
         
 

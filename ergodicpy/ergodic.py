@@ -1,7 +1,7 @@
 import numpy as np
 from functools import cached_property
 
-from .stats import measures, LEGEND, THRESHOLD
+from .stats import measures, distances, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
 
 class ErgodicEnsemble:
@@ -23,7 +23,7 @@ class ErgodicEnsemble:
     :labels: the names of the ensembles for plotting
     :ensemble_name: the name of the ensemble to be used plots
     :dist_name: the name of the distribution variable
-    :units: 'bits' or 'nats' of entropy
+    :base: 'None' default is natural e units of entropy
     :lazy: _False_ will calculate measures on creation if False, otherwise need to call `analyse()`
 
     properties
@@ -45,7 +45,7 @@ class ErgodicEnsemble:
     """
     def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                threshold=None, units=None, lazy=False):
+                threshold=None, base=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -56,8 +56,8 @@ class ErgodicEnsemble:
         # default weights of N_k / N
         self.weights = None
 
-        # 'bits' or 'nats' of shannon entropy
-        self.units = units
+        # None is natural base as default, otherwise 2 etc
+        self.base = base
 
         # the "complexity" threshold where it is deemed complex
         self.threshold = THRESHOLD if threshold is None else threshold
@@ -97,7 +97,7 @@ class ErgodicEnsemble:
 
         # get measures
         ms = measures(self.histograms, weights=self.weights,
-                threshold=self.threshold, units=self.units, with_meta=True)
+                threshold=self.threshold, base=self.base, with_meta=True)
 
         for k, v in ms.items():
             setattr(self, k, v)
@@ -246,6 +246,30 @@ class ErgodicEnsemble:
         self.analyse()
         return self
 
+    """
+    Self organisation
+
+    """
+
+    def bayes(self, observations):
+        """
+        Given an array of `observations`,
+        Returns the ergodic bayesian pmf.
+        Using the bins, base etc current set.
+        """
+        hist = np.histogram(observations, self.bins)
+        return self.bayes_histogram(hist)
+
+    def bayes_histogram(self, histogram):
+        """
+        Given a `histogram` (or pmf),
+        of observational data.
+        Returns the ergodic bayesian pmf.
+        """
+        dists = distances(self.histograms, histogram, self.base)
+        dws = np.array(self.weights)*dists
+        return ergodic_ensemble(self.histograms, weights=dws)
+    
 
     """
     Plots & displays
