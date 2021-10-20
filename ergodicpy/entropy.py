@@ -53,7 +53,11 @@ def ergodic_ensemble(pmfs, weights=None):
     """
     default_weights = observation_weights(pmfs, weights)
     normed = np.array([row/row.sum() for row in np.array(pmfs)])
-    return np.average(normed, weights=default_weights, axis=0)
+    try:
+        return np.average(normed, weights=default_weights, axis=0)
+    except TypeError:
+        print("TypeError normed", normed)
+        print("TypeError weights", default_weights)
 
 
 def ergodic_entropy(pmfs, weights=None, **kwargs):
@@ -73,11 +77,13 @@ def observation_weights(hists, weights=None):
     """
     if weights is None:
         # N_k/N default
-        return np.array(hists).sum(axis=1)
+        ws = np.array(hists).sum(axis=1)
+        return ws/ws.sum()
     elif weights is False:
         # actively set it to turn off
         # then have them equal weight
-        return np.ones(len(hists))/len(hists)
+        N = len(hists)
+        return np.ones(N)/N
     else:
         # no need to normalize as np does that
         return weights

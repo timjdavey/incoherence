@@ -1,89 +1,14 @@
 import numpy as np
 from functools import cached_property
 
+from .entropy import ergodic_ensemble
 from .stats import measures, distances, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
 
 
-class ErgodicCollection:
-    """
-    Base wrapper class to hold and run ep.measures
-    """
-    def __init__(self, histograms, weights=None,
-                threshold=None, base=None, lazy=False):
-
-        self.histograms = np.array(histograms)
-        
-        # default weights of N_k / N
-        self.weights = None
-
-        # None is natural base as default, otherwise 2 etc
-        self.base = base
-
-        # the "complexity" threshold where it is deemed complex
-        self.threshold = THRESHOLD if threshold is None else threshold
-
-        if not lazy:
-            self.analyse()
-
-    def analyse(self):
-        """
-        Does all the analysis.
-        Easiest way to compare different input values e.g. continuous or not,
-        number of bins etc, is to reset on the object then recall analyse().
-        """
-        # get measures
-        ms = measures(self.histograms, weights=self.weights,
-                threshold=self.threshold, base=self.base, with_meta=True)
-
-        for k, v in ms.items():
-            setattr(self, k, v)
-
-        del ms['entropies']
-        del ms['weights']
-
-        self.measures = ms
-
-    
-    """
-    Ensemble metrics
-
-    """
-
-    @cached_property
-    def ensemble_count(self):
-        """ Total number of ensembles """
-        return len(self.histograms)
-    
-    @cached_property
-    def ergodic_pmf(self):
-        """ Total number of ensembles """
-        return ergodic_ensemble(self.histograms, weights=self.weights)
-
-    def chi2(self):
-        from scipy.stats import chi2_contingency
-        # returns (chi2, p, dof, expected)
-        return chi2_contingency(self.histograms)
 
 
-    """
-    Self organisation
-
-    """
-
-    def swarm_pmf(self, histogram):
-        """
-        Given a `histogram` (or pmf),
-        of observational data.
-        Returns the predicted ergodic bayesian swarm pmf.
-        """
-        dists = distances(self.histograms, histogram, self.base)
-        dws = np.array(self.weights)*dists
-        return ergodic_ensemble(self.histograms, weights=dws)
-
-
-
-class ErgodicEnsemble(ErgodicCollection):
+class ErgodicEnsemble:
     """
     A simple model to help calculate the 
 
@@ -122,25 +47,31 @@ class ErgodicEnsemble(ErgodicCollection):
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None,
-            labels=None, ensemble_name='ensemble', dist_name='value',
-                lazy=False, **kwargs):
+    def __init__(self, observations, bins=None, weights=None,
+                labels=None, ensemble_name='ensemble', dist_name='value',
+                threshold=None, base=None, lazy=False):
 
         # handle observations
         self.observations = observations
 
         # will do stabilize later
         self.bins = bins
-        
+
+        # default weights of N_k / N
+        self.weights = None
+
+        # None is natural base as default, otherwise 2 etc
+        self.base = base
+
+        # the "complexity" threshold where it is deemed complex
+        self.threshold = THRESHOLD if threshold is None else threshold
+
         # naming for plots
         self.labels = labels
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
 
-        # initialise parent, don't do analysis
-        super().__init__(histograms=None, lazy=True, **kwargs)
-
-        # do analysis if needed at this level
+        # do analysis
         if not lazy:
             if bins is None:
                 self.stabilize()
@@ -152,6 +83,23 @@ class ErgodicEnsemble(ErgodicCollection):
     Essential calculations & metrics
     
     """
+
+    def get_measures(self):
+        """
+        Gets the standard measures.
+        Assigns to `measures` as a dict
+            and the attributes with the same name.
+        """
+        ms = measures(self.histograms, weights=self.weights,
+                threshold=self.threshold, base=self.base, with_meta=True)
+
+        for k, v in ms.items():
+            setattr(self, k, v)
+
+        del ms['entropies']
+        del ms['weights']
+
+        self.measures = ms
 
     def analyse(self):
         """
@@ -167,8 +115,9 @@ class ErgodicEnsemble(ErgodicCollection):
                 hist, nbins = np.histogram(obs, bins=self.bins)
                 histograms.append(hist)
         self.histograms = np.array(histograms)
-        super().analyse()
 
+        # get measures
+        self.get_measures()
         
 
     """
@@ -188,6 +137,11 @@ class ErgodicEnsemble(ErgodicCollection):
         }
 
     @cached_property
+    def ensemble_count(self):
+        """ Total number of ensembles """
+        return len(self.histograms)
+
+    @cached_property
     def ergodic_observations(self):
         return ergodic_obs(self.observations)
 
@@ -199,21 +153,23 @@ class ErgodicEnsemble(ErgodicCollection):
     def obs_max(self):
         return self.ergodic_observations.max()
 
-
-    """
-    Self organisation
+    @property
+    def states(self):
+        if self.bins is not None:
+            return len(self.bins)-1
+        elif self.histograms is not None:
+            return len(self.histograms[0])
+        else:
+            return None
     
     """
+    Comparison metrics
 
-    def swarm_observations(self, observations):
-        """
-        Given an array of `observations`,
-        Returns the ergodic bayesian pmf.
-        Using the bins, base etc current set.
-        """
-        hist, _ = np.histogram(observations, self.bins)
-        return self.swarm_pmf(hist)
-    
+    """
+    def chi2(self):
+        from scipy.stats import chi2_contingency
+        # returns (chi2, p, dof, expected)
+        return chi2_contingency(self.histograms)
 
     """
     Finding optimum bins for continuous entropy distributions
@@ -311,6 +267,43 @@ class ErgodicEnsemble(ErgodicCollection):
         self.analyse()
         return self
 
+    """
+    Self organisation
+
+    """
+    def ergodic_pmf(self):
+        """
+        The ergodic ensemble (pmf as normalised).
+        With standard weights.
+        """
+        return ergodic_ensemble(self.histograms, weights=self.weights)
+
+    def swarm_observations(self, observations, plot=False):
+        """
+        Given an array of `observations`,
+        Returns the ergodic bayesian pmf.
+        Using the bins, base etc current set.
+        """
+        hist = np.histogram(observations, self.bins)
+        return self.swarm_observations(hist)
+
+    def swarm_pmf(self, histogram, with_distances=False, plot=False):
+        """
+        Given a `histogram` (or pmf),
+        of observational data.
+        Returns the ergodic bayesian pmf.
+        """
+        if len(histogram) != self.states:
+            raise InputError("histogram does not have correct states %s != %s" % (len(histogram), self.states))
+
+        dists = distances(self.histograms, histogram, power=-1, base=self.base)
+        dws = np.array(self.weights)*dists
+        swarm_ensemble = ergodic_ensemble(self.histograms, weights=dws)
+
+        if with_distances:
+            return swarm_ensemble, dists
+        else:
+            return swarm_ensemble
     
 
     """
@@ -347,3 +340,63 @@ class ErgodicEnsemble(ErgodicCollection):
         from .plots import scatter
         scatter(self.ensemble_melt(), self.bins,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
+
+
+def histogram_to_observations(histogram, states=None):
+    """
+    Converts a histogram to a series of raw observations.
+    Mainly for use with plots.
+    """
+    if states is None:
+        states = range(len(histogram))
+
+    # it is a pmf with some error
+    boost = 1
+    if np.sum(histogram) < 2:
+        # given is really only for plots doesn't need to be crazy accurate
+        boost = 10000
+    return np.concatenate([np.ones(int(volume*boost))*states[state]
+        for state, volume in enumerate(histogram)])
+
+
+class ErgodicCollection(ErgodicEnsemble):
+    """
+    Wrapper around ErgodicEnsemble.
+
+    So you can create an ErgodicEnsemble directly from
+    histogram data, rather than raw observations.
+
+    Takes just a list of `histograms` as an extra input.
+    """
+    def __init__(self, histograms, bins=None, **kwargs):
+
+        lengths = set([len(h) for h in histograms])
+        if len(lengths) > 1:
+            raise InputError("histogram lengths not equal %s" % lengths)
+        self.histograms = histograms
+
+        if bins is None:
+            # default to incremental numbering
+            bins = binint(0,len(histograms[0]))
+        observations = [histogram_to_observations(h, bins[:-1]) for h in histograms]
+        
+        super().__init__(observations, bins, **kwargs)
+
+    def analyse(self):
+        """ Just does get measures, as histograms invariant now """
+        self.get_measures()
+
+    def stabilize(self, *args, **kwargs):
+        """ No stabilize method as bins are invariant """
+        raise NotImplementedError
+
+    def update_bins(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def swarm_observations(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+
+
+

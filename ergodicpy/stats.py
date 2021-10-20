@@ -23,7 +23,7 @@ def complexity(ergodic_entropy, entropies, weights):
         return (divs / ergodic_entropy)**0.5
 
 
-def distances(references, observed, **kwargs):
+def distances(references, observed, power=0.5, **kwargs):
     """
     Returns an array of Shannon Jenson Distances
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html
@@ -33,8 +33,9 @@ def distances(references, observed, **kwargs):
     """
     distances = []
     for h in references:
-        d = measures([observed, h], weights=False, **kwargs)["divergence"]
-        distances.append(d**0.5)
+        d = sp.stats.entropy(observed, h)
+        #d = measures([observed, h], weights=False, **kwargs)["divergence"]
+        distances.append(d**power)
     return np.array(distances)
 
 

@@ -12,10 +12,14 @@ DEFAULT = {
 }
 
 class Snowflake:
-    
-    def __init__(self, points=(30,360), lazy=False, parameters=DEFAULT):
+    """
+    Generates a snowflake
+    """
+    def __init__(self, points=(30,360), lazy=False, plot=True,
+            spikes=6, spread=2, coherence=1):
         self.points = points # y, x
         self.index = range(points[0]*points[1])
+        self.steps = 0
         
         # maps of where points are
         self.point_map = np.ones(points)
@@ -32,11 +36,15 @@ class Snowflake:
         self.xs = []
         
         # parameters
-        self.parameters = parameters
+        self.spikes = spikes
+        self.spread = spread
+        self.coherence = coherence
         
-        # create on creation
+        # run on creation
         if not lazy:
             self.run(int(points[0]*points[1]/12))
+
+        if plot:
             self.plot()
         
     
@@ -54,15 +62,15 @@ class Snowflake:
         
         # repeat pattern across spikes
         t = self.points[1]
-        s = self.parameters['spikes']
+        s = self.spikes
         raw_ints = np.array([int(t*i/s) for i in range(1,s+1)])
         ints = (raw_ints+x)%t
         for i in ints:
-            self.prob_map[y][i] += self.parameters['coherence']
+            self.prob_map[y][i] += self.coherence
         
         
         # increase probability above & below
-        spread = self.parameters['spread']
+        spread = self.spread
         rows = self.points[0]
         if y < rows-1:
             # make the effect decrease new edges
@@ -96,6 +104,7 @@ class Snowflake:
     def run(self, steps=1):
         for s in range(steps):
             self.place_point(self.pick_point())
+            self.steps += 1
         return self
     
     def dataframe(self):
@@ -106,8 +115,25 @@ class Snowflake:
         g.map_dataframe(sns.scatterplot, x='angles', y='radius', palette='crest_r', hue='position')
         g.set(xticks=[], yticks=[])
     
-    def histogram(self, states=None):
+    def histogram(self, states=None, at_point=None):
+        """
+        Returns the histogram of the snowflake.
+
+        Inputs
+        :states: _None_. defaults to all x axis states (typically 360), but can say pass 180
+                and it'll group each state into 2 even states.
+        :at_point: _None_. defaults to all the data available,
+                can pass it a time step and will return the histogram at
+        """
         if states is None: states = self.points[1]
-        digi = ep.digitize(self.xs, self.ys, ep.binint(0, self.points[1], states))[0]
+        if at_point is None: at_point = len(self.xs)
+
+        digi = ep.digitize(self.xs[:at_point], self.ys[:at_point],
+                            ep.binint(0, self.points[1], states))[0]
         return np.array([len(row) for row in digi])
+
+
+
+
+
 
