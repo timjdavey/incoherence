@@ -1,8 +1,8 @@
 import numpy as np
 from functools import cached_property
 
-from .entropy import ergodic_ensemble
-from .stats import measures, distances, LEGEND, THRESHOLD
+from .entropy import point_pmf
+from .stats import measures, kl_divergences, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
 
 
@@ -276,7 +276,7 @@ class ErgodicEnsemble:
         The ergodic ensemble (pmf as normalised).
         With standard weights.
         """
-        return ergodic_ensemble(self.histograms, weights=self.weights)
+        return point_pmf(self.histograms, weights=self.weights)
 
     def swarm_observations(self, observations, plot=False):
         """
@@ -287,21 +287,45 @@ class ErgodicEnsemble:
         hist = np.histogram(observations, self.bins)
         return self.swarm_observations(hist)
 
-    def swarm_pmf(self, histogram, with_distances=False, plot=False):
+    def swarm_pmf(self, histogram, mode=None, with_kls=False, plot=False, silent=False):
         """
         Given a `histogram` (or pmf),
         of observational data.
         Returns the ergodic bayesian pmf.
         """
         if len(histogram) != self.states:
-            raise InputError("histogram does not have correct states %s != %s" % (len(histogram), self.states))
+            raise ValueError("histogram does not have correct states %s != %s" % (len(histogram), self.states))
 
-        dists = distances(self.histograms, histogram, power=-1, base=self.base)
-        dws = np.array(self.weights)*dists
-        swarm_ensemble = ergodic_ensemble(self.histograms, weights=dws)
+        import scipy as sp
 
-        if with_distances:
-            return swarm_ensemble, dists
+        if mode is None or mode == 0:
+            kls = kl_divergences(self.histograms, histogram, power=-1)
+        elif mode == 1:
+            kls = kl_divergences(self.histograms, histogram, power=-1)**0.5
+        elif mode == 2:
+            kls = kl_divergences(self.histograms, histogram, power=-1)**2
+        elif mode == 3:
+            c = sp.spatial.distance.jensenshannon
+            kls = np.array([c(histogram, h)**-1 for h in self.histograms])
+        elif mode == 4:
+            c = sp.spatial.distance.jensenshannon
+            kls = np.array([c(histogram, h)**-2 for h in self.histograms])
+
+        # if none of the previous ensembles match the data
+        # common when you have few ensembles
+        if kls.sum() == 0:
+            if silent:
+                swarm_ensemble = self.ergodic_pmf()
+            else:
+                raise ValueError("No ensembles overlap with given histogram.")
+        else:
+            # deal with the ensemble / pmf
+            dws = np.array(self.weights)*kls
+            swarm_ensemble = point_pmf(self.histograms, weights=dws)
+
+
+        if with_kls:
+            return swarm_ensemble, kls
         else:
             return swarm_ensemble
     
