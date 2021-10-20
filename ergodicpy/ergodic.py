@@ -4,7 +4,86 @@ from functools import cached_property
 from .stats import measures, distances, LEGEND, THRESHOLD
 from .bins import binint, binspace, binobs, ergodic_obs
 
-class ErgodicEnsemble:
+
+class ErgodicCollection:
+    """
+    Base wrapper class to hold and run ep.measures
+    """
+    def __init__(self, histograms, weights=None,
+                threshold=None, base=None, lazy=False):
+
+        self.histograms = np.array(histograms)
+        
+        # default weights of N_k / N
+        self.weights = None
+
+        # None is natural base as default, otherwise 2 etc
+        self.base = base
+
+        # the "complexity" threshold where it is deemed complex
+        self.threshold = THRESHOLD if threshold is None else threshold
+
+        if not lazy:
+            self.analyse()
+
+    def analyse(self):
+        """
+        Does all the analysis.
+        Easiest way to compare different input values e.g. continuous or not,
+        number of bins etc, is to reset on the object then recall analyse().
+        """
+        # get measures
+        ms = measures(self.histograms, weights=self.weights,
+                threshold=self.threshold, base=self.base, with_meta=True)
+
+        for k, v in ms.items():
+            setattr(self, k, v)
+
+        del ms['entropies']
+        del ms['weights']
+
+        self.measures = ms
+
+    
+    """
+    Ensemble metrics
+
+    """
+
+    @cached_property
+    def ensemble_count(self):
+        """ Total number of ensembles """
+        return len(self.histograms)
+    
+    @cached_property
+    def ergodic_pmf(self):
+        """ Total number of ensembles """
+        return ergodic_ensemble(self.histograms, weights=self.weights)
+
+    def chi2(self):
+        from scipy.stats import chi2_contingency
+        # returns (chi2, p, dof, expected)
+        return chi2_contingency(self.histograms)
+
+
+    """
+    Self organisation
+
+    """
+
+    def swarm_pmf(self, histogram):
+        """
+        Given a `histogram` (or pmf),
+        of observational data.
+        Returns the predicted ergodic bayesian swarm pmf.
+        """
+        dists = distances(self.histograms, histogram, self.base)
+        dws = np.array(self.weights)*dists
+        return ergodic_ensemble(self.histograms, weights=dws)
+
+
+
+class ErgodicEnsemble(ErgodicCollection):
     """
     A simple model to help calculate the 
 
@@ -43,31 +122,25 @@ class ErgodicEnsemble:
     :scatter: plots a scatter graph with data approximated into bins
     :stats: prints all the stats in an easy to read format
     """
-    def __init__(self, observations, bins=None, weights=None,
-                labels=None, ensemble_name='ensemble', dist_name='value',
-                threshold=None, base=None, lazy=False):
+    def __init__(self, observations, bins=None,
+            labels=None, ensemble_name='ensemble', dist_name='value',
+                lazy=False, **kwargs):
 
         # handle observations
         self.observations = observations
 
         # will do stabilize later
         self.bins = bins
-
-        # default weights of N_k / N
-        self.weights = None
-
-        # None is natural base as default, otherwise 2 etc
-        self.base = base
-
-        # the "complexity" threshold where it is deemed complex
-        self.threshold = THRESHOLD if threshold is None else threshold
-
+        
         # naming for plots
         self.labels = labels
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
 
-        # do analysis
+        # initialise parent, don't do analysis
+        super().__init__(histograms=None, lazy=True, **kwargs)
+
+        # do analysis if needed at this level
         if not lazy:
             if bins is None:
                 self.stabilize()
@@ -94,18 +167,9 @@ class ErgodicEnsemble:
                 hist, nbins = np.histogram(obs, bins=self.bins)
                 histograms.append(hist)
         self.histograms = np.array(histograms)
+        super().analyse()
 
-        # get measures
-        ms = measures(self.histograms, weights=self.weights,
-                threshold=self.threshold, base=self.base, with_meta=True)
-
-        for k, v in ms.items():
-            setattr(self, k, v)
-
-        del ms['entropies']
-        del ms['weights']
-
-        self.measures = ms
+        
 
     """
     Helper Metrics
@@ -124,11 +188,6 @@ class ErgodicEnsemble:
         }
 
     @cached_property
-    def ensemble_count(self):
-        """ Total number of ensembles """
-        return len(self.histograms)
-
-    @cached_property
     def ergodic_observations(self):
         return ergodic_obs(self.observations)
 
@@ -142,13 +201,19 @@ class ErgodicEnsemble:
 
 
     """
-    Comparison metrics
-
+    Self organisation
+    
     """
-    def chi2(self):
-        from scipy.stats import chi2_contingency
-        # returns (chi2, p, dof, expected)
-        return chi2_contingency(self.histograms)
+
+    def swarm_observations(self, observations):
+        """
+        Given an array of `observations`,
+        Returns the ergodic bayesian pmf.
+        Using the bins, base etc current set.
+        """
+        hist, _ = np.histogram(observations, self.bins)
+        return self.swarm_pmf(hist)
+    
 
     """
     Finding optimum bins for continuous entropy distributions
@@ -246,29 +311,6 @@ class ErgodicEnsemble:
         self.analyse()
         return self
 
-    """
-    Self organisation
-
-    """
-
-    def bayes(self, observations):
-        """
-        Given an array of `observations`,
-        Returns the ergodic bayesian pmf.
-        Using the bins, base etc current set.
-        """
-        hist = np.histogram(observations, self.bins)
-        return self.bayes_histogram(hist)
-
-    def bayes_histogram(self, histogram):
-        """
-        Given a `histogram` (or pmf),
-        of observational data.
-        Returns the ergodic bayesian pmf.
-        """
-        dists = distances(self.histograms, histogram, self.base)
-        dws = np.array(self.weights)*dists
-        return ergodic_ensemble(self.histograms, weights=dws)
     
 
     """

@@ -19,7 +19,7 @@ class TestErgodic(unittest.TestCase):
         ]
 
         for observations, measures in cases:
-            ee = ErgodicEnsemble(observations, tau_boost=280)
+            ee = ErgodicEnsemble(observations)
             # measures
             np.testing.assert_array_equal(list(ee.measures.values()), measures)
             self.assertEqual(len(ee.entropies), ensembles)
