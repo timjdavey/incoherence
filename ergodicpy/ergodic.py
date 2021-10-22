@@ -296,20 +296,8 @@ class ErgodicEnsemble:
         if len(histogram) != self.states:
             raise ValueError("histogram does not have correct states %s != %s" % (len(histogram), self.states))
 
-        import scipy as sp
 
-        if mode is None or mode == 0:
-            kls = kl_divergences(self.histograms, histogram, power=-1)
-        elif mode == 1:
-            kls = kl_divergences(self.histograms, histogram, power=-1)**0.5
-        elif mode == 2:
-            kls = kl_divergences(self.histograms, histogram, power=-1)**2
-        elif mode == 3:
-            c = sp.spatial.distance.jensenshannon
-            kls = np.array([c(histogram, h)**-1 for h in self.histograms])
-        elif mode == 4:
-            c = sp.spatial.distance.jensenshannon
-            kls = np.array([c(histogram, h)**-2 for h in self.histograms])
+        kls = kl_divergences(self.histograms, histogram, power=-1)
 
         # if none of the previous ensembles match the data
         # common when you have few ensembles

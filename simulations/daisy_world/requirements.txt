@@ -1,9 +1,5 @@
-notebook
 Mesa
 numpy
-scipy
 pandas
 seaborn
-cellpylib
 matplotlib
-networkx
