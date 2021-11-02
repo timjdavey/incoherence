@@ -285,7 +285,7 @@ class ErgodicEnsemble:
         Using the bins, base etc current set.
         """
         hist = np.histogram(observations, self.bins)
-        return self.swarm_observations(hist)
+        return self.swarm_pmf(hist)
 
     def swarm_pmf(self, histogram, mode=None, with_kls=False, plot=False, silent=False):
         """

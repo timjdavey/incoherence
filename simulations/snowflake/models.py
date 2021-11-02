@@ -135,5 +135,79 @@ class Snowflake:
 
 
 
+class SnowVerse:
+    """
+    Generates a mini timeline split for a given SnowFlake.
+
+    So a flake will run for `history_steps` creating a prime timeline,
+    then it will create a given number of `variants` (alternative future timelines),
+    each running for `future_steps` from the `primer`.
+    It will then approximate the distributions to a given number of `states`.
+
+    properties
+    :ec: the ErgodicCollection for the variants
+    :future_pmf: the pointwise average pmf of all variants
+    :current_pmf: the pmf of the primer
+    :complexity: the complexity of the variants
+
+    function
+    :plot: plots the primer flake, then each variant
+    """
+    def __init__(self, history_steps=0, future_steps=900, variants=20, primer=None, states=360):
+        
+        # create joint history, if one not provided
+        if primer is None:
+            primer = Snowflake(lazy=True, plot=False)
+            # by default there is no joint history
+            if history_steps:
+                primer.run(history_steps)
+                
+        # create variant futures
+        flurry = []
+        for i in range(variants):
+            x = copy.deepcopy(primer)
+            x.run(future_steps)
+            flurry.append(x)
+        
+        # store
+        self.states = states
+        self.primer = primer
+        self.variants = flurry
+        self._ec = {}
+        self.history_steps = history_steps
+        self.future_steps = future_steps
+
+    
+    @property
+    def ec(self):
+        try:
+            return self._ec[self.states]
+        except KeyError:
+            histograms = [s.histogram(states=self.states) for s in self.variants]
+            ec = ep.ErgodicCollection(histograms)
+            self._ec[self.states] = ec
+            return ec
+    
+    @property
+    def future_pmf(self):
+        return self.ec.ergodic_pmf()
+    
+    @property
+    def current_pmf(self):
+        hist = self.primer.histogram(self.states)
+        return hist/hist.sum()
+    
+    def plot(self):
+        self.primer.plot()
+        for v in self.variants:
+            v.plot()
+    
+    @property
+    def complexity(self):
+        return self.ec.complexity
+
+
+
+
 
 
