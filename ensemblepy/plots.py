@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
         tidy_variable='ensemble', tidy_value='value', palette='flare', tidy_h='h', title=None):
     
-    """ Plots the histograms overlaid & the ergodic frequency plot """
+    """ Plots the histograms overlaid & the pooled frequency plot """
 
     sns.set_style('white')
 
@@ -16,7 +16,7 @@ def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
     legend = labels is not None and len(labels) < 12
 
     # Subplots
-    fig, axes = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(15,5))
+    fig, axes = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10,5))
 
     # Ensembles
     if title is None:
@@ -30,8 +30,8 @@ def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
         common_norm=False, #multiple='dodge',
         palette=palette, alpha=0.2, legend=legend)
 
-    # Ergodic
-    axes[1].set_title('Distribution of all observations (ergodic)')
+    # Pooled
+    axes[1].set_title('Distribution of all observations (pooled)')
     g = sns.histplot(ax=axes[1],
         data=tidy_ergo, x=tidy_value, hue=tidy_variable,
         bins=bins, element='step', stat='probability',

@@ -34,16 +34,16 @@ def observation_weights(hists, weights=None):
 def point_pmf(pmfs, weights=None):
     """
     For a given array of pmfs
-    Returns the weighted pointwise ergodic pmf
+    Returns the weighted pointwise pooled pmf
     """
     default_weights = observation_weights(pmfs, weights)
     normed = np.array([row/row.sum() for row in np.array(pmfs)])
     return np.average(normed, weights=default_weights, axis=0)
 
 
-def ergodic_entropy(pmfs, weights=None, **kwargs):
+def pooled_entropy(pmfs, weights=None, **kwargs):
     """
-    Returns the entropy of the ergodic ensemble
+    Returns the entropy of the pooled ensemble
     """
     return shannon_entropy(point_pmf(pmfs, weights), **kwargs)
 

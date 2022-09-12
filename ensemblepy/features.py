@@ -1,19 +1,19 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
-from .ergodic import ErgodicEnsemble
+from .base import EnsembleComplexity
 
-class ErgodicFeatures:
+class Features:
 
     def __init__(self, df, dist_name, ensemble_names, weighted=True):
         """
         For a given dataset & list of possible suitable ensembles,
-        it creates a dict of ErgodicEnsemble's.
+        it creates a dict of EnsembleComplexity's.
     
         :df: a dataframe of the data
         :dist_name: the distribution of interest e.g. 'house price'
         :ensemble_names: possible ensembles (typically columns in the data) e.g. ['region', 'year']
-        :weighted: _True_ whether to weight the ergodic calculations by the ensemble frequency
+        :weighted: _True_ whether to weight the pooled calculations by the ensemble frequency
         """
     
         ees = {}
@@ -37,7 +37,7 @@ class ErgodicFeatures:
                 weights = None 
 
             # store the analyser class
-            ee = ErgodicEnsemble(observations, weights=weights,
+            ee = EnsembleComplexity(observations, weights=weights,
                 labels=labels, ensemble_name=candidate, dist_name=dist_name)
             ees[candidate] = ee
         
@@ -80,7 +80,7 @@ class ErgodicFeatures:
 
     def plot(self):
         """
-        Plots the ergodic graphs for each potential ensemble
+        Plots the pooled graphs for each potential ensemble
         """
         for e in self.map.values():
             e.plot()

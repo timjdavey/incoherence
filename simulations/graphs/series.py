@@ -1,4 +1,4 @@
-import ergodicpy as ep
+import ensemblepy as ep
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ def generate(nodes, ensembles, p_range, cp):
         if cp is not None: cp(p)
         obs = np.array([[ERGraph(nodes, p).connected] for i in range(ensembles)], dtype='uint8')
         y.append(obs)
-        divs.append(ep.ErgodicEnsemble(obs, [0,1,2]).measures['divergence'])
+        divs.append(ep.EnsembleComplexity(obs, [0,1,2]).measures['divergence'])
     return y, divs
 
 
@@ -32,7 +32,7 @@ def plot(nodes, ensembles, x, ax, cp, log):
         h.set_title("Log scale")
         h.set(xscale='log')
     else:
-        h.set_title("Ergodic Divergence of ER graphs  (%s nodes, %s ensembles)" % (nodes, ensembles))
+        h.set_title("Ensemble Divergence of ER graphs  (%s nodes, %s ensembles)" % (nodes, ensembles))
 
 
 def series(nodes, ensembles=200, steps=100, log=False, cp=None):

@@ -1,5 +1,5 @@
 import numpy as np
-import ergodicpy as ep
+import ensemblepy as ep
 
 from .models import DaisyWorld, POP_DEFAULT
 
@@ -7,16 +7,16 @@ from .models import DaisyWorld, POP_DEFAULT
 def scan(luminosities=np.linspace(0.4, 1.8, 50), *args, **kwargs):
     """ Does a scan of a range of a particular variable, in this case luminosities """
     
-    # create an ErgodicSeries for each luminosity value
+    # create an Series for each luminosity value
     ess = [series(luminosity=lum, *args, **kwargs) for lum in luminosities]
 
     # plot using normal scan
-    sss = ep.ErgodicScan(x=luminosities, y=ess, trend=0.5, x_label='Luminosity')
+    sss = ep.Scan(x=luminosities, y=ess, trend=0.5, x_label='Luminosity')
     return sss
 
 
 def series(ensembles=20, steps=200, luminosity=1.0, population=POP_DEFAULT, mutate_p=0.0, mutate_a=0.05, store=False, vary_age=False, cp=None):
-    """ Creates an ErgodicSeries for a given set of inputs """
+    """ Creates an Series for a given set of inputs """
 
     # create worlds
     worlds = []
@@ -39,5 +39,5 @@ def series(ensembles=20, steps=200, luminosity=1.0, population=POP_DEFAULT, muta
 
     # bins count species, so just the ints
     bins = ep.binint(0,observations.max())
-    es = ep.ErgodicSeries(x=x, observations=observations, bins=bins, x_label='Timesteps', models=worlds)
+    es = ep.Series(x=x, observations=observations, bins=bins, x_label='Timesteps', models=worlds)
     return es

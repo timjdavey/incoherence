@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import ergodicpy as ep
+import ensemblepy as ep
 
 from .models import r2e, CA1DEnsemble
 

@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def ergodic_obs(observations):
+def pooled_obs(observations):
     """
-    Given a set of observations, returns the ergodic version.
+    Given a set of observations, returns the pooled version.
     Handles ragged stacks, when the observations count isn't consistent across ensemble.
     """
     if len(set([len(o) for o in observations])) != 1:
@@ -13,9 +13,9 @@ def ergodic_obs(observations):
     return np.hstack(observations)
 
 
-def ergodic_series(series):
+def pooled_series(series):
     """
-    Given a series, returns the ergodic collection of all data
+    Given a series, returns the pooled collection of all data
     i.e. if all the data was taken from a single model step
     """
     obs = np.stack(np.hstack(np.stack(series, axis=2)),axis=1)
@@ -27,7 +27,7 @@ def binobs(observations, ratio=5):
     Creates bins based on the observed min & max
     With a count which is average_obs_per_ensemble/`ratio=5`
     """
-    ergobs = ergodic_obs(observations)
+    ergobs = pooled_obs(observations)
     avg = len(ergobs)/len(observations)
     #count = np.log(2*avg)
     count = max(4, avg/ratio)
@@ -38,7 +38,7 @@ def binseries(series, ratio=5):
     """
     Same as bin_obs
     """
-    return binobs(ergodic_series(series), ratio)
+    return binobs(pooled_series(series), ratio)
 
 
 def binspace(minimum, maximum, count, log=False):

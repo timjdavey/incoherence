@@ -1,6 +1,6 @@
 import seaborn as sns
 import numpy as np
-import ergodicpy as ep
+import ensemblepy as ep
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -145,7 +145,7 @@ class SnowVerse:
     It will then approximate the distributions to a given number of `states`.
 
     function
-    :ec: the ErgodicCollection for the variants
+    :ec: the Collection for the variants
     :plot: plots the primer flake, then each variant
     """
     def __init__(self, history_steps=0, future_steps=900, variants=20, primer=None, states=360):
@@ -175,7 +175,7 @@ class SnowVerse:
     def ec(self, states=None, at_point=None):
         if states is None: states = self.states
         histograms = [s.histogram(states=states, at_point=at_point) for s in self.variants]
-        return ep.ErgodicCollection(histograms)
+        return ep.Collection(histograms)
     
     def plot(self):
         self.primer.plot()

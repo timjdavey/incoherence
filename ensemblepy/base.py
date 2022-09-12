@@ -2,15 +2,15 @@ import numpy as np
 from functools import cached_property
 
 from .entropy import point_pmf
-from .stats import measures, kl_divergences, LEGEND, THRESHOLD
-from .bins import binint, binspace, binobs, ergodic_obs
+from .stats import measures, kl_divergences, LEGEND
+from .bins import binint, binspace, binobs, pooled_obs
 
 
 
 
-class ErgodicEnsemble:
+class EnsembleComplexity:
     """
-    A simple model to help calculate the 
+    A base model to help calculate the various measures.
 
     Contains some simple performance boosts, but also stores
     some helpful data to make visualisation simpler
@@ -24,32 +24,16 @@ class ErgodicEnsemble:
     :bins: _None_. the bins to be used for the data
     if :bins: is None, then it assumes system is continous and automatically finds optimum
 
+    :weights: _None_, list, for the ensembles
     :labels: the names of the ensembles for plotting
     :ensemble_name: the name of the ensemble to be used plots
     :dist_name: the name of the distribution variable
-    :base: 'None' default is natural e units of entropy
+    :base: _None_ units default is natural e units of entropy
     :lazy: _False_ will calculate measures on creation if False, otherwise need to call `analyse()`
-
-    properties
-    :measures: all the four measures below, which are also assigned as properties
-    :ensemble: the average ensemble entropy
-    :ergodic: the entropy of the ergodic distribution
-    :divergence: the divergence metric
-    :complexity: the complexity metric
-
-    :histograms: the histograms of each ensemble
-    :entropies: the entropy for each histogram
-
-    functions
-    :stats: a dict of the key statistics
-    :plot: plots the ensemble & ergodic histograms
-    :ridge: plots a ridge plot of the ensemble histograms
-    :scatter: plots a scatter graph with data approximated into bins
-    :stats: prints all the stats in an easy to read format
     """
     def __init__(self, observations, bins=None, weights=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
-                threshold=None, base=None, lazy=False):
+                base=None, lazy=False):
 
         # handle observations
         self.observations = observations
@@ -62,9 +46,6 @@ class ErgodicEnsemble:
 
         # None is natural base as default, otherwise 2 etc
         self.base = base
-
-        # the "complexity" threshold where it is deemed complex
-        self.threshold = THRESHOLD if threshold is None else threshold
 
         # naming for plots
         self.labels = labels
@@ -91,7 +72,7 @@ class ErgodicEnsemble:
             and the attributes with the same name.
         """
         ms = measures(self.histograms, weights=self.weights,
-                threshold=self.threshold, base=self.base, with_meta=True)
+                base=self.base, with_meta=True)
 
         for k, v in ms.items():
             setattr(self, k, v)
@@ -100,6 +81,7 @@ class ErgodicEnsemble:
         del ms['weights']
 
         self.measures = ms
+        return ms
 
     def analyse(self):
         """
@@ -142,16 +124,16 @@ class ErgodicEnsemble:
         return len(self.histograms)
 
     @cached_property
-    def ergodic_observations(self):
-        return ergodic_obs(self.observations)
+    def pooled_observations(self):
+        return pooled_obs(self.observations)
 
     @cached_property
     def obs_min(self):
-        return self.ergodic_observations.min()
+        return self.pooled_observations.min()
 
     @cached_property
     def obs_max(self):
-        return self.ergodic_observations.max()
+        return self.pooled_observations.max()
 
     @property
     def states(self):
@@ -328,18 +310,18 @@ class ErgodicEnsemble:
         return pd.melt(pd.DataFrame(self.observations, index=self.labels).T,
             var_name=self.ensemble_name, value_name=self.dist_name)
 
-    def ergodic_melt(self):
-        """ Dataframe of ergodic data prepared for plots """
+    def pooled_melt(self):
+        """ Dataframe of pooled data prepared for plots """
         import pandas as pd
         return pd.DataFrame({
-            self.dist_name:self.ergodic_observations,
+            self.dist_name:self.pooled_observations,
             self.ensemble_name:'h',})
 
     def plot(self, title=None):
         # import in function import so doesn't require
         # pandas or seaborn to use above
         from .plots import dual
-        dual(self.ensemble_melt(), self.ergodic_melt(), self.bins, self.labels,
+        dual(self.ensemble_melt(), self.pooled_melt(), self.bins, self.labels,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name, title=title)
 
     def ridge(self):
@@ -370,14 +352,15 @@ def histogram_to_observations(histogram, states=None):
         for state, volume in enumerate(histogram)])
 
 
-class ErgodicCollection(ErgodicEnsemble):
+class Collection(EnsembleComplexity):
     """
-    Wrapper around ErgodicEnsemble.
+    Wrapper around EnsembleComplexity.
 
-    So you can create an ErgodicEnsemble directly from
+    So you can create an EnsembleComplexity directly from
     histogram data, rather than raw observations.
 
-    Takes just a list of `histograms` as an extra input.
+    :histograms: list of histogram data e.g. [[1,2], [0,12]]
+    :bins: list of bin values for the histograms
     """
     def __init__(self, histograms, bins=None, **kwargs):
 

@@ -1,5 +1,5 @@
 import numpy as np
-import ergodicpy as ep
+import ensemblepy as ep
 
 from mesa import Agent, Model
 from mesa.datacollection import DataCollector

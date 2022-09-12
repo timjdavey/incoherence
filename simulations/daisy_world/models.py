@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from functools import cached_property
 
-import ergodicpy as ep
+import ensemblepy as ep
 
 from .agent import Daisy
 from mesa import Model

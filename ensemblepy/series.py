@@ -2,16 +2,16 @@ import numpy as np
 from functools import cached_property
 
 from .bins import binseries
-from .ergodic import ErgodicEnsemble
+from .base import EnsembleComplexity
 from .stats import LEGEND
 
 
-class ErgodicSeries:
+class Series:
     """
-    Simple class to handle the ergodic analysis over a series of values.
+    Simple class to handle the analysis over a series of values.
     
     :x: array-like, the x values of the graph (the series evolution) e.g. timesteps or % values or luminosity etc
-    :y: array-like, the ergodic ensembles for the corresponding x-values
+    :y: array-like, the pooled ensembles for the corresponding x-values
     :observations: array-like, 3d, the observations for each x-step in a 2d array of ensembles
     :x_label: 'x', what is x?
     :title: _None_ of the graph
@@ -38,15 +38,15 @@ class ErgodicSeries:
 
     def analyse(self):
         """
-        Creates ErgodicEnsembles for each series (typically time)
+        Creates EnsembleComplexity for each series (typically time)
         and stores the analysis for plotting
         """
         
         # type check
         if self.y is None and self.observations is None:
-            raise InputError("Please supply a list of ErgodicEnsembles through `y` or raw `observations`")
+            raise InputError("Please supply a list of EnsembleComplexity through `y` or raw `observations`")
         
-        # create ergodics if needed
+        # create pooled if needed
         elif self.observations is not None:
             
             # if continuous distribution
@@ -56,11 +56,11 @@ class ErgodicSeries:
                 self.bins = binseries(self.observations)
 
             # then create ensembles
-            self.y = [ErgodicEnsemble(obs, self.bins) for obs in self.observations]
+            self.y = [EnsembleComplexity(obs, self.bins) for obs in self.observations]
 
         # type check y otherwise
-        elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (ErgodicEnsemble)):
-            raise TypeError("`y` should be a `list` of `ErgodicEnsemble`")
+        elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (EnsembleComplexity)):
+            raise TypeError("`y` should be a `list` of `EnsembleComplexity`")
 
         # create x if needed, defaulted to just a count
         if self.x is None:
@@ -86,7 +86,7 @@ class ErgodicSeries:
         for i, k in enumerate(self.y[0].measures.keys()):
             self.measures[k] = stacked[i]
 
-        # dict access to each ErgodicEnsemble
+        # dict access to each EnsembleComplexity
         for i, x in enumerate(self.x):
             self.map[x] = self.y[i]
 
@@ -178,17 +178,17 @@ class ErgodicSeries:
         for i, e in enumerate(ensemble_entropies):
             sns.lineplot(x=self.x, y=e, ax=axes[0], color=palette[i])
 
-        # ergodic & ensemble
+        # pooled & ensemble
         g = self._lineplot('ensemble', axes[0], 'Entropy', 1.0)
-        g = self._lineplot('ergodic', axes[0], 'Entropy', 1.0)
+        g = self._lineplot('pooled', axes[0], 'Entropy', 1.0)
         g.set_title("Entropies (incl semi-transparent blue individual ensembles)")
         
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Ergodic complexity', ymax)
-        j = self._lineplot('divergence', ax2, 'Ergodic divergence', ymax)
-        j.set_title(self.title if self.title else "Ergodic complexity and divergence")
+        h = self._lineplot('complexity', axes[1], 'Ensemble complexity', ymax)
+        j = self._lineplot('divergence', ax2, 'Ensemble divergence', ymax)
+        j.set_title(self.title if self.title else "Ensemble complexity and divergence")
 
         # combine legends
         h1, l1 = axes[1].get_legend_handles_labels()
@@ -199,6 +199,6 @@ class ErgodicSeries:
         return fig
 
     def step_plot(self, index, comment=""):
-        """ Plot a specific ErgodicEnsemble step """
+        """ Plot a specific EnsembleComplexity step """
         title = "%s=%s, step=%s (%s)" % (self.x_label, self.x[index], index, comment)
         self.y[index].plot(title)

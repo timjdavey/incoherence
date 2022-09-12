@@ -1,7 +1,8 @@
 import numpy as np
 
 from .bins import binspace, binint
-from .ergodic import ErgodicEnsemble
+from .base import EnsembleComplexity
+from .stats import THRESHOLD
 
 def digitize(X, Y, count):
     """
@@ -20,10 +21,7 @@ def digitize(X, Y, count):
     if len(X) != len(Y):
         raise IndexError("Length of X & Y must match %s != %s" % (len(X), len(Y)))
     
-    if isinstance(count, int):
-        ensembles = binspace(X.min(), X.max(), int(count))
-    else:
-        ensembles = count
+    ensembles = binspace(X.min(), X.max(), int(count))
     
     # group using a dict
     obs = dict([(str(b), []) for b in ensembles[:-1]])
@@ -40,9 +38,9 @@ def digitize(X, Y, count):
     return list(obs.values()), list(obs.keys())
 
 
-class ErgodicCorrelation(ErgodicEnsemble):
+class Correlation(EnsembleComplexity):
     """
-    Is a wrapper class around ErgodicEnsemble.
+    Is a wrapper class around EnsembleComplexity.
     Where instead of passing observations, you pass the 
     x, y numeric values and it will automatically create ensembles for your.
     So that you can easily use it as a correlation metric.
@@ -53,13 +51,14 @@ class ErgodicCorrelation(ErgodicEnsemble):
     functions
     :metrics: results a dict of common correlation metrics
     """    
-    def __init__(self, x, y, ensembles=None, *args, **kwargs):
+    def __init__(self, x, y, ensembles=None, threshold=THRESHOLD, *args, **kwargs):
         self.x = np.array(x)
         self.y = np.array(y)
+        self.threshold = threshold
         
         # create a blended set of ensembles
         if ensembles is None:
-            maximum = np.int(np.log(len(self.x)))
+            maximum = int(np.log(len(self.x)))
             minimum = 3 #max(3,maximum-2)
             obs = []
             labels = []
@@ -82,8 +81,12 @@ class ErgodicCorrelation(ErgodicEnsemble):
             obs, labels = digitize(self.x, self.y, ensembles)
         
         
-        # create an ErgodicEnsemble standard
+        # create an EnsembleComplexity standard
         super().__init__(obs, labels=labels, *args, **kwargs)
+
+    @property
+    def is_complex(self):
+        return self.complexity > self.threshold
     
     @property
     def correlations(self):

@@ -1,4 +1,4 @@
-import ergodicpy as ep
+import ensemblepy as ep
 import numpy as np
 from .models import MoneyModel
 
@@ -26,7 +26,7 @@ def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
     :output: for printing progress e.g. print or nb.cp
     :log: if you need to use a log bin strategy, useful for large distribution spreads.
 
-    :returns: an ep.ErgodicSeries objects
+    :returns: an ep.Series objects
     """
     x, y = [], []
     models = generate(agents, level, ensembles, percent, threshold, initial)
@@ -47,7 +47,7 @@ def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
     if log is None:
         log = percent is not None
     
-    ees = ep.ErgodicSeries(x=x, observations=y, x_label='timesteps', log=log)
+    ees = ep.Series(x=x, observations=y, x_label='timesteps', log=log)
     
     # only plot results if you need them
     if plot:

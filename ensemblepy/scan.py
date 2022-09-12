@@ -1,15 +1,15 @@
 import numpy as np
 
 from .stats import LEGEND
-from .series import ErgodicSeries
+from .series import Series
 from .plots import combine_legends
 
 
-class ErgodicScan:
+class Scan:
     """
     Plots the maximum & trend complexities for a series of variables.
     This is a kind of a 3D plot (but more helpful as contains multiple surfaces).
-    ErgodicSeries can do a scan for multiple variables, but if the model
+    Series can do a scan for multiple variables, but if the model
     depends on the system evolving, typically you'll need to look at
     the maximum complexity and trend over time.
 
@@ -18,7 +18,7 @@ class ErgodicScan:
     
     Inputs
     :x: the x axis variables which were altered.
-    :y: a list of ErgodicSeries.
+    :y: a list of Series.
     :x_label: for the plot access.
     :title: for the plot.
     :trend: "0.1" percentage of final observations to take as trend.
@@ -32,8 +32,8 @@ class ErgodicScan:
     def __init__(self, x=None, y=None, x_label='x', title=None, trend=0.1, max_trend=1.0):
 
         # check passed values & loading went correctly
-        if not isinstance(y, (list, np.ndarray)) or not isinstance(y[0], (ErgodicSeries)):
-            raise TypeError("`y` should be a `list` of `ErgodicSeries`")
+        if not isinstance(y, (list, np.ndarray)) or not isinstance(y[0], (Series)):
+            raise TypeError("`y` should be a `list` of `Series`")
         else:
             self.y = np.array(y)
 
@@ -48,11 +48,11 @@ class ErgodicScan:
         self.map = {}
 
         # store the key measures
-        for key in ('ensemble', 'ergodic', 'divergence', 'complexity'):
+        for key in ('ensemble', 'pooled', 'divergence', 'complexity'):
             self.measures['%s max' % key] = [e.max(max_trend)[key] for e in self.y]
             self.measures['%s trend' % key] = [e.trend(trend)[key] for e in self.y]
 
-        # dict access to each ErgodicSeries
+        # dict access to each Series
         for i, x in enumerate(self.x):
             self.map[x] = self.y[i]
     
@@ -99,9 +99,9 @@ class ErgodicScan:
         import matplotlib.pyplot as plt
         fig, axes = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(15,5))
 
-        # ergodic & ensemble
+        # pooled & individual ensemble
         g = self._lineplot('ensemble', axes[0], 'Entropy', 1.0)
-        g = self._lineplot('ergodic', axes[0], 'Entropy', 1.0)
+        g = self._lineplot('pooled', axes[0], 'Entropy', 1.0)
         g.set_title("Entropies")
         
 
@@ -109,7 +109,7 @@ class ErgodicScan:
         ax2 = axes[1].twinx()
         h = self._lineplot('complexity', axes[1], 'Complexity', ymax)
         j = self._lineplot('divergence', ax2, 'Divergence', ymax)
-        j.set_title(self.title if self.title else "Ergodic complexity and divergence")
+        j.set_title(self.title if self.title else "Ensemble complexity and divergence")
 
         # combine legends
         combine_legends(axes[1], ax2)

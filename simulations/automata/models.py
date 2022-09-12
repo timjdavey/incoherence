@@ -4,7 +4,7 @@ import cellpylib as cpl
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-import ergodicpy as ep
+import ensemblepy as ep
 
 from cellpylib.entropy import shannon_entropy
 
