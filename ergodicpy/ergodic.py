@@ -278,44 +278,43 @@ class ErgodicEnsemble:
         """
         return point_pmf(self.histograms, weights=self.weights)
 
-    def swarm_observations(self, observations, plot=False):
+    def obs_to_hist(self, observations):
         """
-        Given an array of `observations`,
-        Returns the ergodic bayesian pmf.
-        Using the bins, base etc current set.
+        Returns a histogram, for a given set of `observations`
+        using the current set of bins.
         """
-        hist = np.histogram(observations, self.bins)
-        return self.swarm_pmf(hist)
+        return np.histogram(observations, self.bins)
 
-    def swarm_pmf(self, histogram, mode=None, with_kls=False, plot=False, silent=False):
+    def bayes_posterior(self, histogram):
         """
-        Given a `histogram` (or pmf),
-        of observational data.
-        Returns the ergodic bayesian pmf.
+        Given a `histogram`,
+        Returns the full bayesian posterior.
+        Using the ensembles as likelihood functions.
         """
         if len(histogram) != self.states:
             raise ValueError("histogram does not have correct states %s != %s" % (len(histogram), self.states))
 
+        prior = np.array(self.weights)
+        data = np.array(histogram)
 
-        kls = kl_divergences(self.histograms, histogram, power=-1)
+        likelihood = np.array([np.product(l**data) for l in self.histograms])
+        posterior = likelihood*prior
+        return posterior/posterior.sum()
 
-        # if none of the previous ensembles match the data
-        # common when you have few ensembles
-        if kls.sum() == 0:
-            if silent:
-                swarm_ensemble = self.ergodic_pmf()
-            else:
-                raise ValueError("No ensembles overlap with given histogram.")
+    def bayes_pmf(self, histogram, references=None, with_posterior=False):
+        """
+        Given a `histogram` of observational data,
+        Returns the predicted bayesian pmf.
+        Using the ensemble histograms as the references
+        """
+        posterior = self.bayes_posterior(histogram)
+        if references is None: references = self.histograms
+        pmf = point_pmf(references, weights=posterior)
+
+        if with_posterior:
+            return pmf, posterior
         else:
-            # deal with the ensemble / pmf
-            dws = np.array(self.weights)*kls
-            swarm_ensemble = point_pmf(self.histograms, weights=dws)
-
-
-        if with_kls:
-            return swarm_ensemble, kls
-        else:
-            return swarm_ensemble
+            return pmf
     
 
     """
@@ -384,7 +383,7 @@ class ErgodicCollection(ErgodicEnsemble):
 
         lengths = set([len(h) for h in histograms])
         if len(lengths) > 1:
-            raise InputError("histogram lengths not equal %s" % lengths)
+            raise ValueError("histogram lengths not equal %s" % lengths)
         self.histograms = histograms
 
         if bins is None:
@@ -405,7 +404,7 @@ class ErgodicCollection(ErgodicEnsemble):
     def update_bins(self, *args, **kwargs):
         raise NotImplementedError
 
-    def swarm_observations(self, *args, **kwargs):
+    def bayesian_observations(self, *args, **kwargs):
         raise NotImplementedError
 
 

@@ -144,13 +144,8 @@ class SnowVerse:
     each running for `future_steps` from the `primer`.
     It will then approximate the distributions to a given number of `states`.
 
-    properties
-    :ec: the ErgodicCollection for the variants
-    :future_pmf: the pointwise average pmf of all variants
-    :current_pmf: the pmf of the primer
-    :complexity: the complexity of the variants
-
     function
+    :ec: the ErgodicCollection for the variants
     :plot: plots the primer flake, then each variant
     """
     def __init__(self, history_steps=0, future_steps=900, variants=20, primer=None, states=360):
@@ -177,35 +172,15 @@ class SnowVerse:
         self.history_steps = history_steps
         self.future_steps = future_steps
 
-    
-    @property
-    def ec(self):
-        try:
-            return self._ec[self.states]
-        except KeyError:
-            histograms = [s.histogram(states=self.states) for s in self.variants]
-            ec = ep.ErgodicCollection(histograms)
-            self._ec[self.states] = ec
-            return ec
-    
-    @property
-    def future_pmf(self):
-        return self.ec.ergodic_pmf()
-    
-    @property
-    def current_pmf(self):
-        hist = self.primer.histogram(self.states)
-        return hist/hist.sum()
+    def ec(self, states=None, at_point=None):
+        if states is None: states = self.states
+        histograms = [s.histogram(states=states, at_point=at_point) for s in self.variants]
+        return ep.ErgodicCollection(histograms)
     
     def plot(self):
         self.primer.plot()
         for v in self.variants:
             v.plot()
-    
-    @property
-    def complexity(self):
-        return self.ec.complexity
-
 
 
 
