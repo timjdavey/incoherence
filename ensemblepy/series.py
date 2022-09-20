@@ -2,7 +2,7 @@ import numpy as np
 from functools import cached_property
 
 from .bins import binseries
-from .base import EnsembleComplexity
+from .base import Ensembles
 from .stats import LEGEND
 
 
@@ -19,7 +19,8 @@ class Series:
     :base: 'None', the units of entropy
     :models: array-like, the models that generated the data
     """
-    def __init__(self, x=None, y=None, observations=None, x_label='x', title=None, bins=None, base=None, models=None, log=False):
+    def __init__(self, x=None, y=None, observations=None, x_label='x',
+            title=None, bins=None, base=None, models=None, log=False):
         self.x = x
         self.x_label = x_label
 
@@ -38,13 +39,13 @@ class Series:
 
     def analyse(self):
         """
-        Creates EnsembleComplexity for each series (typically time)
+        Creates Ensembles for each series (typically time)
         and stores the analysis for plotting
         """
         
         # type check
         if self.y is None and self.observations is None:
-            raise InputError("Please supply a list of EnsembleComplexity through `y` or raw `observations`")
+            raise InputError("Please supply a list of Ensembles through `y` or raw `observations`")
         
         # create pooled if needed
         elif self.observations is not None:
@@ -53,14 +54,14 @@ class Series:
             # bins need to be the maximum of the stablized series
             # to ensure the detail is captured
             if self.bins is None:
-                self.bins = binseries(self.observations)
+                self.bins = binseries(self.observations, log=self.log)
 
             # then create ensembles
-            self.y = [EnsembleComplexity(obs, self.bins) for obs in self.observations]
+            self.y = [Ensembles(obs, self.bins) for obs in self.observations]
 
         # type check y otherwise
-        elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (EnsembleComplexity)):
-            raise TypeError("`y` should be a `list` of `EnsembleComplexity`")
+        elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (Ensembles)):
+            raise TypeError("`y` should be a `list` of `Ensembles`")
 
         # create x if needed, defaulted to just a count
         if self.x is None:
@@ -86,7 +87,7 @@ class Series:
         for i, k in enumerate(self.y[0].measures.keys()):
             self.measures[k] = stacked[i]
 
-        # dict access to each EnsembleComplexity
+        # dict access to each Ensembles
         for i, x in enumerate(self.x):
             self.map[x] = self.y[i]
 
@@ -181,14 +182,14 @@ class Series:
         # pooled & ensemble
         g = self._lineplot('ensemble', axes[0], 'Entropy', 1.0)
         g = self._lineplot('pooled', axes[0], 'Entropy', 1.0)
-        g.set_title("Entropies (incl semi-transparent blue individual ensembles)")
+        g.set_title("Individual entropies")
         
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Ensemble complexity', ymax)
-        j = self._lineplot('divergence', ax2, 'Ensemble divergence', ymax)
-        j.set_title(self.title if self.title else "Ensemble complexity and divergence")
+        h = self._lineplot('complexity', axes[1], 'Incoherence', ymax)
+        j = self._lineplot('divergence', ax2, 'Divergence', ymax)
+        j.set_title(self.title if self.title else "Incoherence and divergence")
 
         # combine legends
         h1, l1 = axes[1].get_legend_handles_labels()
@@ -199,6 +200,6 @@ class Series:
         return fig
 
     def step_plot(self, index, comment=""):
-        """ Plot a specific EnsembleComplexity step """
+        """ Plot a specific Ensembles step """
         title = "%s=%s, step=%s (%s)" % (self.x_label, self.x[index], index, comment)
         self.y[index].plot(title)

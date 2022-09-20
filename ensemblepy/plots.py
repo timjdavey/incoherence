@@ -36,6 +36,7 @@ def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
         data=tidy_ergo, x=tidy_value, hue=tidy_variable,
         bins=bins, element='step', stat='probability',
         palette=palette, alpha=1.0, legend=False)
+    return g
 
 
 
@@ -77,6 +78,7 @@ def ridge(tidy_ensembles, bins, labels=None,
 
         # reset theme
         sns.set_style('white')
+    return g
 
 def scatter(tidy_ensembles, bins, tidy_variable='ensemble', tidy_value='value',
             palette='flare', jitter=0.5, alpha=0.7):
@@ -84,6 +86,7 @@ def scatter(tidy_ensembles, bins, tidy_variable='ensemble', tidy_value='value',
     sns.set_theme(style="white")#, rc={"figure.figsize":(15, 10)})
     g = sns.stripplot(data=tidy_ensembles, x=tidy_variable, y=tidy_value,
             palette=palette, jitter=jitter, alpha=alpha, size=2)
+    return g
 
 
 

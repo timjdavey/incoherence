@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 
 from ..bins import binobs
-from ..base import EnsembleComplexity
+from ..base import Ensembles
 from ..series import Series
 
 class TestSeries(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestSeries(unittest.TestCase):
         
         # create from y
         bins = binobs(observations=observations)
-        ees2 = Series(y=[EnsembleComplexity(obs, bins) for obs in observations])
+        ees2 = Series(y=[Ensembles(obs, bins) for obs in observations])
 
         for ees in [ees1, ees2]:
             # test default x gets assigned

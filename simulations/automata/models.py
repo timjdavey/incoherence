@@ -258,16 +258,17 @@ class CA1DEnsemble:
 
     """
 
-    def plot(self, i=None):
-        fig, axes = plt.subplots(1, 3,
-            sharex=False, sharey=False, figsize=(20,5))
+    def plot(self, i=None, data=False):
+        fig, axes = plt.subplots(1, 3 if data else 2,
+            sharex=False, sharey=False, figsize=(10,5))
         self.plot_heatmap(axes[0])
         self.plot_single(ax=axes[1])
-        try:
-            self.plot_data(axes[2])
-        except AttributeError:
-            # if not have done analysis
-            pass
+        if data:
+            try:
+                self.plot_data(axes[2])
+            except AttributeError:
+                # if not have done analysis
+                pass
         return fig
 
     def plot_cpl(self, i=0):
@@ -275,8 +276,8 @@ class CA1DEnsemble:
         cpl.plot(self.raw[i])
 
     def plot_heatmap(self, ax=None):
-        f = sns.heatmap(sum(self.raw), ax=ax,
-            xticklabels=False, yticklabels=False)
+        f = sns.heatmap(sum(self.raw), ax=ax, cbar=False,
+            xticklabels=False, yticklabels=False, square=True)
         f.set_title("%s ensembles with rule %s" %
             (self.count, self.rule))
         return f
@@ -286,7 +287,7 @@ class CA1DEnsemble:
             i = np.random.randint(0, self.count)
         
         s = sns.heatmap(self.raw[i], ax=ax, cbar=False,
-                xticklabels=False, yticklabels=False)
+                xticklabels=False, yticklabels=False, square=True)
         s.set_title("Single plot of ensemble %s with rule %s" % (i, self.rule))
         s.set_xlabel("%s Cells" % self.cells)
         s.set_ylabel("%s Timesteps" % len(self.raw[i]))

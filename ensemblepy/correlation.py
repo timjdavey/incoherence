@@ -1,7 +1,7 @@
 import numpy as np
 
 from .bins import binspace, binint
-from .base import EnsembleComplexity
+from .base import Ensembles
 from .stats import THRESHOLD
 
 def digitize(X, Y, count):
@@ -38,9 +38,9 @@ def digitize(X, Y, count):
     return list(obs.values()), list(obs.keys())
 
 
-class Correlation(EnsembleComplexity):
+class Correlation(Ensembles):
     """
-    Is a wrapper class around EnsembleComplexity.
+    Is a wrapper class around Ensembles.
     Where instead of passing observations, you pass the 
     x, y numeric values and it will automatically create ensembles for your.
     So that you can easily use it as a correlation metric.
@@ -81,7 +81,7 @@ class Correlation(EnsembleComplexity):
             obs, labels = digitize(self.x, self.y, ensembles)
         
         
-        # create an EnsembleComplexity standard
+        # create an Ensembles standard
         super().__init__(obs, labels=labels, *args, **kwargs)
 
     @property

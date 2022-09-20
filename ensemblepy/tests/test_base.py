@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from ..base import EnsembleComplexity
+from ..base import Ensembles
 
 class TestBase(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class TestBase(unittest.TestCase):
         ]
 
         for observations, measures in cases:
-            ee = EnsembleComplexity(observations)
+            ee = Ensembles(observations)
             # measures
             np.testing.assert_array_almost_equal(list(ee.measures.values()), measures)
             self.assertEqual(len(ee.entropies), ensembles)
@@ -42,7 +42,7 @@ class TestBase(unittest.TestCase):
             
             for obs in [uni_obs,power_obs]:
                 
-                ee = EnsembleComplexity(obs, lazy=True)
+                ee = Ensembles(obs, lazy=True)
         
                 # do full scan & leave legacy bins
                 scan = ee.stabilize(optimized=False, plot=True)

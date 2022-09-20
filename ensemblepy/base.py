@@ -8,7 +8,7 @@ from .bins import binint, binspace, binobs, pooled_obs
 
 
 
-class EnsembleComplexity:
+class Ensembles:
     """
     A base model to help calculate the various measures.
 
@@ -321,17 +321,17 @@ class EnsembleComplexity:
         # import in function import so doesn't require
         # pandas or seaborn to use above
         from .plots import dual
-        dual(self.ensemble_melt(), self.pooled_melt(), self.bins, self.labels,
+        return dual(self.ensemble_melt(), self.pooled_melt(), self.bins, self.labels,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name, title=title)
 
     def ridge(self):
         from .plots import ridge
-        ridge(self.ensemble_melt(), self.bins, self.labels,
+        return ridge(self.ensemble_melt(), self.bins, self.labels,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
         
     def scatter(self):
         from .plots import scatter
-        scatter(self.ensemble_melt(), self.bins,
+        return scatter(self.ensemble_melt(), self.bins,
             tidy_variable=self.ensemble_name, tidy_value=self.dist_name)
 
 
@@ -352,11 +352,11 @@ def histogram_to_observations(histogram, states=None):
         for state, volume in enumerate(histogram)])
 
 
-class Collection(EnsembleComplexity):
+class Collection(Ensembles):
     """
-    Wrapper around EnsembleComplexity.
+    Wrapper around Ensembles.
 
-    So you can create an EnsembleComplexity directly from
+    So you can create an Ensembles directly from
     histogram data, rather than raw observations.
 
     :histograms: list of histogram data e.g. [[1,2], [0,12]]

@@ -9,13 +9,16 @@ def js_divergence(p_entropy, entropies, weights, power=1):
     return np.average(divs, weights=weights)
 
 
-def complexity(p_entropy, entropies, weights):
+def complexity(p_entropy, entropies, weights=None):
     """
     Ensemble complexity calculation
 
     :p_entropy: can use `pooled_entropy()` to calc
     :entropies: can use `entropies()` to calc
+    :weights: _None_
     """
+    if weights is None:
+        weights = np.ones(len(entropies))
     if p_entropy == 0:
         return 0.0
     else:
@@ -33,10 +36,10 @@ def kl_divergences(references, observed, power=1):
 
 
 LEGEND = {
-    'ensemble': ('Mean ensemble entropy','orange'),
-    'pooled': ('Pooled entropy','firebrick'),
-    'divergence': ('Ensemble divergence','forestgreen'),
-    'complexity': ('Ensemble complexity','blueviolet'),
+    'ensemble': ('Mean entropy of individuals','orange'),
+    'pooled': ('Entropy of pooled','firebrick'),
+    'divergence': ('Divergence','forestgreen'),
+    'complexity': ('Incoherence','blueviolet'),
     'entropies': ('Entropies of individual ensembles','crest'),
     'weights': ('Weights of each ensemble', 'red'),
 }

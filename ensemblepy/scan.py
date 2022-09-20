@@ -107,9 +107,9 @@ class Scan:
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Complexity', ymax)
+        h = self._lineplot('complexity', axes[1], 'Incoherence', ymax)
         j = self._lineplot('divergence', ax2, 'Divergence', ymax)
-        j.set_title(self.title if self.title else "Ensemble complexity and divergence")
+        j.set_title(self.title if self.title else "Incoherence and divergence")
 
         # combine legends
         combine_legends(axes[1], ax2)
