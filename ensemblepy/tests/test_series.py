@@ -29,10 +29,10 @@ class TestSeries(unittest.TestCase):
     def test_fixed(self):
         np.random.seed(1283947)
 
-        measures = {'ensemble': ([0.93514933, 0.70948397]), 'pooled': ([0.97179239, 0.76638377]), 'divergence': ([0.03664307, 0.0568998 ]), 'complexity': ([0.10545047, 0.24092971]),}
+        measures = {'ensemble': ([0.93514933, 0.70948397]), 'pooled': ([0.97179239, 0.76638377]), 'divergence': ([0.03664307, 0.0568998 ]), 'incoherence': ([0.10545047, 0.24092971]),}
 
-        mmax = {'ensemble': 0.30951977140256587, 'pooled': 0.3250829733914482, 'divergence': 0.04485226313012047, 'complexity': 0.3859157617880867}
-        mtrend = {'ensemble': 0.2087866837915709, 'pooled': 0.25363894692169137, 'divergence': 0.04485226313012047, 'complexity': 0.3859157617880867}
+        mmax = {'ensemble': 0.30951977140256587, 'pooled': 0.3250829733914482, 'divergence': 0.04485226313012047, 'incoherence': 0.3859157617880867}
+        mtrend = {'ensemble': 0.2087866837915709, 'pooled': 0.25363894692169137, 'divergence': 0.04485226313012047, 'incoherence': 0.3859157617880867}
 
         x_label = 'tester'
         steps = 2

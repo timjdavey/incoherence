@@ -131,7 +131,7 @@ class Series:
 
     @property
     def peaks(self):
-        return np.where(self.measures['complexity'] == np.amax(self.measures['complexity']))[0]
+        return np.where(self.measures['incoherence'] == np.amax(self.measures['incoherence']))[0]
 
     def results(self, steps=False):
         """ Outputs most of the really interesting analysis """
@@ -143,7 +143,7 @@ class Series:
             # first results
             self.step_plot(0, "first")
             # first maximum plot
-            self.step_plot(self.peaks[0], "max complexity")
+            self.step_plot(self.peaks[0], "max incoherence")
             # last results
             self.step_plot(-1, "last")     
 
@@ -187,8 +187,8 @@ class Series:
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Incoherence', ymax)
-        j = self._lineplot('divergence', ax2, 'Divergence', ymax)
+        h = self._lineplot('incoherence', axes[1], LEGEND['incoherence'], ymax)
+        j = self._lineplot('divergence', ax2, LEGEND['divergence'], ymax)
         j.set_title(self.title if self.title else "Incoherence and divergence")
 
         # combine legends

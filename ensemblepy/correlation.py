@@ -2,7 +2,6 @@ import numpy as np
 
 from .bins import binspace, binint
 from .base import Ensembles
-from .stats import THRESHOLD
 
 def digitize(X, Y, count):
     """
@@ -51,15 +50,14 @@ class Correlation(Ensembles):
     functions
     :metrics: results a dict of common correlation metrics
     """    
-    def __init__(self, x, y, ensembles=None, threshold=THRESHOLD, *args, **kwargs):
+    def __init__(self, x, y, ensembles=None, *args, **kwargs):
         self.x = np.array(x)
         self.y = np.array(y)
-        self.threshold = threshold
         
         # create a blended set of ensembles
         if ensembles is None:
             maximum = int(np.log(len(self.x)))
-            minimum = 3 #max(3,maximum-2)
+            minimum = 3
             obs = []
             labels = []
             # where you create progressively more ensembles
@@ -84,17 +82,19 @@ class Correlation(Ensembles):
         # create an Ensembles standard
         super().__init__(obs, labels=labels, *args, **kwargs)
 
-    @property
-    def is_complex(self):
-        return self.complexity > self.threshold
     
     @property
     def correlations(self):
         from scipy.stats import pearsonr, spearmanr, kendalltau
+        pr, pp = pearsonr(self.x, self.y)
+        sr, sp = spearmanr(self.x, self.y)
+        kr, kp = kendalltau(self.x, self.y)
         return {
-            "pearson": pearsonr(self.x, self.y)[0],
-            "spearman": spearmanr(self.x, self.y)[0],
-            "kendall": kendalltau(self.x, self.y)[0],
-            "complexity": self.complexity,
-            "is_complex": self.is_complex,
+            "pearson": pr,
+            "pearson_p": pp,
+            "spearman": sr,
+            "spearman_p": sp,
+            "kendall": kr,
+            "kendall_p": kp,
+            "incoherence": self.incoherence,
         }

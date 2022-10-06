@@ -18,7 +18,7 @@ class TestCorrelation(unittest.TestCase):
                 (np.random.random(o), 0.05),
             ]
             for y, threshold in lt:
-                c = Correlation(x, y).complexity
+                c = Correlation(x, y).incoherence
                 self.assertTrue(c < threshold, (c, threshold))
             
             
@@ -29,15 +29,15 @@ class TestCorrelation(unittest.TestCase):
                 (x**3, 0.6),
             ]
             for y, threshold in gt:
-                c = Correlation(x, y).complexity
+                c = Correlation(x, y).incoherence
                 self.assertTrue(c > threshold, (c, threshold))
 
     def test_specific(self):
         np.random.seed(268480)
         o = 1000
         x = np.random.random(o)
-        nats = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 0.7517597472513868, 'is_complex': 1}
-        bits = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'complexity': 0.9029554784472786, 'is_complex': 1}
+        nats = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'incoherence': 0.7517597472513868, 'is_complex': 1}
+        bits = {'pearson': 1.0, 'spearman': 1.0, 'kendall': 1.0, 'incoherence': 0.9029554784472786, 'is_complex': 1}
 
         for c, unit in ((nats, None),(bits, 2)):
             wec = Correlation(x,x, base=unit)

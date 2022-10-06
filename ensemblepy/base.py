@@ -148,10 +148,13 @@ class Ensembles:
     Comparison metrics
 
     """
-    def chi2(self):
+    def chi2(self, ignore=False):
         from scipy.stats import chi2_contingency
         # returns (chi2, p, dof, expected)
-        return chi2_contingency(self.histograms)
+        try:
+            return chi2_contingency(self.histograms)
+        except ValueError:
+            return None, None, None, None
 
     """
     Finding optimum bins for continuous entropy distributions
@@ -161,13 +164,13 @@ class Ensembles:
     def _bin_search(self, xs):
         """
         For a given bin count range `xs`
-        Returns the `optimium_count` of bins and a 2D array of `bin` to `complexity` value
+        Returns the `optimium_count` of bins and a 2D array of `bin` to `incoherence` value
         """
         indx = []
 
         for x in xs:
             self.update_bins(x)
-            indx.append([x, self.complexity])
+            indx.append([x, self.incoherence])
 
         indx = np.array(indx)
         ys = np.array(indx[:,1])
@@ -177,7 +180,7 @@ class Ensembles:
     def _bin_optimize(self, minimum, maximum, spread, depth, iteration=0, base_threshold=0.0001):
         """
         A faster, recursive approach to finding optimum bins than searching through entire range.
-        Doesn't have to be perfect, since complexity levels off for such a large range.
+        Doesn't have to be perfect, since incoherence levels off for such a large range.
         """
         xs = binint(minimum, maximum, spread)
         optimum_index, indx = self._bin_search(xs)
@@ -185,7 +188,7 @@ class Ensembles:
         upper_index = len(indx)-1
         
         # return if reached max depth
-            # or complexity is basically zero
+            # or incoherence is basically zero
                 # or the difference is basically zero
                     # you're looking at nearest neighbours
         if iteration >= depth \
@@ -210,7 +213,7 @@ class Ensembles:
         :maximum: observations/5 of the range to explore
         :update: _True_ update to the optimimum bins or return to current
         :optimized: _True_ use a faster search version
-        :plot: _False_ plot a figure of bin number against complexity at that bin
+        :plot: _False_ plot a figure of bin number against incoherence at that bin
         :spread: 4, the number of bins to try during optimised
         :depth: 10, the max number of depth searches to be used during optimised search
         :cheat: _True_, cheat mode which just uses obs/5 bins

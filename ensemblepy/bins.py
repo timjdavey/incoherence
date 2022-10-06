@@ -22,15 +22,15 @@ def pooled_series(series):
     return obs
 
 
-def binobs(observations, ratio=5, log=False):
+def binobs(observations, ratio=5, log=False, min_count=4):
     """
     Creates bins based on the observed min & max
-    With a count which is average_obs_per_ensemble/`ratio=5`
+    With a count which is average_obs_per_ensemble/`ratio=5` with a minimum of min_count=4
     """
     ergobs = pooled_obs(observations)
     avg = len(ergobs)/len(observations)
     #count = np.log(2*avg)
-    count = max(4, avg/ratio)
+    count = max(min_count, avg/ratio)
     return binspace(ergobs.min(), ergobs.max(), int(count), log=log)
 
 

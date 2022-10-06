@@ -48,7 +48,7 @@ class Scan:
         self.map = {}
 
         # store the key measures
-        for key in ('ensemble', 'pooled', 'divergence', 'complexity'):
+        for key in ('ensemble', 'pooled', 'divergence', 'incoherence'):
             self.measures['%s max' % key] = [e.max(max_trend)[key] for e in self.y]
             self.measures['%s trend' % key] = [e.trend(trend)[key] for e in self.y]
 
@@ -72,7 +72,7 @@ class Scan:
     """
     Plotting
     """
-    def _lineplot(self, key, ax, ylabel=None, ymaxmin=None):
+    def _lineplot(self, key, ax, ylabel=None, ymaxmin=None, showmax=False):
         """ Internal function to properly format the lines """
         import seaborn as sns
         # trend
@@ -80,7 +80,8 @@ class Scan:
                 label=LEGEND[key][0], color=LEGEND[key][1])
         # max
         y = np.array(self.measures["%s max" % key])
-        g = sns.lineplot(x=self.x, y=y, ax=ax,
+        if showmax:
+            g = sns.lineplot(x=self.x, y=y, ax=ax,
                 label='%s max' % key, color=LEGEND[key][1], alpha=0.5, linestyle="dotted")
         
         # labels
@@ -107,8 +108,8 @@ class Scan:
 
         # second plot
         ax2 = axes[1].twinx()
-        h = self._lineplot('complexity', axes[1], 'Incoherence', ymax)
-        j = self._lineplot('divergence', ax2, 'Divergence', ymax)
+        h = self._lineplot('incoherence', axes[1], LEGEND['incoherence'], ymax)
+        j = self._lineplot('divergence', ax2, LEGEND['divergence'], ymax)
         j.set_title(self.title if self.title else "Incoherence and divergence")
 
         # combine legends
