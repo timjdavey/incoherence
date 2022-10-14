@@ -40,7 +40,7 @@ def densities(data, steps=STEP_COUNT, k=VARIANCE_K, var_range=STEP_RANGE):
         axis=1)/len(data)
 
 
-def density_variance(data, steps=STEP_COUNT, bounded=True, k=VARIANCE_K, var_range=STEP_RANGE, vs=None):
+def density_variance(data, normalise=(0,1), steps=STEP_COUNT, bounded=True, k=VARIANCE_K, var_range=STEP_RANGE, vs=None):
     """
     Returns the density variance for a give set of `data`.
 
@@ -51,6 +51,12 @@ def density_variance(data, steps=STEP_COUNT, bounded=True, k=VARIANCE_K, var_ran
     :var_range: STEP_RANGE, the range over which variance is calculated.
     :vs: None, the upper and lower bounds, so can override if use different k or var_range values. If left blank, automatically calculates.
     """
+    data = np.array(data)
+    if data.min() < normalise[0] or data.max() > normalise[1]:
+        raise ValueError("Please make sure `data` is within `normalise` bounds")
+    else:
+        data = (data-normalise[0])/normalise[1]
+
     dens = densities(data, steps, k, var_range)
     v = dens.var()
 
