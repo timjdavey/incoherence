@@ -1,7 +1,7 @@
 import numpy as np
 
 from .bins import binspace, binint
-from .base import Ensembles
+from .continuous import Continuous
 
 def digitize(X, Y, count):
     """
@@ -37,36 +37,33 @@ def digitize(X, Y, count):
     return list(obs.values()), list(obs.keys())
 
 
-class Correlation(Ensembles):
+class Correlation(Continuous):
     """
-    Is a wrapper class around Ensembles.
+    Is a wrapper class around Continuous.
     Where instead of passing observations, you pass the 
     x, y numeric values and it will automatically create ensembles for your.
     So that you can easily use it as a correlation metric.
     
-    inputs
-    :counts: (ensemble_count, bin_count) tuple(ints) of counts
-
-    functions
-    :metrics: results a dict of common correlation metrics
+    :x: list of x data points
+    :y: list of y data points
     """    
-    def __init__(self, x, y, ensembles=None, *args, **kwargs):
-        self.x = np.array(x)
-        self.y = np.array(y)
-        
+    def __init__(self, x, y, ensemble_count=None, *args, **kwargs):
+        self.x = np.array(x) # ensembles
+        self.y = np.array(y) # continuous y values
+
         # create a blended set of ensembles
-        if ensembles is None:
-            maximum = int(np.log(len(self.x)))
-            minimum = 3
-            obs = []
-            labels = []
-            # where you create progressively more ensembles
-            # out of the data, but just add them all for
-            # comparison
-            # since they're different sizes
-            # the defaulting weighting system
-            # will count for the various proportioning
-            # into the ergodic ensemble & final calc
+        maximum = int(2*np.log(len(self.x)))
+        minimum = 3
+        obs = []
+        labels = []
+        # where you create progressively more ensembles
+        # out of the data, but just add them all for
+        # comparison
+        # since they're different sizes
+        # the defaulting weighting system
+        # will count for the various proportioning
+        # into the ergodic ensemble & final calc
+        if ensemble_count is None:
             for e in binint(minimum, maximum):
                 obs_i, labels_i = digitize(self.x, self.y, e)
                 # need to add individually, as ragged lengths
@@ -75,8 +72,7 @@ class Correlation(Ensembles):
                 for label in labels_i:
                     labels.append(label)
         else:
-            # turn the continous data into discrete ensembles
-            obs, labels = digitize(self.x, self.y, ensembles)
+            obs, labels = digitize(self.x, self.y, ensemble_count)
         
         
         # create an Ensembles standard

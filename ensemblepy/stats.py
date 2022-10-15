@@ -1,8 +1,8 @@
 import numpy as np
 import scipy as sp
 from itertools import permutations
-from .entropy import ensemble_entropies, observation_weights, pooled_entropy
-
+from .entropy import ensemble_entropies, get_weights, pooled_entropy
+from .densityvar import density_variance
 
 def js_divergence(p_entropy, entropies, weights, power=1):
     """ Jenson Shannon Divergence """
@@ -49,11 +49,22 @@ LEGEND = {
     'weights': ('Weights of each ensemble', 'red'),
 }
 
-def measures(pmfs, weights=None, with_meta=False, **kwargs):
-    """ Returns all metrics """
-    ents = ensemble_entropies(pmfs, **kwargs)
-    weights = observation_weights(pmfs, weights)
-    pooled = pooled_entropy(pmfs, weights, **kwargs)
+def measures(data, weights=None, with_meta=False, discrete=True, **kwargs):
+    """
+    Returns all metrics
+
+    :weights: _None_ calculates them automatically, _False_ ignores then, _list_ uses supplied
+    :with_meta: _False_ adds additional calculated stats
+    :discrete: _True_ if the data is discrete, _False_ if continuous
+    """
+    if discrete:
+        ents = ensemble_entropies(data, **kwargs)
+        weights = get_weights(data, weights, discrete=True)
+        pooled = pooled_entropy(data, weights, **kwargs)
+    else:
+        ents = np.array([density_variance(observations) for observations in data])
+        weights = get_weights(data, weights, discrete=False)
+        pooled = density_variance(np.concatenate(data))
 
     metrics = {
         'ensemble': np.average(ents, weights=weights),
@@ -65,3 +76,4 @@ def measures(pmfs, weights=None, with_meta=False, **kwargs):
         metrics['entropies'] = ents
         metrics['weights'] = weights
     return metrics
+

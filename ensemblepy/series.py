@@ -1,8 +1,8 @@
 import numpy as np
 from functools import cached_property
 
-from .bins import binseries
-from .base import Ensembles
+from .discrete import Discrete
+from .continuous import Continuous
 from .stats import LEGEND
 
 
@@ -49,15 +49,11 @@ class Series:
         
         # create pooled if needed
         elif self.observations is not None:
-            
-            # if continuous distribution
-            # bins need to be the maximum of the stablized series
-            # to ensure the detail is captured
-            if self.bins is None:
-                self.bins = binseries(self.observations, log=self.log)
 
-            # then create ensembles
-            self.y = [Ensembles(obs, self.bins) for obs in self.observations]
+            if self.bins is None:
+                self.y = [Continuous(obs) for obs in self.observations]
+            else:
+                self.y = [Discrete(obs, self.bins) for obs in self.observations]
 
         # type check y otherwise
         elif not isinstance(self.y, (list, np.ndarray)) or not isinstance(self.y[0], (Ensembles)):

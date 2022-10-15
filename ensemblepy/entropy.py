@@ -9,26 +9,34 @@ def ensemble_entropies(pmfs, **kwargs):
     return [shannon_entropy(p, **kwargs) for p in pmfs]
 
 
-def observation_weights(hists, weights=None):
+def get_weights(data, weights=None, discrete=True):
     """
     Default weight strategy of N_k/N
 
-    :hists: histograms of each distribution
-    :weights: can pass weights which if exist,
+    :data: histograms of each distribution or set of observations if continuous
+    :weights: _None_, can pass weights which if exist,
         returns those so can use this function as a default mechanism
+        set as _False_ if want to ignore weights
+    :discrete: _True_, if _False_ specify data is continuous
+        and use observation count instead
     """
     if weights is None:
-        # N_k/N default
-        ws = np.array(hists).sum(axis=1)
+        if discrete:
+            # N_k/N default
+            ws = np.array(data).sum(axis=1)
+        else:
+            # continuous
+            ws = np.array([len(h) for h in data])
         return ws/ws.sum()
     elif weights is False:
         # actively set it to turn off
         # then have them equal weight
-        N = len(hists)
+        N = len(data)
         return np.ones(N)/N
     else:
         # no need to normalize as np does that
         return weights
+
 
 
 def point_pmf(pmfs, weights=None):
@@ -36,7 +44,7 @@ def point_pmf(pmfs, weights=None):
     For a given array of pmfs
     Returns the weighted pointwise pooled pmf
     """
-    default_weights = observation_weights(pmfs, weights)
+    default_weights = get_weights(pmfs, weights)
     normed = np.array([row/row.sum() for row in np.array(pmfs)])
     return np.average(normed, weights=default_weights, axis=0)
 

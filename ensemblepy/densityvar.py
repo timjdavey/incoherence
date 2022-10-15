@@ -53,9 +53,9 @@ def density_variance(data, normalise=(0,1), steps=STEP_COUNT, bounded=True, k=VA
     """
     data = np.array(data)
     if data.min() < normalise[0] or data.max() > normalise[1]:
-        raise ValueError("Please make sure `data` is within `normalise` bounds")
+        raise ValueError("Please make sure `data` %s is within `normalise` %s bounds" % ((data.min(), data.max()), normalise))
     else:
-        data = (data-normalise[0])/normalise[1]
+        data = (data-normalise[0])/(normalise[1]-normalise[0])
 
     dens = densities(data, steps, k, var_range)
     v = dens.var()
