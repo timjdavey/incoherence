@@ -1,18 +1,12 @@
 import numpy as np
 import scipy as sp
-from itertools import permutations
 from .entropy import ensemble_entropies, get_weights, pooled_entropy
 from .densityvar import density_variance
+from .divergences import js_divergence, radial_divergences
 
-def js_divergence(p_entropy, entropies, weights, power=1):
-    """ Jenson Shannon Divergence """
-    divs = [(p_entropy - e)**power for e in entropies]
-    return np.average(divs, weights=weights)
-
-
-def incoherence(p_entropy, entropies, weights=None):
+def _incoherence(p_entropy, entropies, weights=None):
     """
-    incoherence calculation
+    incoherence calculation from entropies
 
     :p_entropy: can use `pooled_entropy()` to calc
     :entropies: can use `entropies()` to calc
@@ -24,20 +18,26 @@ def incoherence(p_entropy, entropies, weights=None):
         return 0.0
     else:
         divs = js_divergence(p_entropy, entropies, weights, power=2)
-        return (divs / p_entropy)**0.5
+        return np.sqrt(divs / p_entropy)
 
 
-def kl_divergences(references, observed=None, power=1, func=sp.stats.entropy):
+def _incohesion(data, discrete=True):
     """
-    Returns an array of KL divergences
-    For a given array of histogram `references`
-    and an `observed` histogram.
-    If `observed` is default None, compared against the permutation of references.
+    incohesion calculation from pmfs or observations
+    
+    :data: if discrete is True, in the form of histograms,
+        if continuous just all the observations normalised between (0,1)
+    :discrete: True, is the data histograms or continuous observations
     """
-    if observed is None:
-        return np.array([func(a, b) for a, b in permutations(references, 2)])
-    else:
-        return np.array([func(observed, h)**power for h in references])
+    divergences = radial_divergences(data, discrete)
+    
+    # if discrete need to normalise by bins (max entropy)
+    # if continuous will already be normalised to (0,1)
+    if discrete:
+        divergences /= np.log(len(data[0]))
+
+    return density_variance(divergences)
+
 
 
 LEGEND = {
@@ -45,6 +45,7 @@ LEGEND = {
     'pooled': ('Entropy of pooled','firebrick'),
     'divergence': ('Divergence','forestgreen'),
     'incoherence': ('Incoherence','blueviolet'),
+    'incohesion': ('Incohesion', 'teal'),
     'entropies': ('Entropies of individual ensembles','crest'),
     'weights': ('Weights of each ensemble', 'red'),
 }
@@ -70,7 +71,8 @@ def measures(data, weights=None, with_meta=False, discrete=True, **kwargs):
         'ensemble': np.average(ents, weights=weights),
         'pooled': pooled,
         'divergence': js_divergence(pooled, ents, weights),
-        'incoherence': incoherence(pooled, ents, weights),
+        'incoherence': _incoherence(pooled, ents, weights),
+        'incohesion': _incohesion(data, discrete=discrete),
     }
     if with_meta:
         metrics['entropies'] = ents

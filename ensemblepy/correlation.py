@@ -1,6 +1,7 @@
 import numpy as np
 
 from .bins import binspace, binint
+from .discrete import Discrete
 from .continuous import Continuous
 
 def digitize(X, Y, count):
@@ -37,60 +38,73 @@ def digitize(X, Y, count):
     return list(obs.values()), list(obs.keys())
 
 
-class Correlation(Continuous):
+def correlations(self):
+    """ Returns the standard correlation metrics for reference """
+    from scipy.stats import pearsonr, spearmanr, kendalltau
+    corrs = {}
+    for name, func in (('pearson', pearsonr),
+        ('spearman', spearmanr),
+        ('kendall', kendalltau)):
+        val, p = func(self.x, self.y)
+        corrs[name] = val
+        corrs['%s_p' % name] = p
+
+    corrs['incoherence'] = self.incoherence
+    return corrs
+
+
+def Correlation(x, y, discrete=True,
+        ensemble_count=None, blend_maximum=None,
+        *args, **kwargs):
     """
-    Is a wrapper class around Continuous.
+    Is a wrapper function around Continuous or Discrete.
     Where instead of passing observations, you pass the 
     x, y numeric values and it will automatically create ensembles for your.
     So that you can easily use it as a correlation metric.
     
     :x: list of x data points
     :y: list of y data points
+    :discrete: True, whether to return a Discrete or Continuous object
+        using continuous or discrete entropy approximations
+        discrete is defaulted as special search algorithm is more accurate in this case
+    :ensemble_count: None, how many ensembles to use instead of a blend
+    :blend_maximum: None, how many to blend up to from 3
     """    
-    def __init__(self, x, y, ensemble_count=None, *args, **kwargs):
-        self.x = np.array(x) # ensembles
-        self.y = np.array(y) # continuous y values
+    x = np.array(x) # ensembles
+    y = np.array(y) # to be binned or continuous
 
-        # create a blended set of ensembles
-        maximum = int(2*np.log(len(self.x)))
-        minimum = 3
-        obs = []
-        labels = []
-        # where you create progressively more ensembles
-        # out of the data, but just add them all for
-        # comparison
-        # since they're different sizes
-        # the defaulting weighting system
-        # will count for the various proportioning
-        # into the ergodic ensemble & final calc
-        if ensemble_count is None:
-            for e in binint(minimum, maximum):
-                obs_i, labels_i = digitize(self.x, self.y, e)
-                # need to add individually, as ragged lengths
-                for row in obs_i:
-                    obs.append(row)
-                for label in labels_i:
-                    labels.append(label)
-        else:
-            obs, labels = digitize(self.x, self.y, ensemble_count)
-        
-        
-        # create an Ensembles standard
-        super().__init__(obs, labels=labels, *args, **kwargs)
+    # create a blended set of ensembles
+    if blend_maximum is None:
+        blend_maximum = int(2*np.log(len(x))) 
 
+    # needs to be odd, otherwise symmetrical distributions always come out lowest
+    minimum = 3
+    obs = []
+    labels = []
+
+    # where you create progressively more ensembles
+    # out of the data, but just add them all for
+    # comparison
+    # since they're different sizes
+    # the defaulting weighting system
+    # will count for the various proportioning
+    if ensemble_count is None:
+        for e in binint(minimum, blend_maximum):
+            obs_i, labels_i = digitize(x, y, e)
+            # need to add individually, as ragged lengths
+            for row in obs_i:
+                obs.append(row)
+            for label in labels_i:
+                labels.append(label)
+    else:
+        obs, labels = digitize(x, y, ensemble_count)
     
-    @property
-    def correlations(self):
-        from scipy.stats import pearsonr, spearmanr, kendalltau
-        pr, pp = pearsonr(self.x, self.y)
-        sr, sp = spearmanr(self.x, self.y)
-        kr, kp = kendalltau(self.x, self.y)
-        return {
-            "pearson": pr,
-            "pearson_p": pp,
-            "spearman": sr,
-            "spearman_p": sp,
-            "kendall": kr,
-            "kendall_p": kp,
-            "incoherence": self.incoherence,
-        }
+    Model = type('Correlation',
+        (Discrete if discrete else Continuous, ),
+        {'correlations': correlations })
+    m = Model(obs, None, labels=labels, *args, **kwargs)
+    m.x, m.y = x, y
+    return m
+
+
+

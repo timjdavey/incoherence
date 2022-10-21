@@ -38,6 +38,7 @@ def series(ensembles=20, steps=200, luminosity=1.0, population=POP_DEFAULT, muta
     observations = np.array(observations)
 
     # bins count species, so just the ints
-    bins = ep.binint(0,observations.max())
+    # this works are observations are integer labeled
+    bins = ep.binint(0,observations.max()+1)
     es = ep.Series(x=x, observations=observations, bins=bins, x_label='Timesteps', models=worlds)
     return es
