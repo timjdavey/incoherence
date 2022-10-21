@@ -3,7 +3,8 @@ from functools import cached_property
 
 from .continuous import Continuous
 from .entropy import point_pmf
-from .stats import measures, kl_divergences, LEGEND
+from .divergences import kl_divergences
+from .stats import measures, LEGEND
 from .bins import binint, binspace, binobs, pooled_obs
 
 

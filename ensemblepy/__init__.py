@@ -1,5 +1,6 @@
 from .entropy import ensemble_entropies, point_pmf, pooled_entropy
-from .stats import js_divergence, kl_divergences, LEGEND, measures
+from .divergences import js_divergence, kl_divergences
+from .stats import LEGEND, measures
 from .bins import binint, binspace, binobs, binseries
 from .discrete import Discrete
 from .continuous import Continuous
