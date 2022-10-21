@@ -18,7 +18,6 @@ def minmax_variance(k=VARIANCE_K, var_range=STEP_RANGE, count=10000, steps=STEP_
     :var_range: var range
     :count: 10000 sample count
     """
-
     return densities(np.linspace(0,1,count), steps, k, var_range).var(), \
         densities(np.ones(count), steps, k, var_range).var()
 
@@ -32,12 +31,16 @@ def densities(data, steps=STEP_COUNT, k=VARIANCE_K, var_range=STEP_RANGE):
     if data.max() > 1 or data.min() < 0:
         raise ValueError("Please normalise `data` values to within [0,1]")
 
-    return np.sum( \
-        np.exp(-k*np.abs( \
-                    np.full([len(data),steps], \
-                        np.linspace(var_range[0],var_range[1],steps) \
-                    ).T-data)), \
-        axis=1)/len(data)
+    if iterate:
+        return np.array([np.mean(np.exp(-k*np.abs(i-data))) \
+            for i in np.linspace(var_range[0],var_range[1],steps)])
+    else:
+        return np.mean( \
+            np.exp(-k*np.abs( \
+                        np.full([len(data),steps], \
+                            np.linspace(var_range[0],var_range[1],steps) \
+                        ).T-data)), \
+            axis=1)
 
 
 def density_variance(data, normalise=(0,1), steps=STEP_COUNT, bounded=True, k=VARIANCE_K, var_range=STEP_RANGE, vs=None):
