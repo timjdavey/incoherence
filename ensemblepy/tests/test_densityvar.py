@@ -7,13 +7,14 @@ from ..densityvar import *
 class TestCorrelation(unittest.TestCase):
     
     def test_constants(self):
-        v0, v1 = minmax_variance()
-        self.assertEqual(v0, MIN_VARIANCE)
-        self.assertEqual(v1, MAX_VARIANCE)
-        
-        v0, v1 = minmax_variance(VARIANCE_K, STEP_RANGE)
-        self.assertEqual(v0, MIN_VARIANCE)
-        self.assertEqual(v1, MAX_VARIANCE)
+        for dimension in range(1,10):
+            v0, v1 = minmax_variance(dimension)
+            self.assertEqual(v0, MIN_VARIANCE[dimension])
+            self.assertEqual(v1, MAX_VARIANCE[dimension])
+            
+            v0, v1 = minmax_variance(dimension, VARIANCE_K, STEP_RANGE)
+            self.assertEqual(v0, MIN_VARIANCE[dimension])
+            self.assertEqual(v1, MAX_VARIANCE[dimension])
 
     def test_densities(self):
         with self.assertRaises(ValueError):
