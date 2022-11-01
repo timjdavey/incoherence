@@ -20,13 +20,14 @@ class Continuous:
         defaults when None to (y.min(), y.max())
     """
     def __init__(self, observations, normalise=None, weights=None,
-                labels=None, ensemble_name='ensemble', dist_name='value',
+                labels=None, metrics=None, ensemble_name='ensemble', dist_name='value',
                 lazy=False):
         
         self.discrete = False
         self.observations = observations
         self.weights = weights
         self.labels = labels
+        self.metrics = metrics
 
         pooled = np.concatenate(observations)
         if normalise is None:
@@ -38,9 +39,9 @@ class Continuous:
         if not lazy:
             self.analyse()
 
-    def get_measures(self):
+    def _get_measures(self):
         return measures(self.normalised, discrete=False,
-            weights=self.weights, with_meta=True)
+            weights=self.weights, metrics=self.metrics)
 
     def analyse(self):
         """
@@ -48,13 +49,10 @@ class Continuous:
         """
 
         # get measures
-        ms = self.get_measures()
+        ms = self._get_measures()
 
         for k, v in ms.items():
             setattr(self, k, v)
-
-        del ms['entropies']
-        del ms['weights']
 
         self.measures = ms
         return ms

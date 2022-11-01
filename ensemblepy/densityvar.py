@@ -99,9 +99,9 @@ def density_variance(data, normalise=(0,1), steps=STEP_COUNT, bounded=True, k=VA
     else:
         raise ValueError("Please make sure data is in correct format of shape (dimensions, observations) not %s" % data.shape)
 
-
+    # normalise the data
     if data.min() < normalise[0] or data.max() > normalise[1]:
-        raise ValueError("Please make sure `data` %s is within `normalise` %s bounds" % ((data.min(), data.max()), normalise))
+        raise ValueError("Please make sure `data` %s is within `normalise` %s" % ((data.min(), data.max()), normalise))
     else:
         data = (data-normalise[0])/(normalise[1]-normalise[0])
 

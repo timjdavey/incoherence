@@ -29,7 +29,7 @@ def radial_divergences(data, discrete=True):
                 density_variance(a),
                 density_variance(b)
             ]
-        div = ep.js_divergence(p_entropy, entropies, None)
+        div = js_divergence(p_entropy, entropies, None)
         divergences.append(div)
     return np.array(divergences)
 

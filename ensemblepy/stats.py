@@ -20,14 +20,14 @@ def _incoherence(p_entropy, entropies, weights=None):
         divs = js_divergence(p_entropy, entropies, weights, power=2)
         return np.sqrt(divs / p_entropy)
 
-
-def _incohesion(data, discrete=True):
+def _cohesion(data, discrete=True):
     """
-    incohesion calculation from pmfs or observations
+    Cohesion calculation from pmfs or observations,
+    that is how `clumped` or `grouped` the ensembles are.
     
     :data: if discrete is True, in the form of histograms,
         if continuous just all the observations normalised between (0,1)
-    :discrete: True, is the data histograms or continuous observations
+    :discrete: True, if data in histograms or False if continuous observations
     """
     divergences = radial_divergences(data, discrete)
     
@@ -36,7 +36,8 @@ def _incohesion(data, discrete=True):
     if discrete:
         divergences /= np.log(len(data[0]))
 
-    return density_variance(divergences)
+    return 1-density_variance(divergences)**2
+
 
 
 
@@ -45,17 +46,17 @@ LEGEND = {
     'pooled': ('Entropy of pooled','firebrick'),
     'divergence': ('Divergence','forestgreen'),
     'incoherence': ('Incoherence','blueviolet'),
-    'incohesion': ('Incohesion', 'teal'),
+    'cohesion': ('Cohesion', 'teal'),
     'entropies': ('Entropies of individual ensembles','crest'),
     'weights': ('Weights of each ensemble', 'red'),
 }
 
-def measures(data, weights=None, with_meta=False, discrete=True, **kwargs):
+def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
     """
     Returns all metrics
 
     :weights: _None_ calculates them automatically, _False_ ignores then, _list_ uses supplied
-    :with_meta: _False_ adds additional calculated stats
+    :metrics: _None_, can specify which metrics you'd like returned in a list, otherwise will return all available
     :discrete: _True_ if the data is discrete, _False_ if continuous
     """
     if discrete:
@@ -65,17 +66,31 @@ def measures(data, weights=None, with_meta=False, discrete=True, **kwargs):
     else:
         ents = np.array([density_variance(observations) for observations in data])
         weights = get_weights(data, weights, discrete=False)
-        pooled = density_variance(np.concatenate(data))
+        pooled = density_variance(np.concatenate(data).flatten())
 
-    metrics = {
-        'ensemble': np.average(ents, weights=weights),
-        'pooled': pooled,
-        'divergence': js_divergence(pooled, ents, weights),
-        'incoherence': _incoherence(pooled, ents, weights),
-        'incohesion': _incohesion(data, discrete=discrete),
-    }
-    if with_meta:
-        metrics['entropies'] = ents
-        metrics['weights'] = weights
-    return metrics
+    # is cumbersome, but allows for specific metrics to be called
+    data = {}
+    if metrics is None or 'ensemble' in metrics:
+        data['ensemble'] = np.average(ents, weights=weights)
+    
+    if metrics is None or 'pooled' in metrics:
+        data['pooled'] = pooled
+    
+    if metrics is None or 'divergence' in metrics:
+        data['divergence'] =  js_divergence(pooled, ents, weights)
+    
+    if metrics is None or 'incoherence' in metrics:
+        data['incoherence'] = _incoherence(pooled, ents, weights),
+    
+    if metrics is None or 'cohesion' in metrics:
+        data['cohesion'] = _cohesion(data, discrete=discrete)
+    
+    if metrics is None or 'entropies' in metrics:
+        data['entropies'] = ents
+    
+    if metrics is None or 'weights' in metrics:
+        data['weights'] = weights
+
+    print(data)
+    return data
 

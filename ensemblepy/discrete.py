@@ -25,7 +25,7 @@ class Discrete(Continuous):
     :base: _None_ units default is natural e units of entropy
     :lazy: _False_ will calculate measures on creation if False, otherwise need to call `analyse()`
     """
-    def __init__(self, observations, bins, weights=None,
+    def __init__(self, observations, bins, weights=None, metrics=None,
                 labels=None, ensemble_name='ensemble', dist_name='value',
                 base=None, lazy=False):
 
@@ -38,6 +38,7 @@ class Discrete(Continuous):
         self.labels = labels
         self.ensemble_name = ensemble_name
         self.dist_name = dist_name
+        self.metrics = None
 
         # do analysis
         if not lazy:
@@ -46,7 +47,7 @@ class Discrete(Continuous):
             else:
                 self.analyse()
 
-    def get_measures(self):
+    def _get_measures(self):
         """
         Gets the standard measures, now using histograms.
         """
@@ -60,7 +61,7 @@ class Discrete(Continuous):
             self.histograms = np.array(histograms)
 
         return measures(self.histograms, weights=self.weights,
-                base=self.base, discrete=True, with_meta=True)
+                base=self.base, discrete=True, metrics=self.metrics)
         
         
 
