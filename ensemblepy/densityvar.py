@@ -3,29 +3,42 @@ from scipy.stats import entropy
 import itertools
 
 
-DEFAULT_K = 20
-DEFAULT_RANGE = (-0.1, 1.1)
+DEFAULT_K = 10
+DEFAULT_RANGE = (-0.5,1.5)
 DEFAULT_STEPS = 2000
-DEFAULT_MODE = 'var'
-DIMENSIONS = 10
-MODES = {'var': lambda x: x.var(), 'entropy': lambda x: entropy(x.flatten()) }
 
-# tuple([k, (var_range lower, var_range upper), steps],)
-CACHED_VS = {(20, (-0.1, 1.1), 2000, 'var', 1): (0.0008574780498222127, 0.03523253847900814)}
+CACHED_VS = {(10, (-0.5, 1.5), 2000, 1): (0.007018931041174293, 0.04005055342173444), (10, (-0.5, 1.5), 2000, 2): (0.00040104566979067366, 0.003526150161930223), (10, (-0.5, 1.5), 2000, 3): (2.3714886754960084e-05, 0.0002900854089843002), (10, (-0.5, 1.5), 2000, 4): (1.2051739927817778e-06, 1.7883647121279985e-05)}
+
+def generate_cache(k=DEFAULT_K, var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS,
+        dimensions=4, vs=None, timings=False):
+    """
+    Generates the min & max variance values as a cache
+    as dict with keys: tuple([k, (var_range lower, var_range upper), steps],)
+
+    See CACHED_VS for example
+    """
+    import time
+    if vs is None: vs = {}
+    params = (k, var_range, steps)
+    for d in range(1,dimensions+1):
+        tic = time.time()
+        vs[(*params, d)] = minmax_variance(*params, dimensions=d)
+        if timings: print(d, time.time()-tic)
+    return vs
 
 
 def dimspace(lower, upper, count, dimensions, limit_count=False):
     """
     Like linspace but for multiple dimensions
     """
-    if limit_count: count = int(count**(1/dimensions)*dimensions)
+    if limit_count: count = (int(count**(1/dimensions))+1)*dimensions
     x = np.linspace(lower, upper, count)
     # faster than itertools.product(*[x for _ in range(dimensions)])
     return np.concatenate(np.array(np.meshgrid(*[x for _ in range(dimensions)])).T).reshape(-1,dimensions)
 
 
 def minmax_variance(k=DEFAULT_K, var_range=DEFAULT_RANGE,
-        steps=DEFAULT_STEPS, mode=DEFAULT_MODE, dimensions=1, count=1000):
+        steps=DEFAULT_STEPS, dimensions=1, count=2000):
     """
     Calculates the minimum and maximum variance for a given k and var_range value.
     These should never realisically change from the defaults.
@@ -38,7 +51,7 @@ def minmax_variance(k=DEFAULT_K, var_range=DEFAULT_RANGE,
     # use random as much faster than dimspace(0,1,count,dimensions) and close enough with 10* count
     uniform = np.random.uniform(0,1,(count*100, dimensions))
     single = np.ones((count,dimensions))
-    return tuple([MODES[mode](densities(d, k, var_range, steps)) for d in (uniform, single)])
+    return tuple([densities(d, k, var_range, steps)[0].var() for d in (uniform, single)])
 
 
 def _dimensions(data):
@@ -79,7 +92,7 @@ def densities(data, k=DEFAULT_K, var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS, l
     However, in practice it's much slower
     Particularly the more steps you have
     Plus has the benefit of not being ram bound
-    And instead can be done via parallelisation
+    So can expand to be parallelised with taichi in the future
 
     return np.mean(\
             np.exp(\
@@ -93,14 +106,15 @@ def densities(data, k=DEFAULT_K, var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS, l
         axis=1)
     """
     dens = []
-    for ref in dimspace(*var_range, steps, dims, limit_steps):
+    points = dimspace(*var_range, steps, dims, limit_steps)
+    for ref in points:
         dens.append(np.mean(np.exp(-k*np.linalg.norm(ref-data, axis=1))))
-    return np.array(dens)
+    return np.array(dens), points
 
 
 
 def density_variance(data, normalise=(0,1), bounded=True, k=DEFAULT_K,
-    var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS, mode=DEFAULT_MODE, vs=CACHED_VS, limit_steps=True):
+    var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS, vs=CACHED_VS, limit_steps=True):
     """
     Returns the density variance for a give set of `data` for a given `k` and or `var_range`
 
@@ -118,18 +132,14 @@ def density_variance(data, normalise=(0,1), bounded=True, k=DEFAULT_K,
 
     data = (data-normalise[0])/(normalise[1]-normalise[0])
 
-    dens = densities(data, k, var_range, steps, limit_steps)
-    v = MODES[mode](dens)
+    v = densities(data, k, var_range, steps, limit_steps)[0].var()
     try:
-        v0, v1 = vs[tuple([k, var_range, steps, mode, dims])]
+        v0, v1 = vs[tuple([k, var_range, steps, dims])]
     except KeyError:
-        v0, v1 = minmax_variance(k, var_range, steps, mode, dims)
+        print('KEYERROR', [k, var_range, steps, dims])
+        v0, v1 = minmax_variance(k, var_range, steps, dims)
 
-    if mode == 'var':
-        dv = (v-v1)/(v0-v1)#1-(v-v0)/(v1-v0)
-    elif mode == 'entropy':
-        dv = (v-v1)/(v0-v1)
-
+    dv = 1-(v-v0)/(v1-v0)
 
     if bounded:
         return min(max(dv, 0), 1)
