@@ -7,7 +7,7 @@ DEFAULT_K = 10
 DEFAULT_RANGE = (-0.5,1.5)
 DEFAULT_STEPS = 2000
 
-CACHED_VS = {(10, (-0.5, 1.5), 2000, 1): (0.007018931041174293, 0.04005055342173444), (10, (-0.5, 1.5), 2000, 2): (0.00040104566979067366, 0.003526150161930223), (10, (-0.5, 1.5), 2000, 3): (2.3714886754960084e-05, 0.0002900854089843002), (10, (-0.5, 1.5), 2000, 4): (1.2051739927817778e-06, 1.7883647121279985e-05)}
+CACHED_VS = {(10, (-0.5, 1.5), 2000, 1): (0.007058290954639278, 0.040052248668986046), (10, (-0.5, 1.5), 2000, 2): (0.0004060305619015262, 0.0036091902456439552), (10, (-0.5, 1.5), 2000, 3): (2.6979262276843913e-05, 0.000354146896734922), (10, (-0.5, 1.5), 2000, 4): (2.139069954703946e-06, 3.9605121737750026e-05)}
 
 def generate_cache(k=DEFAULT_K, var_range=DEFAULT_RANGE, steps=DEFAULT_STEPS,
         dimensions=4, vs=None, timings=False):
@@ -49,7 +49,7 @@ def minmax_variance(k=DEFAULT_K, var_range=DEFAULT_RANGE,
     :count: 10000 sample count
     """
     # use random as much faster than dimspace(0,1,count,dimensions) and close enough with 10* count
-    uniform = np.random.uniform(0,1,(count*100, dimensions))
+    uniform = np.random.uniform(0,1,(count*10, dimensions))
     single = np.ones((count,dimensions))
     return tuple([densities(d, k, var_range, steps)[0].var() for d in (uniform, single)])
 

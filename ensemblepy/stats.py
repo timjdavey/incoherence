@@ -69,28 +69,27 @@ def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
         pooled = density_variance(np.concatenate(data).flatten())
 
     # is cumbersome, but allows for specific metrics to be called
-    data = {}
+    outs = {}
     if metrics is None or 'ensemble' in metrics:
-        data['ensemble'] = np.average(ents, weights=weights)
+        outs['ensemble'] = np.average(ents, weights=weights)
     
     if metrics is None or 'pooled' in metrics:
-        data['pooled'] = pooled
+        outs['pooled'] = pooled
     
     if metrics is None or 'divergence' in metrics:
-        data['divergence'] =  js_divergence(pooled, ents, weights)
+        outs['divergence'] =  js_divergence(pooled, ents, weights)
     
     if metrics is None or 'incoherence' in metrics:
-        data['incoherence'] = _incoherence(pooled, ents, weights),
+        outs['incoherence'] = _incoherence(pooled, ents, weights)
     
     if metrics is None or 'cohesion' in metrics:
-        data['cohesion'] = _cohesion(data, discrete=discrete)
+        outs['cohesion'] = _cohesion(data, discrete=discrete)
     
     if metrics is None or 'entropies' in metrics:
-        data['entropies'] = ents
+        outs['entropies'] = ents
     
     if metrics is None or 'weights' in metrics:
-        data['weights'] = weights
+        outs['weights'] = weights
 
-    print(data)
-    return data
+    return outs
 
