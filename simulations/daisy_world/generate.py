@@ -5,28 +5,30 @@ import pickle
 import numpy as np
 from simulations.daisy_world.series import series
 from multiprocessing import Pool
+import time
 
 def partial(lum):
-    return series(
-        ensembles=5,
-        steps=10,
+    return lum, series(
+        ensembles=200,
+        steps=200,
         luminosity=lum,
         population={
             'white': {'albedo': 0.75, 'initial': 0.3},
             'black': {'albedo': 0.25, 'initial': 0.3},
-        })
+        }).y[-1]
 
 if __name__ == '__main__':
 
-    filename = 'simulations/daisy_world/scan.pickle'
-    luminosities = np.linspace(0.48, 1.35, 2)
+    filename = 'datasets/daisy_scan200.pickle'
+    luminosities = np.linspace(0.48, 1.35, 201)
 
     with Pool() as pool:
-        ess = []
-        #for i in pool.imap_unordered(partial, luminosities):
-        #    ess.append(i)
-        for i in luminosities:
-            ess.append(partial(i))
+        ess = {}
+        count = 0
+        for k, v in pool.imap_unordered(partial, luminosities):
+            ess[k] = v
+            count += 1
+            print(count)
 
     with open(filename, 'wb') as fh:
         pickle.dump(ess, fh)

@@ -10,7 +10,7 @@ def js_divergence(p_entropy, entropies, weights, power=1):
     return np.average(divs, weights=weights)
 
 
-def radial_divergences(data, discrete=True):
+def radial_divergences(data, discrete=True, normalise=False):
     """
     Returns the JS divergences for each pair of data
 
@@ -31,6 +31,13 @@ def radial_divergences(data, discrete=True):
             ]
         div = js_divergence(p_entropy, entropies, None)
         divergences.append(div)
+
+    if normalise and discrete:
+        # if continuous will already be normalised to (0,1)
+        divergences /= np.log(len(data[0])-1)
+        # deal with float errors
+        divergences[divergences<0] = 0
+        divergences[divergences>1] = 1
     return np.array(divergences)
 
 

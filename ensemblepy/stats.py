@@ -29,14 +29,8 @@ def _cohesion(data, discrete=True):
         if continuous just all the observations normalised between (0,1)
     :discrete: True, if data in histograms or False if continuous observations
     """
-    divergences = radial_divergences(data, discrete)
-    
-    # if discrete need to normalise by bins (max entropy)
-    # if continuous will already be normalised to (0,1)
-    if discrete:
-        divergences /= np.log(len(data[0]))
-
-    return 1-density_variance(divergences)**2
+    divergences = radial_divergences(data, discrete, normalise=True)
+    return 1-density_variance(divergences)
 
 
 

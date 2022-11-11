@@ -128,7 +128,7 @@ def density_variance(data, normalise=(0,1), bounded=True, k=DEFAULT_K,
     if normalise is None:
         normalise = (data.min(), data.max())
     elif data.min() < normalise[0] or data.max() > normalise[1]:
-        raise ValueError("Please make sure `data` %s is within `normalise` %s" % ((data.min(), data.max()), normalise))
+        raise ValueError("Please make sure `data` (%s,%s) is within `normalise` %s" % ((data.min(), data.max()), normalise))
 
     data = (data-normalise[0])/(normalise[1]-normalise[0])
 
@@ -136,7 +136,6 @@ def density_variance(data, normalise=(0,1), bounded=True, k=DEFAULT_K,
     try:
         v0, v1 = vs[tuple([k, var_range, steps, dims])]
     except KeyError:
-        print('KEYERROR', [k, var_range, steps, dims])
         v0, v1 = minmax_variance(k, var_range, steps, dims)
 
     dv = 1-(v-v0)/(v1-v0)
