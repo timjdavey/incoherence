@@ -64,7 +64,7 @@ class Correlation:
         
         # create a blended set of ensembles
         if blend_maximum is None:
-            blend_maximum = int(2*np.log(len(self.x))) 
+            blend_maximum = int(1.5*np.log(len(self.x))) 
     
         # needs to be odd, otherwise symmetrical distributions always come out lowest
         minimum = 3
@@ -105,8 +105,8 @@ class Correlation:
             corrs['%s_p' % name] = p
         
         if self.discrete is not None and self.continuous is not None:
-            corrs['incoherence_discrete'] = self.discrete.incoherence
-            corrs['incoherence_continuous'] = self.continuous.incoherence
+            corrs['incoherence discrete'] = self.discrete.incoherence
+            corrs['incoherence continuous'] = self.continuous.incoherence
         elif self.discrete is not None:
             corrs['incoherence'] = self.discrete.incoherence
         elif self.continuous is not None:

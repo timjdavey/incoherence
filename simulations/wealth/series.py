@@ -11,8 +11,8 @@ def generate(agents=100, level=5, ensembles=20, percent=None, threshold=None, in
     return [MoneyModel(initial[i], level, percent, threshold) for i in range(ensembles)]
 
 
-def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
-        percent=None, threshold=None, initial=None, cp=None, plot=True, log=None, step_plots=False):
+def series(agents=100, level=5, ensembles=20, steps=200, ratio=5, metrics=('incoherence', 'pooled', 'entropies'),
+        percent=None, threshold=None, initial=None, cp=None, log=None, discrete=True, plot=True, plot_params=None):
     """
     Simple function to generate results for boltzmann wealth abm
 
@@ -40,16 +40,18 @@ def series(agents=100, level=5, ensembles=20, steps=200, ratio=5,
         if cp is not None: cp(steps-i)
         x.append(i)
         y.append([m.step() for m in models])
-        
-    if cp is not None: cp("")
+    
+    x, y = np.array(x), np.array(y)
+    if cp is not None: cp("calculate metrics")
+    
+    if discrete:
+        # use log bins when using percent mode, as distribution becomes powerlaw
+        if log is None: log = percent is not None
+        bins = ep.binspace(y.min(), y.max(), agents/ratio, log)
+        eps = [ep.Discrete(obs, bins=bins, metrics=metrics) for obs in y]
+    else:
+        eps = [ep.Continuous(obs, normalise=(y.min(), y.max()), metrics=metrics) for obs in y]
 
-    # use log bins when using percent mode, as distribution becomes powerlaw
-    if log is None:
-        log = percent is not None
-    
-    ees = ep.Series(x=x, observations=y, x_label='timesteps', log=log)
-    
-    # only plot results if you need them
-    if plot:
-        ees.plot()
-    return ees
+    if plot_params is None: plot_params = {}
+    p = ep.plot_series(x, eps, **plot_params) if plot else None
+    return x, eps, p

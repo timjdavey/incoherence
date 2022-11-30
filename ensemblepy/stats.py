@@ -17,8 +17,10 @@ def _incoherence(p_entropy, entropies, weights=None):
     if p_entropy == 0:
         return 0.0
     else:
-        divs = js_divergence(p_entropy, entropies, weights, power=2)
-        return np.sqrt(divs / p_entropy)
+        #divs = js_divergence(p_entropy, entropies, weights, power=2)
+        #return np.sqrt(divs / p_entropy)
+        divs = js_divergence(1, entropies / p_entropy, weights, power=2)
+        return np.sqrt(divs)
 
 def _cohesion(data, discrete=True):
     """
@@ -30,18 +32,16 @@ def _cohesion(data, discrete=True):
     :discrete: True, if data in histograms or False if continuous observations
     """
     divergences = radial_divergences(data, discrete, normalise=True)
-    return 1-density_variance(divergences)
+    return 1-density_variance(divergences, power=0.5)
 
 
 
 
 LEGEND = {
-    'ensemble': ('Mean entropy of individuals','orange'),
     'pooled': ('Entropy of pooled','firebrick'),
-    'divergence': ('Divergence','forestgreen'),
     'incoherence': ('Incoherence','blueviolet'),
     'cohesion': ('Cohesion', 'teal'),
-    'entropies': ('Entropies of individual ensembles','crest'),
+    'entropies': ('Entropies of individual ensembles','skyblue'),
     'weights': ('Weights of each ensemble', 'red'),
 }
 
@@ -64,14 +64,9 @@ def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
 
     # is cumbersome, but allows for specific metrics to be called
     outs = {}
-    if metrics is None or 'ensemble' in metrics:
-        outs['ensemble'] = np.average(ents, weights=weights)
     
     if metrics is None or 'pooled' in metrics:
         outs['pooled'] = pooled
-    
-    if metrics is None or 'divergence' in metrics:
-        outs['divergence'] =  js_divergence(pooled, ents, weights)
     
     if metrics is None or 'incoherence' in metrics:
         outs['incoherence'] = _incoherence(pooled, ents, weights)

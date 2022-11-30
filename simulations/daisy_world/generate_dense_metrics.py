@@ -19,7 +19,7 @@ def partial(lum):
 
 if __name__ == '__main__':
 
-    filename = 'datasets/daisy_scan200.pickle'
+    filename = 'datasets/daisy_dense_metrics.pickle'
     luminosities = np.linspace(0.48, 1.35, 201)
 
     with Pool() as pool:

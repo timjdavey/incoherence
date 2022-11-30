@@ -55,7 +55,7 @@ class DaisyWorld(Model):
             # varies max_age so doesn't boom / bust
             vary_age=False,
             # store data in datacollector or not
-            store=True): 
+            store=True):
 
         # setup grid world
         self.size = int(size)
@@ -78,7 +78,8 @@ class DaisyWorld(Model):
         self.schedule = RandomActivation(self)
         
         # you'd want to turn off storing
-        # for minor performance gains        
+        # for minor performance gains  
+        self.history = []      
         if store:
             self.datacollector = DataCollector(
                 model_reporters = {
@@ -320,6 +321,9 @@ class DaisyWorld(Model):
     def _collect(self):
         """ Collect the data at the current step """
         
+        # always store the average temperature
+        self.history.append(self.temperature)
+
         # only store if collecting
         if self.datacollector is not None:
             # clear the cached variables

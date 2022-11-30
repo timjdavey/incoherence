@@ -6,7 +6,6 @@ from .densityvar import dimspace, density_variance, minmax_variance, densities
 from .discrete import Discrete
 from .divergences import js_divergence, kl_divergences, radial_divergences
 from .entropy import ensemble_entropies, point_pmf, pooled_entropy
-from .scan import Scan
-from .series import Series
+from .plots import plot_series
 from .stats import LEGEND, measures
 from .wrapper import incoherence, cohesion

@@ -3,6 +3,54 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+
+from .stats import LEGEND
+
+
+def plot_series(x, y,
+        left_label='Entropy', right_label='Incoherence',
+        xlabel='Model timesteps', title=None, ylim=(-0.05, 0.8),
+        figsize=(6, 5), legend_loc=7, ax=None):
+    
+    """
+    Plots the main metrics for a given series of Discrete or Continuous objects
+
+    :x: list of x axis labels
+    :y: list of Discrete or Continuous objects
+    """
+
+    if ax is not None:
+        fig, g = ax.get_figure(), ax
+    else:
+        fig, g = plt.subplots(1,1, figsize=figsize)
+    
+    # individuals
+    ncolors = len(y[0].entropies)
+    palette = sns.light_palette(LEGEND['entropies'][1], ncolors, reverse=True)
+    for i in range(ncolors):
+        ents = [e.entropies[i] for e in y]
+        sns.lineplot(x=x, y=ents, ax=g, color=palette[i])
+    
+    # pooled
+    sns.lineplot(x=x, y=[e.pooled for e in y], ax=g,
+        label=LEGEND['pooled'][0]+" (left)", color=LEGEND['pooled'][1])
+    g.set(ylabel=left_label, xlabel=xlabel, title=title)
+    
+    # incoherence
+    twin = g.twinx()
+    sns.lineplot(x=x, y=[e.incoherence for e in y],
+        label=LEGEND['incoherence'][0]+" (right)", color=LEGEND['incoherence'][1], ax=twin)
+    twin.set(ylabel=right_label, ylim=ylim)
+    
+    if legend_loc is None:
+        g.get_legend().remove()
+        twin.get_legend().remove()
+    else:
+        combine_legends(g, twin, legend_loc,
+            (Line2D([0],[0], color=LEGEND['entropies'][1]), LEGEND['entropies'][0]+' (left)'))
+
+    return fig
 
 
 def dual(tidy_ensembles, tidy_ergo, bins, labels=None,
@@ -90,11 +138,15 @@ def scatter(tidy_ensembles, bins, tidy_variable='ensemble', tidy_value='value',
 
 
 
-def combine_legends(ax1, ax2):
+def combine_legends(ax1, ax2, loc=0, extend=None):
     """ When you twin axis, this helpfully combines the legends into a single legend """
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
-    ax1.legend(h1+h2, l1+l2, loc=0)
+    if extend is not None:
+        h1.extend([extend[0], ])
+        ax1.legend(h1+h2, l1+[extend[1],]+l2, loc=loc)
+    else:
+        ax1.legend(h1+h2, l1+l2, loc=loc)
     ax2.get_legend().remove()
 
 
