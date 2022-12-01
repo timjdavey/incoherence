@@ -50,13 +50,8 @@ def binspace(minimum, maximum, count, log=False):
     count = int(count)+1
 
     if log:
-        # doesn't accept 0 as an input, so fudge first bin
-        if minimum == 0:
-            arr = np.geomspace(0.1, maximum, count)
-            arr[0] -= 0.1
-            return arr
-        else:
-            return np.geomspace(minimum, maximum, count)
+        points =((np.logspace(0,1,count)-1)/9) 
+        return points*(maximum-minimum)+minimum
     else:
         return np.linspace(minimum, maximum, count)
 

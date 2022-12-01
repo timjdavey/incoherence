@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 import ensemblepy as ep
+from ensemblepy.stats import _incoherence
 
 from cellpylib.entropy import shannon_entropy
 
@@ -248,7 +249,7 @@ class CA1DEnsemble:
         ergodic_data = self.get_analysis("ergodic")
 
         for key in ensemble_data:
-            data[key] = ep.complexity(list(ergodic_data[key])[0], list(ensemble_data[key]))
+            data[key] = _incoherence(list(ergodic_data[key])[0], list(ensemble_data[key]))
         
         self._raw_analysis.append(data)
 

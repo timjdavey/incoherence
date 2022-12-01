@@ -33,7 +33,7 @@ class Discrete(Continuous):
         self.histograms = None
         self.observations = observations
         self.bins = bins
-        self.weights = None
+        self.weights = weights
         self.base = base
         self.labels = labels
         self.ensemble_name = ensemble_name

@@ -8,6 +8,26 @@ from matplotlib.lines import Line2D
 from .stats import LEGEND
 
 
+def plot_discrete(discrete, xlabel='', ylim=(None, None), ax=None):
+    """
+    Plots the distributions for a Discrete
+    """
+    data = []
+    for e, h in enumerate(discrete.histograms):
+        hs = np.sum(h)
+        for i, v in enumerate(h):
+            data.append({'x': i,'y': v/hs, 'ensemble': e})
+    df = pd.DataFrame(data)
+
+    sns.lineplot(data=df, x='x', y='y', hue='ensemble',
+        legend=False, linestyle='dotted', palette='Blues_r', ax=ax)
+    
+    pmf = discrete.ergodic_pmf()
+    g = sns.lineplot(x=range(len(pmf)), y=pmf, color=LEGEND['pooled'][1], ax=ax)
+    g.set(xlabel=xlabel, ylabel='', xticks=[], ylim=ylim)
+    
+    return g
+
 def plot_series(x, y,
         left_label='Entropy', right_label='Incoherence',
         xlabel='Model timesteps', title=None, ylim=(-0.05, 0.8),

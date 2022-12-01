@@ -17,10 +17,8 @@ def _incoherence(p_entropy, entropies, weights=None):
     if p_entropy == 0:
         return 0.0
     else:
-        #divs = js_divergence(p_entropy, entropies, weights, power=2)
-        #return np.sqrt(divs / p_entropy)
-        divs = js_divergence(1, entropies / p_entropy, weights, power=2)
-        return np.sqrt(divs)
+        divs = js_divergence(p_entropy, np.array(entropies), weights, power=2)
+        return np.sqrt(divs/p_entropy)
 
 def _cohesion(data, discrete=True):
     """
@@ -38,7 +36,7 @@ def _cohesion(data, discrete=True):
 
 
 LEGEND = {
-    'pooled': ('Entropy of pooled','firebrick'),
+    'pooled': ('Entropy of pooled','coral'),
     'incoherence': ('Incoherence','blueviolet'),
     'cohesion': ('Cohesion', 'teal'),
     'entropies': ('Entropies of individual ensembles','skyblue'),

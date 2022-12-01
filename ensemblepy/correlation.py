@@ -39,35 +39,24 @@ def digitize(X, Y, count):
     return list(obs.values()), list(obs.keys())
 
 
-class Correlation:
+class Correlation(Continuous):
     """
-    Is a wrapper function around Continuous or Discrete.
+    Is a wrapper function around Continuous.
     Where instead of passing observations, you pass the 
     x, y numeric values and it will automatically create ensembles for your.
     So that you can easily use it as a correlation metric.
     
     :x: list of x data points
     :y: list of y data points
-    :use_discrete: True, creates a Discrete object to develop incoherence metric
-        where the object is stored as property `discrete`
-    :use_continuous: False, creates a Continuous object, can have both for comparison
-        where the object is stored as property `continuous`
     :ensemble_count: None, how many ensembles to use instead of a blend
-    :blend_maximum: None, how many to blend up to from 3
     """   
-    def __init__(self, x, y,
-        use_disrete=True, use_continuous=False,
-        ensemble_count=None, blend_maximum=None,
-        *args, **kwargs):
+    def __init__(self, x, y, ensemble_count=None, *args, **kwargs):
         self.x = np.array(x) # ensembles
         self.y = np.array(y) # to be binned or continuous
         
-        # create a blended set of ensembles
-        if blend_maximum is None:
-            blend_maximum = int(1.5*np.log(len(self.x))) 
-    
         # needs to be odd, otherwise symmetrical distributions always come out lowest
         minimum = 3
+        blend_maximum = int(np.log(len(self.x)))
         obs = []
         labels = []
     
@@ -88,10 +77,9 @@ class Correlation:
         else:
             obs, labels = digitize(self.x, self.y, ensemble_count)
         
-        self.discrete = Discrete(obs, bins=None, labels=labels,\
-            metrics=('incoherence', ), *args, **kwargs) if use_disrete else None
-        self.continuous = Continuous(obs, labels=labels,\
-            metrics=('incoherence', ), *args, **kwargs) if use_continuous else None
+        super().__init__(obs, labels=labels,\
+                metrics=('incoherence', ), *args, **kwargs)
+            
 
     def correlations(self):
         """ Returns the standard correlation metrics for reference """
@@ -104,13 +92,7 @@ class Correlation:
             corrs[name] = val
             corrs['%s_p' % name] = p
         
-        if self.discrete is not None and self.continuous is not None:
-            corrs['incoherence discrete'] = self.discrete.incoherence
-            corrs['incoherence continuous'] = self.continuous.incoherence
-        elif self.discrete is not None:
-            corrs['incoherence'] = self.discrete.incoherence
-        elif self.continuous is not None:
-            corrs['incoherence'] = self.continuous.incoherence
+        corrs['incoherence'] = self.incoherence
         return corrs
 
 
