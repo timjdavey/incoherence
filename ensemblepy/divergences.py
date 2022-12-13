@@ -10,35 +10,43 @@ def js_divergence(p_entropy, entropies, weights, power=1):
     return np.average(divs, weights=weights)
 
 
-def radial_divergences(data, discrete=True, normalise=False):
+def radial_divergences(data, discrete=True, normalise=False, entropies=None):
     """
     Returns the JS divergences for each pair of data
 
     :data: if discrete is True, in the form of histograms,
         if continuous just all the observations normalised between (0,1)
     :discrete: True, is the data histograms or continuous observations
+    :normalise: False, will automatically normalise the output
+    :entropies: list, saves calculating the individual entropies for data if already done
     """
     divergences = []
-    for a,b in combinations(data, 2):
+    if entropies is None:
+        if discrete: entropies = ensemble_entropies(data)
+        else: entropies = [density_variance(a) for a in data]
+
+    indices = list(range(len(data)))
+    for a,b in combinations(indices, 2):
         if discrete:
-            p_entropy = pooled_entropy([a,b])
-            entropies = ensemble_entropies([a,b])
+            p_entropy = pooled_entropy([data[a],data[b]])
         else:
-            p_entropy = density_variance(np.concatenate([a,b]))
-            entropies = [
-                density_variance(a),
-                density_variance(b)
-            ]
-        div = js_divergence(p_entropy, entropies, None)
+            p_entropy = density_variance(np.concatenate([data[a],data[b]]))
+
+        div = js_divergence(p_entropy, (entropies[a], entropies[b]), None)
         divergences.append(div)
 
-    if normalise and discrete:
+    divergences = np.array(divergences)
+
+    if normalise:
         # if continuous will already be normalised to (0,1)
-        divergences /= np.log(len(data[0])-1)
+        if discrete:
+            divergences /= np.log(len(data[0])-1)
+    
         # deal with float errors
         divergences[divergences<0] = 0
         divergences[divergences>1] = 1
-    return np.array(divergences)
+
+    return divergences
 
 
 def kl_divergences(data, compare=None):

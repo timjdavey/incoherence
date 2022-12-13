@@ -20,7 +20,7 @@ def _incoherence(p_entropy, entropies, weights=None):
         divs = js_divergence(p_entropy, np.array(entropies), weights, power=2)
         return np.sqrt(divs/p_entropy)
 
-def _cohesion(data, discrete=True):
+def _cohesion(data, discrete=True, entropies=None):
     """
     Cohesion calculation from pmfs or observations,
     that is how `clumped` or `grouped` the ensembles are.
@@ -28,9 +28,10 @@ def _cohesion(data, discrete=True):
     :data: if discrete is True, in the form of histograms,
         if continuous just all the observations normalised between (0,1)
     :discrete: True, if data in histograms or False if continuous observations
+    :entropies: None, list of entropies saves recalculating here
     """
-    divergences = radial_divergences(data, discrete, normalise=True)
-    return 1-density_variance(divergences, power=0.5)
+    divergences = radial_divergences(data, discrete, True, entropies)
+    return 1-density_variance(divergences, power=0.5, k=100), divergences
 
 
 
@@ -39,6 +40,7 @@ LEGEND = {
     'pooled': ('Entropy of pooled','coral'),
     'incoherence': ('Incoherence','blueviolet'),
     'cohesion': ('Cohesion', 'teal'),
+    'divergences': ('Radial divergences between each pair', 'seagreen'),
     'entropies': ('Entropies of individual ensembles','skyblue'),
     'weights': ('Weights of each ensemble', 'red'),
 }
@@ -46,7 +48,8 @@ LEGEND = {
 def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
     """
     Returns all metrics
-
+    
+    :data: the histograms by ensemble if discrete, otherwise the normalised observations if continuous
     :weights: _None_ calculates them automatically, _False_ ignores then, _list_ uses supplied
     :metrics: _None_, can specify which metrics you'd like returned in a list, otherwise will return all available
     :discrete: _True_ if the data is discrete, _False_ if continuous
@@ -70,7 +73,7 @@ def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
         outs['incoherence'] = _incoherence(pooled, ents, weights)
     
     if metrics is None or 'cohesion' in metrics:
-        outs['cohesion'] = _cohesion(data, discrete=discrete)
+        outs['cohesion'], outs['divergences'] = _cohesion(data, discrete, ents)
     
     if metrics is None or 'entropies' in metrics:
         outs['entropies'] = ents

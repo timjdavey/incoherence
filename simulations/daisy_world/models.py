@@ -57,6 +57,7 @@ class DaisyWorld(Model):
             # store data in datacollector or not
             store=True):
 
+        self.time = 0
         # setup grid world
         self.size = int(size)
         self.grid = SingleGrid(size, size, True)
@@ -209,6 +210,8 @@ class DaisyWorld(Model):
         # optionally return obs on each step
         if observations:
             return self.observations()
+
+        self.time = self.time+1
         
         
     def simulate(self, ticks):
