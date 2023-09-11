@@ -27,16 +27,15 @@ def get_weights(data, weights=None, discrete=True):
         else:
             # continuous
             ws = np.array([len(h) for h in data])
-        return ws/ws.sum()
+        return ws / ws.sum()
     elif weights is False:
         # actively set it to turn off
         # then have them equal weight
         N = len(data)
-        return np.ones(N)/N
+        return np.ones(N) / N
     else:
         # no need to normalize as np does that
         return weights
-
 
 
 def point_pmf(pmfs, weights=None):
@@ -45,7 +44,7 @@ def point_pmf(pmfs, weights=None):
     Returns the weighted pointwise pooled pmf
     """
     default_weights = get_weights(pmfs, weights)
-    normed = np.array([row/row.sum() for row in np.array(pmfs)])
+    normed = np.array([row / row.sum() for row in np.array(pmfs)])
     return np.average(normed, weights=default_weights, axis=0)
 
 
@@ -54,4 +53,3 @@ def pooled_entropy(pmfs, weights=None, **kwargs):
     Returns the entropy of the pooled ensemble
     """
     return shannon_entropy(point_pmf(pmfs, weights), **kwargs)
-

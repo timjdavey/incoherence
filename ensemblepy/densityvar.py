@@ -16,6 +16,15 @@ CACHED_VS = {
 
     # for cohesion: power = 0.5, but need higher drop-off so k=100
     (100, (-0.5, 1.5), 500, 0.5, 1): (0.0047683913076489465, 0.009711690148675985),
+    (100, (-0.5, 1.5), 500, 0.5, 2): (0.00010905408911155288, 0.0001358670123656454),
+
+    # for cellular automata more details
+    (100, (-0.5, 1.5), 500, 1, 1): (9.696359378670741e-05, 0.005151090381558178),
+    (100, (-0.5, 1.5), 500, 1, 2): (6.867003767957743e-08, 2.127189703421981e-05),
+    (10, (-0.5, 1.5), 500, 0.5, 1): (0.02730861775895304, 0.06283397725602342),
+    (10, (-0.5, 1.5), 500, 0.5, 2): (0.0064278794927177816, 0.012033246222506901),
+    (1000, (-0.5, 1.5), 500, 0.5, 1): (0.0004985965422482039, 0.002063619720333923),
+    (1000, (-0.5, 1.5), 500, 0.5, 2): (1.1802103705815318e-06, 7.079451229210704e-11),
 
     # for development: high resolution with steps=2000
     (10, (-0.5, 1.5), 2000, 1, 1): (0.007058290954639278, 0.040052248668986046),
@@ -35,9 +44,10 @@ def generate_vs_cache(k=DEFAULT_K, var_range=DEFAULT_RANGE,
 
     from ensemblepy.densityvar import generate_vs_cache
     vs = {}
-    for d in range(1,3+1):
-        for p in (0.5, 1, 2):
-            vs = generate_vs_cache(dimension=d, vs=vs, timings=True)
+    for d in [1,2]:
+        for p in [0.5, 1]:
+            for k in [10, 100]:
+                vs = generate_vs_cache(k=k, dimension=d, power=p, vs=vs, timings=True)
     print(vs)
     """
     import time
@@ -146,6 +156,8 @@ def density_variance(data, normalise=(0,1), bounded=True,
     limit_steps=True, auto_calculate=False):
     """
     Returns the density variance for a give set of `data` for a given `k` and or `var_range`
+
+    This value is a continuous entropy estimator.
 
     :data: n-dimensional list of numbers.
     :bounded: True, ensures results are bounded within [0,1] handling any rounding errors within reason, erroring otherwise.

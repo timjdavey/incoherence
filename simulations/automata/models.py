@@ -86,7 +86,9 @@ class CA1DEnsemble:
     cb.analyse()
 
     """
-    def __init__(self, rule=30, cells=200, count=1, init='random', folder='results/', p=0.9):
+    def __init__(self, rule=30, cells=200, count=1,
+            init='random', folder='results/', p=0.9,
+            power=0.5, k=None):
         # specify major rules
         self.rule = rule
         self.cells = cells
@@ -97,6 +99,8 @@ class CA1DEnsemble:
         self._raw_analysis = None
         self.analysis = None
         self.raw = []
+        self.power = power
+        self.k = k
         
         # even if loading them from a file a single creation won't hurt
         self.create(count)
@@ -191,36 +195,66 @@ class CA1DEnsemble:
         self._analyse_complexity()
         self.analysis = pd.DataFrame(self._raw_analysis)
 
-    def _analyse_ca(self, e):
-        timesteps = len(e)
-        stable = e[int(timesteps/2):]
-        return {
+    def _dv(self, stable=None):
+        """Density variance entropy estimator
+        Turns array into a list of positions for density variance"""
+
+        if self.k is None: return 0
+
+        stable_steps = len(self.raw[0])//2
+
+        if stable is None:
+            # then doing it for ergodic
+            positions = []
+            for e in self.raw:
+                # identifier is the more common
+                iden = 1 if np.sum(e) < e.size/2 else 0
+                positions += list(zip(*np.where(e[stable_steps:]==iden)))
+        else:
+            iden = 1 if np.sum(stable) < stable.size/2 else 0
+            positions = list(zip(*np.where(stable==iden)))
+
+        if len(positions) > 1:
+            # normalise the positions
+            positions = np.array(positions, 'float64')
+            positions[:, 1] /= float(self.cells)
+            positions[:, 0] /= float(stable_steps)
+            return ep.density_variance(positions, power=self.power, k=self.k)
+        else:
+            # if no positions, then high entropy
+            return 1
+
+    def _stable(self):
+        return [e[len(e)//2:] for e in self.raw]
+
+
+    def _analyse_ensembles(self):        
+        rows = []
+        for stable in self._stable():
+            rows.append({
              #'Avg Cell Entropy' : cpl.average_cell_entropy(e),
              'Avg Stable Cell Entropy' : cpl.average_cell_entropy(stable),
              #'Last Cell Entropy' : r2e(e[-1]),
              'Stable diag LR': diagnol_entropies(stable).mean(),
              'Stable diag RL': diagnol_entropies(stable, True).mean(),
-             'Initial' : "".join([str(x) for x in e[0]]),
+             'Stable density variance': self._dv(stable),
+             #'Initial' : "".join([str(x) for x in stable[0]]),
              'Kind': 'ensemble',
-            }
-
-    def _analyse_ensembles(self):        
-        rows = []
-        for e in self.raw:
-            rows.append(self._analyse_ca(e))
+            })
         self._raw_analysis = rows
         return self._raw_analysis
     
     def _analyse_ergodic(self):
         # for avg cell entropy
-        whole = np.concatenate(self.raw)
+        #whole = np.concatenate(self.raw)
+
+        # last row
+        #last = np.concatenate([r[-1] for r in self.raw])
         
         # for stable cell entropy
-        timesteps = len(self.raw[0])
-        half = np.concatenate([r[int(timesteps/2):] for r in self.raw])
-        
-        # last row
-        last = np.concatenate([r[-1] for r in self.raw])
+        stable = self._stable()
+        half = np.concatenate(stable)
+
         
         # run analysis
         ergodic_analysis = {
@@ -230,13 +264,14 @@ class CA1DEnsemble:
             #'Last Cell Entropy': r2e(last),
             'Stable diag LR': diagnol_entropies(half).mean(),
             'Stable diag RL': diagnol_entropies(half, True).mean(),
+            'Stable density variance': self._dv(),
             'Initial' : "",
             'Kind': 'ergodic',
         }
         self._raw_analysis.append(ergodic_analysis)
     
     def get_analysis(self, kind='ensemble'):
-        return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:3]]
+        return self.analysis.loc[self.analysis['Kind']==kind].loc[:,self.analysis.columns[0:-2]]
 
     def _analyse_complexity(self):
 
@@ -253,43 +288,42 @@ class CA1DEnsemble:
         
         self._raw_analysis.append(data)
 
+    @property
+    def incoherence(self):
+        return self.get_analysis('complexity')['Avg Stable Cell Entropy'].to_list()[0]
+
 
     """
     Plotting
 
     """
 
-    def plot(self, i=None, data=False):
-        fig, axes = plt.subplots(1, 3 if data else 2,
-            sharex=False, sharey=False, figsize=(10,5))
-        self.plot_heatmap(axes[0])
-        self.plot_single(ax=axes[1])
-        if data:
-            try:
-                self.plot_data(axes[2])
-            except AttributeError:
-                # if not have done analysis
-                pass
+    def plot(self, i=0, j=None, inc=None):
+        col = 2 if j is None else 3
+        fig, axes = plt.subplots(1, col,
+            sharex=False, sharey=False, figsize=(4*col,4))
+        plt.tight_layout()
+        self.plot_heatmap(axes[0], inc=inc)
+        self.plot_single(i, ax=axes[1])
+        if j is not None:
+            self.plot_single(j, ax=axes[2])
         return fig
 
     def plot_cpl(self, i=0):
         """ Plot using cpl """
         cpl.plot(self.raw[i])
 
-    def plot_heatmap(self, ax=None):
+    def plot_heatmap(self, ax=None, inc=None):
         f = sns.heatmap(sum(self.raw), ax=ax, cbar=False,
             xticklabels=False, yticklabels=False, square=True)
-        f.set_title("%s ensembles with rule %s" %
-            (self.count, self.rule))
+        f.set_title("Rule %s with incoherence of %.2f" %
+            (self.rule, self.incoherence if inc is None else inc))
         return f
 
-    def plot_single(self, i=None, ax=None):
-        if i is None:
-            i = np.random.randint(0, self.count)
-        
+    def plot_single(self, i=0, ax=None):
         s = sns.heatmap(self.raw[i], ax=ax, cbar=False,
                 xticklabels=False, yticklabels=False, square=True)
-        s.set_title("Single plot of ensemble %s with rule %s" % (i, self.rule))
+        s.set_title("Single sample out of %s" % self.count)
         s.set_xlabel("%s Cells" % self.cells)
         s.set_ylabel("%s Timesteps" % len(self.raw[i]))
         return s

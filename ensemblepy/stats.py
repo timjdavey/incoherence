@@ -30,8 +30,8 @@ def _cohesion(data, discrete=True, entropies=None):
     :discrete: True, if data in histograms or False if continuous observations
     :entropies: None, list of entropies saves recalculating here
     """
-    divergences = radial_divergences(data, discrete, True, entropies)
-    return 1-density_variance(divergences, power=0.5, k=100), divergences
+    divergences = radial_divergences(data, discrete, entropies)
+    return (1-density_variance(divergences, power=0.5, k=100))**2, divergences
 
 
 
@@ -41,8 +41,8 @@ LEGEND = {
     'incoherence': ('Incoherence','blueviolet'),
     'cohesion': ('Cohesion', 'teal'),
     'divergences': ('Radial divergences between each pair', 'seagreen'),
-    'entropies': ('Entropies of individual ensembles','skyblue'),
-    'weights': ('Weights of each ensemble', 'red'),
+    'entropies': ('Entropies of individual samples','skyblue'),
+    'weights': ('Weights of each sample', 'red'),
 }
 
 def measures(data, weights=None, metrics=None, discrete=True, **kwargs):
