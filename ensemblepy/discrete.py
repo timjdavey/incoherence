@@ -3,9 +3,8 @@ from functools import cached_property
 
 from .continuous import Continuous
 from .entropy import point_pmf
-from .divergences import kl_divergences
+from .divergences import kl_divergences, radial_divergences
 from .stats import measures, LEGEND
-from .bins import binint, binspace, binobs, pooled_obs
 
 
 class Discrete(Continuous):
@@ -30,10 +29,10 @@ class Discrete(Continuous):
         self,
         observations,
         bins,
-        weights=None,
+        weights=False,
         metrics=None,
         labels=None,
-        base=None,
+        base=2,
         lazy=False,
         histograms=False,
     ):
@@ -84,11 +83,25 @@ class Discrete(Continuous):
 
     def comparison(self):
         c, p, _, _ = self.chi2()
+        jsd = self.js_divergence()
         return {
             "incoherence": self.incoherence,
             "chi2": c,
             "chi2 p": p,
+            "jsd": jsd,
+            "njsd": jsd / np.log2(len(self.histograms[0])),
+            "pooled": self.measures["pooled"],
+            "kl": np.mean(kl_divergences(self.histograms)),
+            "radial": np.mean(
+                radial_divergences(self.histograms, True, self.measures["entropies"])
+            ),
         }
+
+    def pooled_histogram(self):
+        """
+        The pooled histogram.
+        """
+        return self.histograms.sum(axis=0)
 
     def ergodic_pmf(self):
         """

@@ -1,5 +1,6 @@
 import numpy as np
 from .stats import measures
+from .divergences import js_divergence
 
 
 class Continuous:
@@ -23,11 +24,12 @@ class Continuous:
         self,
         observations,
         normalise=None,
-        weights=None,
+        weights=False,
         labels=None,
         metrics=None,
         ensemble_name="ensemble",
         dist_name="value",
+        base=2,
         lazy=False,
     ):
         self.discrete = False
@@ -35,6 +37,7 @@ class Continuous:
         self.weights = weights
         self.labels = labels
         self.metrics = metrics
+        self.base = base
 
         pooled = np.concatenate(self.observations)
         if normalise is None:
@@ -57,7 +60,11 @@ class Continuous:
 
     def _get_measures(self):
         return measures(
-            self.normalised, discrete=False, weights=self.weights, metrics=self.metrics
+            self.normalised,
+            discrete=False,
+            weights=self.weights,
+            metrics=self.metrics,
+            base=self.base,
         )
 
     def analyse(self):
@@ -74,15 +81,18 @@ class Continuous:
         self.measures = ms
         return ms
 
+    def js_divergence(self):
+        pooled = self.measures["pooled"]
+        return js_divergence(pooled, self.measures["entropies"], self.weights, power=1)
+
     def comparison(self):
         from scipy.stats import kruskal, f_oneway
 
         results = {"incoherence": self.incoherence}
         for name, func in (("Kruskal", kruskal), ("ANOVA", f_oneway)):
-            v, p = func(*self.normalised)
-            results[name] = v
-            results["%s p" % name] = p
+            results[name], results["%s p" % name] = func(*self.normalised)
 
         results["std(means)"] = np.std(np.mean(self.observations, axis=1))
-        results["std(stds)"] = np.mean(np.std(self.observations, axis=1))
+        results["std(stds)"] = np.std(np.std(self.observations, axis=1))
+        results["jsd"] = self.js_divergence()
         return results

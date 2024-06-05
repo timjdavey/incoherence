@@ -4,9 +4,10 @@ from itertools import permutations, combinations
 from .entropy import ensemble_entropies, pooled_entropy
 from .densityvar import density_variance
 
+
 def js_divergence(p_entropy, entropies, weights, power=1):
-    """ Jenson Shannon Divergence """
-    divs = [(p_entropy - e)**power for e in entropies]
+    """Jenson Shannon Divergence"""
+    divs = (p_entropy - entropies) ** power
     return np.average(divs, weights=weights)
 
 
@@ -21,15 +22,17 @@ def radial_divergences(data, discrete=True, entropies=None):
     """
     divergences = []
     if entropies is None:
-        if discrete: entropies = ensemble_entropies(data)
-        else: entropies = [density_variance(a) for a in data]
+        if discrete:
+            entropies = ensemble_entropies(data)
+        else:
+            entropies = [density_variance(a) for a in data]
 
     indices = list(range(len(data)))
-    for a,b in combinations(indices, 2):
+    for a, b in combinations(indices, 2):
         if discrete:
-            p_entropy = pooled_entropy([data[a],data[b]])
+            p_entropy = pooled_entropy([data[a], data[b]])
         else:
-            p_entropy = density_variance(np.concatenate([data[a],data[b]]))
+            p_entropy = density_variance(np.concatenate([data[a], data[b]]))
 
         div = js_divergence(p_entropy, (entropies[a], entropies[b]), None)
         divergences.append(div)
@@ -39,10 +42,10 @@ def radial_divergences(data, discrete=True, entropies=None):
     # if continuous will already be normalised to (0,1)
     if discrete:
         divergences /= np.log(2)
-    
+
     # deal with float errors
-    divergences[divergences<0] = 0
-    divergences[divergences>1] = 1
+    # divergences[divergences < 0] = 0
+    # divergences[divergences > 1] = 1
 
     return divergences
 

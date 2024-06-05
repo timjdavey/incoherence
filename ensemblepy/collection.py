@@ -18,16 +18,11 @@ class Collection(Discrete):
         lengths = set([len(h) for h in histograms])
         if len(lengths) > 1:
             raise ValueError("histogram lengths not equal %s" % lengths)
-        self.histograms = histograms
 
         if bins is None:
             # default to incremental numbering
             bins = binint(0, len(histograms[0]))
-        observations = (
-            []
-        )  # [histogram_to_observations(h, bins[:-1]) for h in histograms]
-
-        super().__init__(observations, bins, **kwargs)
+        super().__init__(histograms, bins, histograms=True, **kwargs)
 
     def bayesian_observations(self, *args, **kwargs):
         raise NotImplementedError

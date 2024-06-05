@@ -5,45 +5,74 @@ import matplotlib.pyplot as plt
 from .models import ERGraph
 
 
+def percentage(graphs):
+    return np.sum([g.connected for g in graphs]) / len(graphs)
+
+
+def incoherence(graphs):
+    return ep.Collection([graph.connected_hist for graph in graphs]).incoherence
+
+
 def generate(nodes, ensembles, p_range, cp):
-    y = []
-    divs = []
+    percentages = []
+    incs = []
     for p in p_range:
-        if cp is not None: cp(p)
-        obs = np.array([[ERGraph(nodes, p).connected] for i in range(ensembles)], dtype='uint8')
-        y.append(obs)
-        divs.append(ep.EnsembleComplexity(obs, [0,1,2]).measures['divergence'])
-    return y, divs
+        if cp is not None:
+            cp(p)
+        graphs = [ERGraph(nodes, p) for i in range(ensembles)]
+        incs.append(incoherence(graphs))
+        percentages.append(percentage(graphs))
+    return percentages, incs
 
 
 def plot(nodes, ensembles, x, ax, cp, log):
-    y, divs = generate(nodes, ensembles, x, cp)
+    percentages, divs = generate(nodes, ensembles, x, cp)
 
     # divergence
-    h = sns.lineplot(x=x, y=divs, ax=ax, color='forestgreen', label='Divergence')
-    # ln(n)/n
-    ax.axvline(x=np.log(nodes)/nodes, color='r')
+    h = sns.lineplot(
+        x=x, y=divs, ax=ax, color="purple", label="Incoherence", legend=not log
+    )
     # percentage
-    sns.lineplot(x=x, y=np.hstack(np.sum(y, axis=1)/ensembles), ax=ax, label='Percentage', color='orange')
-    
-    h.set(ylim=(0,1))
-    h.set_xlabel("p")
+    sns.lineplot(
+        x=x,
+        y=percentages,
+        ax=ax,
+        color="orange",
+        label="Percentage connected",
+        legend=not log,
+    )
+    # ln(n)/n
+    ax.axvline(x=np.log(nodes) / nodes, color="r")
+    ax.axhline(y=0.5, color="r", linestyle="--")
+
+    h.set(ylim=(-0.1, 1.1))
+
     if log:
-        h.set_title("Log scale")
-        h.set(xscale='log')
+        h.set_xlabel("Probability of connection (log scale)")
+        h.set(xscale="log")
     else:
-        h.set_title("Ensemble Divergence of ER graphs  (%s nodes, %s ensembles)" % (nodes, ensembles))
+        h.set_title("Standard ERGraph %s nodes, %s trials" % (nodes, ensembles))
+        h.set_xlabel("Probability of connection")
+    return h
 
 
-def series(nodes, ensembles=200, steps=100, log=False, cp=None):
+def series(nodes, nodes2, ensembles=200, steps=100, log=False, cp=None):
     # two figs for log and not log
-    fig, axes = plt.subplots(1, 2, sharex=False, sharey=True, figsize=(15,5))
+    fig, axes = plt.subplots(2, 2, sharex=False, sharey=True, figsize=(11, 9))
 
-    # plot normal
-    plot(nodes, ensembles, ep.binspace(0.0, 1.0, steps), axes[0], cp, False)
+    for i, n in enumerate((nodes, nodes2)):
+        # plot normal
+        h = plot(n, ensembles, ep.binspace(0.0, 1.0, steps), axes[0][i], cp, False)
 
-    # plot log
-    plot(nodes, ensembles, ep.binspace(steps**-1, 1.0, steps, log=True), axes[1], cp, True)
+        # plot log
+        g = plot(
+            n,
+            ensembles,
+            ep.binspace(steps**-1, 1.0, steps, log=True),
+            axes[1][i],
+            cp,
+            True,
+        )
 
     cp("")
     return fig
