@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-from itertools import permutations, combinations
+from itertools import combinations
 from .entropy import ensemble_entropies, pooled_entropy
 from .densityvar import density_variance
 
@@ -50,15 +50,41 @@ def radial_divergences(data, discrete=True, entropies=None):
     return divergences
 
 
-def kl_divergences(data, compare=None):
+def mean_divergence(data, func):
     """
-    Returns the KL divergences for each pair of `data`.
-    Unless an `compare` set is provided, in which case combined against that.
+    For a given histogram (discrete) data
+    and a func, calculate the mean divergence
+    between the pooled and each distribution.
+    """
+    pooled = np.mean(data, axis=0)
+    return np.mean([func(h / np.sum(h), pooled / np.sum(pooled)) for h in data])
 
-    :data: core reference data
-    :compare: None, optional data to compare against
+
+def kl_divergence(data, compare=None):
+    return mean_divergence(data, sp.stats.entropy)
+
+
+def hellinger(p, q):
     """
-    if compare is None:
-        return np.array([sp.stats.entropy(a, b) for a, b in combinations(data, 2)])
+    https://en.wikipedia.org/wiki/Hellinger_distance
+    https://gist.github.com/larsmans/3116927
+    """
+    return np.linalg.norm(np.sqrt(p) - np.sqrt(q)) / 4
+    # np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2))
+
+
+def hellinger_distance(data):
+    return mean_divergence(data, hellinger)
+
+
+def wasserstein_distance(observations, discrete):
+    pooled = np.concatenate(observations)
+    if discrete:
+        func = sp.stats.wasserstein_distance_nd
     else:
-        return np.array([sp.stats.entropy(compare, h) for h in data])
+        func = sp.stats.wasserstein_distance
+    return np.mean([func(pooled, obs) for obs in observations])
+
+
+def total_variation(data):
+    return mean_divergence(data, lambda p, q: 0.5 * np.sum(np.abs(p - q)))

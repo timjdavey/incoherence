@@ -1,6 +1,6 @@
 import numpy as np
 from .stats import measures
-from .divergences import js_divergence
+from .divergences import js_divergence, wasserstein_distance
 
 
 class Continuous:
@@ -39,9 +39,9 @@ class Continuous:
         self.metrics = metrics
         self.base = base
 
-        pooled = np.concatenate(self.observations)
+        self.pooled = np.concatenate(self.observations)
         if normalise is None:
-            normalise = (pooled.min(), pooled.max())
+            normalise = (self.pooled.min(), self.pooled.max())
 
         self.normalise = normalise
 
@@ -85,6 +85,10 @@ class Continuous:
         pooled = self.measures["pooled"]
         return js_divergence(pooled, self.measures["entropies"], self.weights, power=1)
 
+    def max_gfc(self):
+        normed = self.measures["entropies"] / self.measures["maxent"]
+        return np.max(4 * normed * (1 - normed))
+
     def comparison(self):
         from scipy.stats import kruskal, f_oneway
 
@@ -95,4 +99,6 @@ class Continuous:
         results["std(means)"] = np.std(np.mean(self.observations, axis=1))
         results["std(stds)"] = np.std(np.std(self.observations, axis=1))
         results["jsd"] = self.js_divergence()
+        results["max(gfc)"] = self.max_gfc()
+        results["wasserstein"] = wasserstein_distance(self.observations, discrete=False)
         return results

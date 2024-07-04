@@ -3,7 +3,13 @@ from functools import cached_property
 
 from .continuous import Continuous
 from .entropy import point_pmf
-from .divergences import kl_divergences, radial_divergences
+from .divergences import (
+    kl_divergence,
+    radial_divergences,
+    hellinger_distance,
+    wasserstein_distance,
+    total_variation,
+)
 from .stats import measures, LEGEND
 
 
@@ -37,16 +43,13 @@ class Discrete(Continuous):
         histograms=False,
     ):
         self.discrete = True
-        self.observations = observations
+        self.observations = None if histograms else observations
+        self.histograms = observations if histograms else None
         self.bins = bins
         self.weights = weights
         self.base = base
         self.labels = labels
         self.metrics = None
-        if histograms:
-            self.histograms = observations
-        else:
-            self.histograms = None
 
         # do analysis
         if not lazy:
@@ -84,6 +87,17 @@ class Discrete(Continuous):
     def comparison(self):
         c, p, _, _ = self.chi2()
         jsd = self.js_divergence()
+
+        if self.observations:
+            wass_obs = self.observations
+        else:
+            wass_obs = []
+            # if no observations generate for wass distance
+            # by sampling from the histograms
+            for row in self.histograms:
+                wass_row = [i * np.ones(int(h * 100)) for i, h in enumerate(row)]
+                wass_obs.append(np.concatenate(wass_row))
+
         return {
             "incoherence": self.incoherence,
             "chi2": c,
@@ -91,10 +105,14 @@ class Discrete(Continuous):
             "jsd": jsd,
             "njsd": jsd / np.log2(len(self.histograms[0])),
             "pooled": self.measures["pooled"],
-            "kl": np.mean(kl_divergences(self.histograms)),
+            "kl": kl_divergence(self.histograms),
+            "max(gfc)": self.max_gfc(),
             "radial": np.mean(
                 radial_divergences(self.histograms, True, self.measures["entropies"])
             ),
+            "hellinger": hellinger_distance(self.histograms),
+            "total_var": total_variation(self.histograms),
+            "wasserstein": wasserstein_distance(wass_obs, discrete=False),
         }
 
     def pooled_histogram(self):
