@@ -28,38 +28,10 @@ does the average still describe what actually happens?**
   </tr>
 </table>
 
-## What is this?
-
-Some systems are easy to predict. Hit a snooker ball cleanly and Newtonian mechanics tells you
-exactly where it goes, and if you play the same shot again you get the same result. Many of the
-systems we care most about are not like that: economies, ecosystems, climates, organisations and
-supply chains can be run twice from what looks like the same starting point and end up somewhere
-completely different. In those systems the average outcome can be a dangerous thing to plan
-around, because it may describe no outcome that ever actually happens.
-
-**Incoherence** is a measure of complexity built on that observation. Rather than looking at one
-run of a system, it looks at an *ensemble* of runs (repeated trials, simulations, samples or
-instances) and uses information theory to quantify how much they disagree with each other. When
-incoherence is low the runs are interchangeable and the average is trustworthy, and when it is
-high the system is sensitive to things you can't see, so a single number hides most of what
-matters. It extends Carlos Gershenson's 2012 measure of complexity, and it connects naturally to
-frequentist statistics.
-
-**Cohesion** is its companion. Once you know the runs disagree, the next question is whether they
-disagree randomly or fall into a handful of recognisable patterns, which is what we mean by
-*self-organisation*. A forest that either recovers or collapses, or a market that settles into
-one of two regimes, has high cohesion, and knowing that changes how you should gather data and
-make decisions. Cohesion links to Bayesian statistics in the same way that Incoherence links to
-frequentist statistics.
-
-This repository is the code behind both papers. It contains `ensemblepy`, the small library that
-calculates the measures, the agent-based simulations used to stress-test them, and the notebooks
-that produced every figure in the papers.
-
 ## Start here
 
-If you're new to the ideas, the primers are the best way in. They explain the big picture with no
-equations or jargon, using interactive illustrations, and they're worth reading before the papers.
+The primers are the best way in. They explain the big picture with no equations or jargon, using
+interactive illustrations, and they're worth reading before the papers.
 
 <table>
   <tr>
@@ -77,6 +49,16 @@ equations or jargon, using interactive illustrations, and they're worth reading 
     </td>
   </tr>
 </table>
+
+## What is this?
+
+Run a complex system twice from the same starting point and it can end up somewhere completely
+different, so its average outcome may describe nothing that actually happens. **Incoherence**
+measures how much an ensemble of runs disagree with each other, and **Cohesion** measures whether
+that disagreement is random or organised into a few recognisable patterns.
+
+This repository is the code behind both papers: `ensemblepy`, the library that calculates the
+measures, the simulations used to test them, and the notebooks that produced every figure.
 
 > [!NOTE]
 > **Want to use `ensemblepy` for real? Get in touch.**
