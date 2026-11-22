@@ -7,6 +7,7 @@ from hypothesis import strategies as st
 from hypothesis.extra import numpy as hnp
 
 import incoherence as ic
+from incoherence._entropy import densities, density_entropy
 
 counts_tables = st.tuples(st.integers(2, 6), st.integers(2, 6)).flatmap(
     lambda shape: hnp.arrays(np.int64, shape, elements=st.integers(0, 50)).filter(
@@ -81,3 +82,23 @@ def test_identical_trials_are_coherent_and_cohesive(counts):
     result = ic.measure_counts(np.tile(counts[:1], (4, 1)))
     assert result.incoherence == pytest.approx(0.0, abs=1e-7)
     assert result.cohesion == pytest.approx(1.0, abs=1e-7)
+
+
+unit_trials = st.lists(
+    st.lists(st.floats(0, 1, width=32), min_size=1, max_size=30), min_size=2, max_size=6
+)
+
+
+@pytest.mark.parametrize(("k", "power"), [(10, 1.0), (10, 0.5), (100, 1.0), (100, 0.5)])
+@settings(deadline=None)
+@given(unit_trials, st.randoms(use_true_random=False))
+def test_pooling_never_lowers_continuous_entropy(k, power, trials, random):
+    """Incoherence needs the pooled entropy to be at least the average trial entropy.
+
+    It holds with and without the square root of the densities (``power=0.5``).
+    """
+    rows = np.array([densities(np.asarray(trial, dtype=np.float64), k) for trial in trials])
+    weights = np.array([random.uniform(0.01, 1) for _ in trials])
+    weights /= weights.sum()
+    pooled = density_entropy((weights[:, None] * rows).sum(axis=0)[None], k, power)[0]
+    assert pooled >= weights @ density_entropy(rows, k, power) - ABS

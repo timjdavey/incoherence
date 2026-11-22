@@ -140,6 +140,16 @@ def test_cohesion_on_the_finer_grid(index, cohesion):
     assert ic.cohesion(readme_trials()[index]) == pytest.approx(cohesion, abs=1e-3)
 
 
+@pytest.mark.parametrize(
+    ("value", "old_grid", "new_grid"),
+    [(0.004, 1.000, 1.000), (0.0025, 0.927, 0.995), (0.3333, 0.932, 0.996)],
+)
+def test_grid_table_in_the_improvements_page(value, old_grid, new_grid):
+    divergences = np.full(45, value)
+    assert _measures.cohesion(divergences, points=501) == pytest.approx(old_grid, abs=0.0005)
+    assert _measures.cohesion(divergences) == pytest.approx(new_grid, abs=0.0005)
+
+
 @pytest.mark.parametrize("value", np.linspace(0, 1, 41) + 0.0003)
 def test_equal_divergences_are_fully_cohesive_wherever_they_fall(value):
     """The 501-point grid gave as little as 0.92 here, depending on the value."""

@@ -23,6 +23,7 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/timjdavey/incoherence"
 Issues = "https://github.com/timjdavey/incoherence/issues"
+Changelog = "https://github.com/timjdavey/incoherence/blob/main/CHANGELOG.md"
 "Incoherence paper" = "https://doi.org/10.3390/e26080683"
 "Cohesion paper" = "https://doi.org/10.3390/e25121605"
 
