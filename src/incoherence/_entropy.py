@@ -11,6 +11,7 @@ from math import ceil
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.signal import lfilter
 from scipy.stats import entropy
 
 Array = NDArray[np.float64]
@@ -18,8 +19,8 @@ Array = NDArray[np.float64]
 #: Fewest reference points for the density estimate, and the number the papers used.
 POINTS = 501
 
-#: Largest temporary array, in values, that the density estimate builds at once.
-_BLOCK = 2**21
+#: A continuous entropy below this is rounding error, so it counts as exactly 0.
+_ROUNDING = 1e-12
 
 
 @lru_cache
@@ -50,7 +51,9 @@ def shannon(pmfs: Array) -> Array:
     return np.asarray(entropy(pmfs, base=2, axis=-1), dtype=np.float64)
 
 
-def densities(observations: Array, k: float, points: int = POINTS) -> Array:
+def densities(
+    observations: Array, k: float, points: int = POINTS, weights: Array | None = None
+) -> Array:
     """Density of the observations around each grid point (Incoherence paper, eq. 2).
 
     Parameters
@@ -61,19 +64,35 @@ def densities(observations: Array, k: float, points: int = POINTS) -> Array:
         How quickly an observation's influence falls away with distance.
     points
         The number of grid points. A higher ``k`` needs more, see :func:`points_for`.
+    weights
+        How much each observation counts. Leave as ``None`` to count them equally.
 
     Returns
     -------
     Array
         One density for each point of the grid.
+
+    Notes
+    -----
+    The kernel shrinks by the same factor at every step along the grid. So each
+    observation is added at the grid point on either side of it, and one pass
+    in each direction carries its influence onwards. The cost grows with the
+    observations plus the grid points, rather than with the two multiplied.
     """
     r = grid(points)
-    step = max(1, _BLOCK // points)
-    total = np.zeros(points)
-    for start in range(0, len(observations), step):
-        chunk = observations[start : start + step]
-        total += np.exp(-k * np.abs(r[:, None] - chunk[None, :])).sum(axis=1)
-    return total / len(observations)
+    decay = np.exp(-k * (r[-1] - r[0]) / (points - 1))
+    above = np.searchsorted(r, observations, side="right")
+    below = above - 1
+    mass = 1.0 if weights is None else weights
+    rising = np.bincount(above, mass * np.exp(-k * (r[above] - observations)), points)
+    falling = np.bincount(below, mass * np.exp(-k * (observations - r[below])), points)
+    total = _carry(rising, decay) + _carry(falling[::-1], decay)[::-1]
+    return total / (len(observations) if weights is None else weights.sum())
+
+
+def _carry(values: Array, decay: float) -> Array:
+    """Add to each value the one before it, shrunk by ``decay`` at every step."""
+    return np.asarray(lfilter([1.0], [1.0, -decay], values), dtype=np.float64)
 
 
 @lru_cache
@@ -99,7 +118,10 @@ def density_entropy(rows: Array, k: float, power: float = 1.0) -> Array:
 
     This is the estimator the papers call density variance. Densities that
     vary a lot across the grid mean clustered observations and low entropy.
-    The result is 1 for an even spread and 0 for a single repeated value.
+    The result is 1 for an even spread. A U-shaped spread varies less than an
+    even one, so it is clipped at 1. The result is 0 for a single repeated
+    value at either end of the range. Elsewhere that value scores a little
+    more, up to about 0.003 at ``k = 10`` and much more at a low ``k``.
 
     Parameters
     ----------
@@ -113,4 +135,5 @@ def density_entropy(rows: Array, k: float, power: float = 1.0) -> Array:
     """
     v0, v1 = _variance_limits(k, power, rows.shape[-1])
     variance = (rows**power).var(axis=-1)
-    return np.clip(1 - (variance - v0) / (v1 - v0), 0.0, 1.0)
+    out = np.clip(1 - (variance - v0) / (v1 - v0), 0.0, 1.0)
+    return np.where(out < _ROUNDING, 0.0, out)

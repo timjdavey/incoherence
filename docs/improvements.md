@@ -67,9 +67,9 @@ The three test ensembles in `tests/test_paper.py` move like this.
 correct for the method the paper describes, so this is not a correction to the paper. A grid
 finer than 2,001 points moves cohesion by less than 0.004 more.
 
-**What it costs.** The last step of cohesion is about four times slower. It takes 0.04 seconds
-for 100 trials and about 4 seconds for 1,000. Incoherence at the default `k = 10` is not
-affected, and still uses 501 points so that it matches the published figures.
+**What it costs.** Very little. The last step of cohesion takes under 0.001 seconds for 100 trials
+and about 0.04 seconds for 1,000. Incoherence at the default `k = 10` still uses 501 points so
+that it matches the published figures.
 
 **The same rule for a higher `k`.** The 501 grid is fine enough for any `k` up to 25. Above that
 the package adds grid points in step with `k`, so that about ten always sit across the reach of
@@ -136,7 +136,11 @@ move. The order of the four panels stays the same.
 
 **To make some trials count for more**, pass `weights`. Passing each trial's size as its weight
 does not give the old values back, because the old code weighted the two halves differently. It
-gives 0.484 and 0.165 for the bottom two panels.
+gives 0.475 and 0.167 for the bottom two panels.
+
+With unequal weights, each pair of trials counts towards cohesion in proportion to the weights of
+both trials, so a trial with almost no weight has almost no effect. Equal weights, the default,
+give exactly the same cohesion as before.
 
 ## 4. Better input sanitation
 

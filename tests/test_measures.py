@@ -118,9 +118,41 @@ def test_the_highest_k_runs_without_a_warning():
 def test_divergences_are_worked_out_in_blocks_at_a_high_k():
     rows = np.random.default_rng(0).dirichlet(np.ones(20_001), 16)
     a, b = np.triu_indices(16, k=1)
-    assert _entropy._BLOCK // rows.shape[1] < len(a)
+    assert _measures._BLOCK // rows.shape[1] < len(a)
     expected = [jensenshannon(rows[i], rows[j], base=2) ** 2 for i, j in zip(a, b, strict=True)]
     assert ic.measure_counts(rows).divergences == pytest.approx(expected, abs=1e-9)
+
+
+@pytest.mark.parametrize(
+    ("k", "points"),
+    [(1e-4, 501), (1.0, 501), (10.0, 501), (25.0, 501), (100.0, 2001), (1000.0, 20001)],
+)
+def test_densities_match_the_direct_sum(k, points):
+    r = _entropy.grid(points)
+    on_the_grid = r[(r >= 0) & (r <= 1)][::37]
+    values = np.concatenate([np.random.default_rng(0).random(300), [0.0, 1.0], on_the_grid])
+    direct = np.exp(-k * np.abs(r[:, None] - values[None, :])).mean(axis=1)
+    assert _entropy.densities(values, k, points) == pytest.approx(direct, rel=1e-9)
+
+
+def test_densities_match_the_direct_sum_for_many_observations():
+    r = _entropy.grid(501)
+    values = np.random.default_rng(1).random(5000)
+    direct = np.exp(-10.0 * np.abs(r[:, None] - values[None, :])).mean(axis=1)
+    assert _entropy.densities(values, 10.0, 501) == pytest.approx(direct, rel=1e-9)
+
+
+def test_a_trial_with_almost_no_weight_barely_moves_cohesion():
+    counts = np.array([[9, 1, 0, 0], [8, 2, 0, 0], [0, 0, 1, 9], [0, 0, 2, 8], [3, 3, 2, 2]])
+    weighted = ic.measure_counts(counts, weights=[1, 1, 1, 1, 1e-12])
+    assert weighted.cohesion == pytest.approx(ic.measure_counts(counts[:4]).cohesion, abs=1e-6)
+
+
+def test_equal_weights_leave_cohesion_exactly_as_it_was():
+    counts = np.array([[9, 1, 0], [1, 5, 4], [2, 2, 6], [5, 5, 0]])
+    plain = _measures.cohesion(ic.measure_counts(counts).divergences)
+    assert ic.measure_counts(counts).cohesion == plain
+    assert ic.measure_counts(counts, weights=[3, 3, 3, 3]).cohesion == plain
 
 
 def test_evenly_spread_divergences_have_no_cohesion():

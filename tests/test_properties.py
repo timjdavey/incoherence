@@ -38,6 +38,17 @@ def test_continuous_measures_are_bounded(trials):
     assert ((result.entropies >= 0) & (result.entropies <= 1)).all()
 
 
+@given(counts_tables, st.integers(0, 2**32 - 1))
+def test_discrete_floor_is_bounded(counts, seed):
+    assert 0 <= ic.measure_counts(counts).floor(repeats=3, rng=seed) <= 1
+
+
+@settings(deadline=None)
+@given(continuous_trials, st.integers(0, 2**32 - 1))
+def test_continuous_floor_is_bounded(trials, seed):
+    assert 0 <= ic.measure(trials).floor(repeats=3, rng=seed) <= 1
+
+
 @given(counts_tables, st.randoms(use_true_random=False))
 def test_order_of_trials_and_states_does_not_matter(counts, random):
     rows = random.sample(range(counts.shape[0]), counts.shape[0])

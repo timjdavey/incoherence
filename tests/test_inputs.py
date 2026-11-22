@@ -1,11 +1,14 @@
 """How the package reads and checks what it is given."""
 
+import inspect
+
 import numpy as np
 import pytest
 from scipy.spatial.distance import squareform
 from scipy.stats import entropy
 
 import incoherence as ic
+from incoherence._result import MIN_K
 
 RNG = np.random.default_rng(0)
 TRIALS = [RNG.normal(i, 1, 200) for i in range(4)]
@@ -176,6 +179,7 @@ def test_inputs_are_not_changed():
         ([[1.0, 2.0], [3.0, 4.0]], {"bounds": (-np.inf, np.inf)}, "bounds must be finite"),
         ([[0.5, 0.5, 100.0], [0.5, 0.5, 0.5]], {"bins": [0, 1, 2]}, "outside the bin edges"),
         ([[0.5, 0.5, -0.1], [0.5, 0.5, 0.5]], {"bins": [0, 1, 2]}, "outside the bin edges"),
+        ([[0.5, 1.5], [1.0, 1.0]], {"bins": [0, 1, 2], "bounds": (0, 5)}, "bounds or a list"),
     ],
 )
 def test_bad_observations_are_rejected(trials, kwargs, message):
@@ -199,22 +203,21 @@ def test_bad_counts_are_rejected(counts, message):
         ic.measure_counts(counts)
 
 
-def known_bug(reason):
-    """Mark a confirmed bug. The test fails once the bug is fixed, so the mark gets removed."""
-    return pytest.mark.xfail(
-        strict=True, reason=reason, raises=(AssertionError, pytest.fail.Exception)
-    )
-
-
 SIMPLE = [[0.0, 0.2, 0.4], [0.6, 0.8, 1.0]]
 
 
-@known_bug("the entropy limits collapse for a vanishingly small k")
 def test_a_tiny_k_gives_a_value_in_range():
     assert 0 <= ic.incoherence(SIMPLE, k=1e-300) <= 1
 
 
-@known_bug("the sum of the weights overflows")
+@pytest.mark.parametrize("k", [1e-300, 1e-20, 1e-8])
+def test_a_k_below_the_floor_matches_the_floor(k):
+    floor = ic.measure(SIMPLE, k=MIN_K)
+    result = ic.measure(SIMPLE, k=k)
+    assert result.incoherence == floor.incoherence
+    assert result.cohesion == floor.cohesion
+
+
 def test_huge_discrete_weights_match_equal_weights():
     counts = [[9, 1], [1, 9]]
     assert ic.measure_counts(counts, weights=[1e308, 1e308]).incoherence == pytest.approx(
@@ -222,28 +225,29 @@ def test_huge_discrete_weights_match_equal_weights():
     )
 
 
-@known_bug("the sum of the weights overflows")
 def test_huge_continuous_weights_match_equal_weights():
     assert ic.measure(SIMPLE, weights=[1e308, 1e308]).incoherence == pytest.approx(
         ic.measure(SIMPLE).incoherence
     )
 
 
-@known_bug("the row totals overflow")
+def test_weights_too_far_apart_to_represent_are_rejected():
+    with pytest.raises(ValueError, match="too far apart"):
+        ic.measure_counts([[9, 1], [1, 9], [5, 5]], weights=[1e308, 1e-20, 1e-20])
+
+
 def test_huge_counts_match_their_proportions():
     assert ic.measure_counts([[1e308, 1e308], [1, 9]]).incoherence == pytest.approx(
         ic.measure_counts([[1, 1], [1, 9]]).incoherence
     )
 
 
-@known_bug("the width of the range overflows")
 def test_a_huge_range_matches_the_same_data_scaled_down():
     assert ic.incoherence([[-1e308, 0.0], [1e308, 0.0]]) == pytest.approx(
         ic.incoherence([[-1.0, 0.0], [1.0, 0.0]])
     )
 
 
-@known_bug("cached arrays are writable, so an edit changes later measures")
 @pytest.mark.parametrize("name", ["entropies", "divergences"])
 def test_cached_arrays_are_read_only(name):
     values = getattr(ic.measure_counts([[9, 1], [1, 9]]), name)
@@ -251,14 +255,48 @@ def test_cached_arrays_are_read_only(name):
         values[:] = 0
 
 
-@known_bug("numpy.asarray strips the mask, so hidden values are counted")
 def test_masked_observations_are_rejected():
     masked = np.ma.array([0.0, 1.0, 999.0], mask=[False, False, True])
     with pytest.raises(ValueError):
         ic.measure([masked, np.array([0.0, 1.0, 2.0])])
 
 
-@known_bug("only the first two values of bounds are read")
+@pytest.mark.parametrize("wrap", [np.ma.vstack, list])
+def test_masked_counts_are_rejected(wrap):
+    masked = np.ma.array([1.0, 2.0], mask=[False, True])
+    with pytest.raises(ValueError, match="masked"):
+        ic.measure_counts(wrap([masked, np.array([3.0, 4.0])]))
+
+
+def test_masked_weights_are_rejected():
+    weights = np.ma.array([1.0, 2.0], mask=[False, True])
+    with pytest.raises(ValueError, match="masked"):
+        ic.measure_counts([[9, 1], [1, 9]], weights=weights)
+
+
 def test_bounds_of_the_wrong_length_are_rejected():
     with pytest.raises(ValueError):
         ic.measure(SIMPLE, bounds=(0, 1, 99))
+
+
+def test_an_object_array_of_ragged_trials_matches_the_list():
+    ragged = [TRIALS[0][:50], TRIALS[1], TRIALS[2][:120]]
+    array = np.empty(3, dtype=object)
+    array[:] = ragged
+    assert ic.incoherence(array) == ic.incoherence(ragged)
+
+
+@pytest.mark.parametrize("k", [np.array(10.0), np.float64(10.0), 10])
+def test_k_can_be_any_kind_of_number(k):
+    assert ic.incoherence(TRIALS, k=k) == ic.incoherence(TRIALS, k=10.0)
+
+
+def test_a_table_with_one_state_has_no_entropy_to_reach():
+    assert ic.measure_counts([[4], [7]]).max_entropy == 0
+
+
+@pytest.mark.parametrize("shortcut", [ic.incoherence, ic.cohesion])
+def test_shortcuts_list_the_same_options_as_measure(shortcut):
+    assert inspect.signature(shortcut).parameters.keys() == (
+        inspect.signature(ic.measure).parameters.keys()
+    )

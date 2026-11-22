@@ -1,17 +1,12 @@
 # Examples
 
-A few small ensembles made of 1s and 0s. You can see by eye what each one is doing, then check
-what the package says about it.
-
 The code runs as written. The tests run it too, so the printed numbers are what the package gives.
 
 ```python
 import incoherence as ic
 ```
 
-## Three ensembles
-
-Each row below is one trial of ten observations, and each observation is a 1 or a 0.
+## The range
 
 ```python
 ordered = [
@@ -98,7 +93,7 @@ entropy is 1. That gap between the pool and the trials is what incoherence measu
 
 ## Total incoherence
 
-Incoherence reaches 1 when every trial is certain and each is certain of something different.
+Incoherence reaches 1 when the entropy of each trial is low, yet together they represent maximum entropy.
 
 The table below has three trials and three outcomes. This time a row is not a list of
 observations. Each column counts how often the trial landed on one outcome. The first trial only
@@ -106,7 +101,7 @@ ever lands on the first outcome, the second on the second and the third on the t
 `measure_counts` takes a table like this.
 
 ```python
-result = ic.measure_counts([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+result = ic.measure_counts([[100, 0, 0], [0, 100, 0], [0, 0, 100]])
 print(f"incoherence={result.incoherence:.2f}")
 ```
 

@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from ._entropy import _BLOCK, Array, densities, density_entropy, points_for
+from ._entropy import Array, densities, density_entropy, points_for
 
 Entropy = Callable[[Array], Array]
 
@@ -22,6 +22,9 @@ COHESION_POINTS = points_for(COHESION_K)
 
 #: Most pairs worked on at once.
 _CHUNK = 4096
+
+#: Largest temporary array, in values, built while working through the pairs.
+_BLOCK = 2**21
 
 
 def pooled(rows: Array, weights: Array) -> Array:
@@ -62,6 +65,15 @@ def pairwise_divergences(rows: Array, entropy: Entropy, weights: Array) -> Array
     For each pair, this is the entropy of the two trials pooled, less the
     weighted mean of their own entropies.
 
+    Parameters
+    ----------
+    rows
+        One distribution per trial.
+    entropy
+        The estimator that maps rows to one entropy each.
+    weights
+        One weight per trial. Each pair uses its two weights, rescaled to sum to 1.
+
     Returns
     -------
     Array
@@ -81,7 +93,28 @@ def pairwise_divergences(rows: Array, entropy: Entropy, weights: Array) -> Array
     return np.clip(out, 0.0, 1.0)
 
 
-def cohesion(divergences: Array, points: int = COHESION_POINTS) -> float:
+def pair_weights(weights: Array) -> Array | None:
+    """How much each pair of trials counts towards cohesion.
+
+    A pair counts in proportion to the weights of both its trials, so a trial
+    with almost no weight has almost no effect.
+
+    Returns
+    -------
+    Array or None
+        One value per pair, in the order of ``numpy.triu_indices``. ``None``
+        when every trial has the same weight, so every pair counts the same.
+    """
+    if np.ptp(weights) == 0:
+        return None
+    a, b = np.triu_indices(len(weights), k=1)
+    scaled = weights / weights.max()
+    return scaled[a] * scaled[b]
+
+
+def cohesion(
+    divergences: Array, points: int = COHESION_POINTS, weights: Array | None = None
+) -> float:
     """Cohesion from the pairwise divergences (Cohesion paper, eq. 3 to 5).
 
     Divergences that bunch around a few values mean the trials fall into a few
@@ -93,7 +126,10 @@ def cohesion(divergences: Array, points: int = COHESION_POINTS) -> float:
         One value in [0, 1] per pair of trials.
     points
         The number of grid points for the entropy of the divergences.
+    weights
+        How much each pair counts, from :func:`pair_weights`. Leave as ``None``
+        to count every pair the same.
     """
-    density = densities(divergences, COHESION_K, points)
+    density = densities(divergences, COHESION_K, points, weights)
     entropy = density_entropy(density, COHESION_K, COHESION_POWER)
     return float((1 - entropy) ** 2)

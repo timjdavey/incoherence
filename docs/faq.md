@@ -1,7 +1,6 @@
 # FAQ
 
-Every example runs as written after this setup. The tests run them too, so the printed numbers
-are what the package gives.
+Every example runs as written after this setup.
 
 ```python
 import numpy as np
@@ -10,18 +9,15 @@ import incoherence as ic
 
 ## What counts as high?
 
-Incoherence is a relative measure.
+There is no magic number. Incoherence is a relative measure, so it is up to you to find the levels of incoherence and cohesion that matter in your field or use case.
 
-"p-value < 0.05" is a mythical threshold which gives people a false sense of security and can be misleading. We want to actively avoid that trap.
-
-You need to find the incoherence and cohesion levels that are correct for your field and use case.
-
+"p-value < 0.05" is a mythical threshold that gives people a false sense of security and so we don't want to fall for that same trap.
 
 ## How many observations does each trial need?
 
-The incoherence measure is designed to assume incoherence, rather than consistency. So the fewer the observations, naturally the greater the differences in entropy, so the higher the incoherence.
+There is no minimum, but fewer observations means a higher incoherence. Incoherence is actively designed to assume your trials disagree until the data shows otherwise.
 
-For example:
+Fewer observations means more noise, so trials from the same source look more different and incoherent.
 
 ```python
 for size in [10, 30, 100, 500, 5000]:
@@ -42,25 +38,20 @@ for size in [10, 30, 100, 500, 5000]:
 
 ## What would my data score if the trials agreed?
 
-Shuffle your data and measure again. Pool every observation, then deal them back out at random into trials of the same sizes. The shuffled trials share one source, so whatever incoherence is left comes from sample size alone. We call that the floor, and the method is called a permutation test.
+You can calculate what we call the `result.floor()`.
 
-For example:
+It pools every observation, then returns them randomly into trials of the same sizes. The shuffled trials share one source, so any incoherence left comes only from sample size.
+
+This method is called a permutation test.
 
 ```python
-def floor(trials, rng, repeats=20):
-    """Incoherence when the same observations are dealt out at random."""
-    pooled = np.concatenate(trials)
-    cuts = np.cumsum([len(trial) for trial in trials])[:-1]
-    shuffles = [np.split(rng.permutation(pooled), cuts) for _ in range(repeats)]
-    return float(np.mean([ic.incoherence(shuffle) for shuffle in shuffles]))
-
-
 rng = np.random.default_rng(1)
 same = [rng.normal(0, 1, 30) for _ in range(10)]
 camps = [rng.normal(3 if i % 2 else -3, 1, 30) for i in range(10)]
 
 for name, trials in [("same", same), ("camps", camps)]:
-    print(f"{name:6} incoherence={ic.incoherence(trials):.2f}  floor={floor(trials, rng):.2f}")
+    result = ic.measure(trials)
+    print(f"{name:6} incoherence={result.incoherence:.2f}  floor={result.floor(rng=rng):.2f}")
 ```
 
 ```text
@@ -68,15 +59,21 @@ same   incoherence=0.10  floor=0.09
 camps  incoherence=0.55  floor=0.04
 ```
 
-The first ensemble sits on its floor, so its trials may not disagree at all. The second is far above its floor, so the disagreement is real.
+`same` sits on its floor, so nothing says its trials disagree. `camps` is far above its floor, so the disagreement is real.
+
+The floor is the mean of 20 shuffles. Each shuffle is measured with the same bins, `bounds`, `k` and weights as the result. The shuffles are random, so here the floor moves by about 0.01 from one call to the next. Pass a seed as `rng` to fix it, or raise `repeats` to steady it.
+
+A table of probabilities has no floor. Probabilities do not say how many observations each trial holds, and the floor depends on that. Pass counts to `measure_counts` if you want one.
 
 ## How many trials do you need?
 
-The same is true as the observations (it assumes incoherence). But practically speaking aim for at least ten, and more for cohesion.
+Incoherence is designed to be a fact about your system, not your data. So it is invariant to the number of trials you give. But that means you have to be more careful about how many you use. 
 
-Cohesion looks at pairs of trials, and few trials make few pairs. Two trials make one pair, five make 10 and ten make 45. A handful of values always looks bunched, so cohesion reads high when there are few trials, whatever the data.
+Practically speaking use at least ten for incoherence and more for cohesion. Few trials do not directly push incoherence up the way few observations do, however fewer trials might naturally increase it if the system has a high cohesion.
 
-For example, here every trial wanders off on its own, which should score a low cohesion. Each row is twenty ensembles, showing the mean with the lowest and highest in brackets.
+However, cohesion goes up because it looks at pairs of trials. Two trials make one pair, five make 10 and ten make 45. A handful of pairs always looks bunched, so cohesion reads high whatever the data.
+
+In the example every trial wanders off on its own, so cohesion should be low. Each row is twenty ensembles, showing the mean with the lowest and highest in brackets.
 
 ```python
 for count in [2, 3, 5, 10, 50]:
@@ -101,23 +98,17 @@ for count in [2, 3, 5, 10, 50]:
 50 trials  incoherence 0.50 (0.47 to 0.54)  cohesion 0.22 (0.17 to 0.26)
 ```
 
-- **Two trials always score a cohesion near 1.** One pair gives a single value, and a single value is always bunched.
-- **Ten trials are not many.** The mean cohesion is close to where it settles, but one ensemble of ten scored 0.73 and another scored 0.14.
-- **Incoherence needs trials too.** It has no pull towards 1, but a few trials are a small sample of what the system can do. Two trials scored anywhere from 0.03 to 0.60.
+Two trials score a cohesion of 1 whatever the data. Even ten is not many. The mean is near where it settles, but one ensemble of ten scored 0.73 and another scored 0.14. Incoherence is just as jumpy, with two trials scoring anywhere from 0.03 to 0.60.
 
 ## What does a cohesion of 1 mean?
 
-It means every pair of trials is the same distance apart. That happens when the trials all agree, and also when they all disagree by the same amount.
+Cohesion only makes sense when Incoherence is high. Do not read it on it's own.
 
-Cohesion measures how bunched the pairwise divergences are. If every trial is certain of a different outcome, every pair is equally far apart. Cohesion reads that as one tight group and scores it 1.
-
-Incoherence tells the two apart. With incoherence near 0 the trials all agree. With incoherence near 1 they share nothing. So never read cohesion without incoherence next to it.
+Cohesion is 1 when every pair of trials is the same distance apart. That is true when the trials all agree (incoherence low), and when they all disagree by the same amount (incoherence high).
 
 ## Should I bin my data?
 
-Only if it is already whole numbers or categories. Cutting real-valued measurements into bins makes the answer depend on how many bins you pick.
-
-The three routes into the package suit three kinds of data.
+Only if it is already whole numbers or categories. Cut real-valued measurements into bins and the answer depends on how many bins you picked.
 
 | Your data | Use |
 | :-- | :-- |
@@ -125,7 +116,21 @@ The three routes into the package suit three kinds of data.
 | Whole numbers, or categories coded as numbers | `measure(trials, bins=edges)` with one bin per value |
 | Counts or probabilities you already hold | `measure_counts(counts)` |
 
-For example, the two camps below are just as far apart in every row:
+Give one more edge than you have values, because the last bin includes its upper edge. For the values 0, 1 and 2, use `[0, 1, 2, 3]`. With `[0, 1, 2]` the 1s and 2s share a bin, so trials that disagree look identical.
+
+```python
+ones_and_twos = [[1, 1, 1], [2, 2, 2]]
+
+print(f"[0, 1, 2]     incoherence={ic.incoherence(ones_and_twos, bins=[0, 1, 2]):.2f}")
+print(f"[0, 1, 2, 3]  incoherence={ic.incoherence(ones_and_twos, bins=[0, 1, 2, 3]):.2f}")
+```
+
+```text
+[0, 1, 2]     incoherence=0.00
+[0, 1, 2, 3]  incoherence=0.79
+```
+
+The two camps below are the same data in every row, and only the number of bins changes.
 
 ```python
 rng = np.random.default_rng(1)
@@ -144,17 +149,11 @@ unbinned   incoherence=0.57
 200 bins   incoherence=0.15
 ```
 
-Incoherence falls because of how it is scaled. A trial from one camp is about one bit short of the pooled entropy, however fine the bins. The largest entropy a trial could have keeps growing as bins are added, and incoherence divides by it.
-
-If you must bin real values, fix the edges once and use the same edges for every ensemble you compare.
+The score falls because incoherence divides by the largest entropy a trial could have, which grows with every bin you add. The gap between each trial and the pool stays at about one bit, however fine the bins. If you must bin real values, fix the edges once and use them for every ensemble you compare.
 
 ## How do I compare two ensembles?
 
-Set `bounds` to the same range for both. Use the range the quantity could take.
-
-By default each ensemble is scaled by its own lowest and highest observation. That makes the result blind to size. Two camps 6 units apart and two camps 0.6 units apart score the same.
-
-For example:
+Set `bounds` to the same range for both, using the range the quantity could take. By default each ensemble is scaled by its own lowest and highest observation, which makes the score blind to size. Two camps 6 units apart then score the same as two camps 0.6 apart.
 
 ```python
 rng = np.random.default_rng(1)
@@ -174,11 +173,24 @@ narrow  own scale=0.57  shared scale=0.18
 
 On a shared scale the narrow split counts for less, because it is small next to what was possible.
 
-## What does one outlier do?
+## How should I set `bounds`?
 
-It can drag the score down a long way, unless you set `bounds`. The default scale stretches to fit the stray value, which squeezes everything else together.
+Set them to the range the quantity could take, and no wider. The entropy estimate is made on a scale that runs from the low bound to the high one, so the bounds decide how much of that scale your data fills. Widen them and the same trials look closer together, so the score falls. Here is the `wide` ensemble from the last answer inside four sets of bounds.
 
-For example, here a single observation of 60 is added to the first trial of the wide ensemble:
+```python
+for limit in [8, 20, 50, 100]:
+    score = ic.incoherence(wide, bounds=(-limit, limit))
+    print(f"bounds=({-limit}, {limit})".ljust(20) + f"incoherence={score:.2f}")
+```
+
+```text
+bounds=(-8, 8)      incoherence=0.59
+bounds=(-20, 20)    incoherence=0.49
+bounds=(-50, 50)    incoherence=0.27
+bounds=(-100, 100)  incoherence=0.15
+```
+
+Leaving `bounds` unset does not avoid the choice. The default uses the lowest and highest observation, so one stray value sets the scale for you. It stretches the scale to fit, which squeezes everything else together. Below, one observation in `wide` is changed to 60.
 
 ```python
 stray = [trial.copy() for trial in wide]
@@ -193,15 +205,13 @@ as drawn          incoherence=0.57
 one stray value   incoherence=0.37
 ```
 
-That is one observation in 5,000. Fixed `bounds` would have rejected it with an error instead.
+That is one observation in 5,000. Set `bounds` and the package rejects the stray value with an error instead.
+
+No bounds are the correct ones. The score is always relative to the range you chose, so choose it from what the quantity could do and keep it fixed. Then find the level of incoherence that matters for your use case, as in [What counts as high?](#what-counts-as-high).
 
 ## Should I change `k`?
 
-No, unless you are testing the estimator itself.
-
-`k` sets how sharply the entropy estimate for real-valued observations picks out detail, and it changes the result a great deal.
-
-For example:
+No, unless you are testing the estimator itself. `k` sets how sharply the entropy estimate picks out detail in real-valued observations, and it moves the score a great deal. Here is the `wide` ensemble again at four values of `k`.
 
 ```python
 for k in [5, 10, 20, 100]:
@@ -215,13 +225,13 @@ k=20   incoherence=0.37
 k=100  incoherence=0.08
 ```
 
-A higher `k` only sees bunching tighter than about `1/k` of the range. Broad shapes then read as spread out, so every score falls and sits closer to its floor. A higher `k` also needs a finer grid, so it is slower, about 4 times at `k=100` and 40 times at `k=1000`. The limit is 1,000.
+A higher `k` only sees bunching tighter than about `1/k` of the range. Broad shapes then read as spread out, so every score falls and sits closer to its floor. It is also slower, by about 1.5 times at `k=100` and 7 times at `k=1000`, which is the limit.
 
-No value of `k` is the correct one. The default of 10 is the one the published figures used, so keep it. Never compare results made with different values.
+No value of `k` is the correct one. The default of 10 is what the published figures used, so keep it. Never compare results made with different values.
 
 ## What should I check before I trust a number?
 
-1. Check it against the floor for your sample size.
-2. Read cohesion only when you have many trials. Ten is a bare minimum.
-3. Read incoherence and cohesion together.
-4. Keep the route, the bins, the `bounds` and `k` the same across everything you compare.
+1. Compare it with `result.floor()`, the floor for your sample size.
+2. Read cohesion only when you have many trials. Ten is the bare minimum.
+3. Never read cohesion without incoherence next to it.
+4. Keep the route, the bins, `bounds` and `k` the same across everything you compare.
