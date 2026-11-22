@@ -7,6 +7,7 @@ distribution is a weighted mean of rows in either case.
 """
 
 from functools import lru_cache
+from math import ceil
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,7 +15,7 @@ from scipy.stats import entropy
 
 Array = NDArray[np.float64]
 
-#: Default number of reference points for the density estimate.
+#: Fewest reference points for the density estimate, and the number the papers used.
 POINTS = 501
 
 #: Largest temporary array, in values, that the density estimate builds at once.
@@ -33,6 +34,17 @@ def grid(points: int = POINTS) -> Array:
     return out
 
 
+def points_for(k: float) -> int:
+    """Return how many grid points the density estimate needs for this ``k``.
+
+    An observation's influence falls away over a distance of ``1 / k``. The
+    grid needs about ten points across that distance, or a value that falls
+    between two points is partly missed. The default grid already gives that
+    for ``k`` up to 25, so those results match the papers.
+    """
+    return max(POINTS, ceil(20 * k) + 1)
+
+
 def shannon(pmfs: Array) -> Array:
     """Shannon entropy of each row, in bits (Incoherence paper, eq. 1)."""
     return np.asarray(entropy(pmfs, base=2, axis=-1), dtype=np.float64)
@@ -48,7 +60,7 @@ def densities(observations: Array, k: float, points: int = POINTS) -> Array:
     k
         How quickly an observation's influence falls away with distance.
     points
-        The number of grid points. A sharper kernel (a higher ``k``) needs more.
+        The number of grid points. A higher ``k`` needs more, see :func:`points_for`.
 
     Returns
     -------
@@ -72,9 +84,11 @@ def _variance_limits(k: float, power: float, points: int) -> tuple[float, float]
     of the kernel. V1 is for every observation sitting on the same value.
     """
     r = grid(points)
-    inside = (2 - np.exp(-k * r) - np.exp(-k * (1 - r))) / k
-    below = np.exp(k * r) * (1 - np.exp(-k)) / k
-    above = np.exp(-k * (r - 1)) * (1 - np.exp(-k)) / k
+    # Each branch only sees its own stretch of the grid, so a high k cannot overflow.
+    within, under, over = np.clip(r, 0, 1), np.minimum(r, 0), np.maximum(r, 1)
+    inside = (2 - np.exp(-k * within) - np.exp(-k * (1 - within))) / k
+    below = np.exp(k * under) * (1 - np.exp(-k)) / k
+    above = np.exp(-k * (over - 1)) * (1 - np.exp(-k)) / k
     uniform = np.where(r < 0, below, np.where(r > 1, above, inside))
     point = np.exp(-k * np.abs(r))
     return float((uniform**power).var()), float((point**power).var())

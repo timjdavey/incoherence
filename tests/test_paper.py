@@ -101,12 +101,12 @@ class TestCohesion:
         assert discrete(counts).cohesion == pytest.approx(0.8, abs=0.05)
 
     def test_scenarios_score_above_scatter(self):
-        camps, scatter = readme_trials()[1:]
+        camps, scatter = reference_trials()[1:]
         assert ic.cohesion(camps) > 0.75
         assert ic.cohesion(scatter) < 0.4
 
 
-def readme_trials():
+def reference_trials():
     rng = np.random.default_rng(1)
     same = [rng.normal(0, 1, 500) for _ in range(10)]
     camps = [rng.normal(3 if i % 2 else -3, 1, 500) for i in range(10)]
@@ -125,7 +125,7 @@ def test_matches_the_code_behind_the_papers(index, incoherence, cohesion):
     That code measured cohesion on a 501-point grid. The package uses a finer
     one, so cohesion is checked on the old grid here.
     """
-    result = ic.measure(readme_trials()[index])
+    result = ic.measure(reference_trials()[index])
     assert result.incoherence == pytest.approx(incoherence, abs=1e-3)
     assert _measures.cohesion(result.divergences, points=501) == pytest.approx(cohesion, abs=1e-3)
 
@@ -137,7 +137,7 @@ def test_matches_the_code_behind_the_papers(index, incoherence, cohesion):
 )
 def test_cohesion_on_the_finer_grid(index, cohesion):
     """What the package returns, which differs from the old code by up to 0.06."""
-    assert ic.cohesion(readme_trials()[index]) == pytest.approx(cohesion, abs=1e-3)
+    assert ic.cohesion(reference_trials()[index]) == pytest.approx(cohesion, abs=1e-3)
 
 
 @pytest.mark.parametrize(

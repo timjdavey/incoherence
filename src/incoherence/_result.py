@@ -7,11 +7,14 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from . import _measures
-from ._entropy import Array, densities, density_entropy, shannon
+from ._entropy import Array, densities, density_entropy, points_for, shannon
 from ._measures import Entropy
 
 #: Default ``k`` for the entropy of continuous observations.
 DEFAULT_K = 10.0
+
+#: Largest ``k``. The grid grows with ``k``, so this bounds the time and memory.
+MAX_K = 1000.0
 
 
 class Result:
@@ -98,7 +101,8 @@ def measure(
         Leave as ``None`` to treat the observations as continuous. Otherwise
         the observations are counted into bins first and treated as discrete.
         Takes anything ``numpy.histogram_bin_edges`` accepts: a number of bins,
-        a list of edges, or a rule such as ``"auto"``.
+        a list of edges, or a rule such as ``"auto"``. If you give a list of
+        edges, every observation must fall inside them.
     bounds
         The lowest and highest values an observation could take. Defaults to
         the lowest and highest values seen across all trials.
@@ -107,7 +111,8 @@ def measure(
         counts the same however many observations it holds.
     k
         How quickly an observation's influence falls away with distance when
-        estimating continuous entropy. Ignored when ``bins`` is given.
+        estimating continuous entropy, up to 1000. A higher ``k`` picks out
+        finer detail and takes longer. Ignored when ``bins`` is given.
 
     Returns
     -------
@@ -122,12 +127,19 @@ def measure(
     low, high = _as_bounds(observations, bounds)
     if bins is not None:
         edges = np.histogram_bin_edges(np.concatenate(observations), bins, (low, high))
+        seen = _span(observations)
+        if seen[0] < edges[0] or seen[1] > edges[-1]:
+            raise ValueError(
+                f"observations span {seen}, which falls outside "
+                f"the bin edges ({edges[0]}, {edges[-1]})"
+            )
         counts = np.stack([np.histogram(trial, edges)[0] for trial in observations])
         return measure_counts(counts, weights=weights)
-    if k <= 0:
-        raise ValueError(f"k must be positive, got {k}")
+    if not 0 < k <= MAX_K:
+        raise ValueError(f"k must be positive and at most {MAX_K:g}, got {k}")
     width = high - low or 1.0
-    rows = np.stack([densities((trial - low) / width, k) for trial in observations])
+    points = points_for(k)
+    rows = np.stack([densities((trial - low) / width, k, points) for trial in observations])
     return Result(rows, _as_weights(weights, len(rows)), partial(density_entropy, k=k), 1.0)
 
 
@@ -185,14 +197,22 @@ def _as_trials(trials: Sequence[ArrayLike] | ArrayLike) -> list[Array]:
     return observations
 
 
+def _span(observations: list[Array]) -> tuple[float, float]:
+    """Return the lowest and highest observation across all trials."""
+    low = min(float(trial.min()) for trial in observations)
+    high = max(float(trial.max()) for trial in observations)
+    return low, high
+
+
 def _as_bounds(
     observations: list[Array], bounds: tuple[float, float] | None
 ) -> tuple[float, float]:
     """Return the range the observations are scaled by."""
-    low = min(float(trial.min()) for trial in observations)
-    high = max(float(trial.max()) for trial in observations)
+    low, high = _span(observations)
     if bounds is None:
         return low, high
+    if not np.isfinite(bounds).all():
+        raise ValueError(f"bounds must be finite, got {bounds}")
     if not bounds[0] < bounds[1]:
         raise ValueError(f"bounds must be (low, high) with low below high, got {bounds}")
     if low < bounds[0] or high > bounds[1]:

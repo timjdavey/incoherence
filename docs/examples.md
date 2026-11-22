@@ -1,125 +1,153 @@
 # Examples
 
-Two worked examples. The first measures a simulation from start to finish. The second uses the
-pairwise divergences to find out which trial belongs to which group.
+A few small ensembles made of 1s and 0s. You can see by eye what each one is doing, then check
+what the package says about it.
 
-Both run as written after this setup. The tests run them too, so the printed numbers are what
-the package gives.
+The code runs as written. The tests run it too, so the printed numbers are what the package gives.
 
 ```python
-import numpy as np
 import incoherence as ic
 ```
 
-## An urn that remembers
+## Three ensembles
 
-Put one red ball and one blue ball in an urn. Draw a ball, note its colour and put it back. Do
-that 1,000 times and about half the draws are red, every time you run it.
-
-Now change one rule. Each time you draw a ball, put it back with one more of the same colour. An
-early run of red makes red more likely, which makes red more likely still. Each run settles on
-its own mix of colours and stays there. This is called a Pólya urn, and it is a simple model of
-a system where early luck gets locked in.
-
-Each trial below is one run of 1,000 draws, recorded as 1 for red and 0 for blue. `bins=2` counts
-the two colours.
+Each row below is one trial of ten observations, and each observation is a 1 or a 0.
 
 ```python
-def urn(rng, draws, remember):
-    """Draw from an urn that starts with one red ball and one blue ball."""
-    red, blue = 1, 1
-    seen = np.empty(draws)
-    for i in range(draws):
-        seen[i] = rng.random() < red / (red + blue)
-        if remember:
-            red += seen[i]
-            blue += 1 - seen[i]
-    return seen
+ordered = [
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+]
+disordered = [
+    [0, 1, 1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [1, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+    [0, 0, 1, 0, 1, 1, 0, 1, 1, 0],
+    [1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+]
+split = [
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
 
-
-rng = np.random.default_rng(4)
-plain = [urn(rng, 1000, remember=False) for _ in range(20)]
-polya = [urn(rng, 1000, remember=True) for _ in range(20)]
-
-for name, trials in [("plain", plain), ("polya", polya)]:
+for name, trials in [("ordered", ordered), ("disordered", disordered), ("split", split)]:
     result = ic.measure(trials, bins=2)
-    red = np.mean([trial.mean() for trial in trials])
-    print(f"{name}  red={red:.2f}  incoherence={result.incoherence:.2f}", end="  ")
-    print(f"cohesion={result.cohesion:.2f}")
+    print(f"{name:10} incoherence={result.incoherence:.2f}")
 ```
 
 ```text
-plain  red=0.50  incoherence=0.00  cohesion=1.00
-polya  red=0.49  incoherence=0.28  cohesion=0.37
+ordered    incoherence=0.00
+disordered incoherence=0.02
+split      incoherence=0.53
 ```
 
-Averaged over the runs, both urns draw red about half the time. The average says they are the
-same system. Incoherence says they are not. Every run of the plain urn looks like every other
-run. The runs of the Pólya urn disagree, and the average of 0.49 describes almost none of them.
+`bins=2` tells `measure` to count the observations into two bins, one for the 0s and one for
+the 1s.
 
-The low cohesion adds that the runs do not fall into camps. Each one lands on its own mix.
+The ordered trials are identical, so they score 0. The disordered trials are a jumble, yet they
+score almost the same. Incoherence ignores the order inside a trial. It only asks whether the
+trials agree with each other, and the disordered ones do. Each is about half 1s.
+
+The split trials disagree. Three are nearly all 0s and three are nearly all 1s. Pool them and
+you get 30 ones in 60 observations. That even mix describes none of the six.
+
+## What is behind the number
+
+Incoherence is built from entropy. The entropy of a trial says how hard it is to guess the next
+observation. A trial of all 0s has an entropy of 0, because you always guess right. A trial that
+is half 1s and half 0s has an entropy of 1, the highest two outcomes can give. This is called
+Shannon entropy, and here it is measured in bits.
 
 ```python
-shares = np.sort([trial.mean() for trial in polya])
-print("share of red in each run, lowest to highest")
-print(" ".join(f"{share:.2f}" for share in shares[:10]))
-print(" ".join(f"{share:.2f}" for share in shares[10:]))
+result = ic.measure(ordered, bins=2)
+print(result.entropies.round(2))
+print(round(result.pooled_entropy, 2))
 ```
 
 ```text
-share of red in each run, lowest to highest
-0.04 0.16 0.23 0.26 0.29 0.33 0.33 0.37 0.43 0.48
-0.56 0.58 0.59 0.61 0.62 0.65 0.73 0.81 0.84 0.95
+[0.88 0.88 0.88 0.88 0.88 0.88]
+0.88
 ```
 
-## Finding the camps
-
-Cohesion tells you that the trials fall into groups. It does not tell you which trial is in
-which group. The divergences behind it do.
-
-`result.divergences` holds one value for every pair of trials. It is 0 when two trials have the
-same distribution and grows as they differ. `scipy.spatial.distance.squareform` lays the values
-out as a table with one row and one column per trial.
+`entropies` holds one value per trial. Each ordered trial has three 1s and seven 0s, which gives
+`−0.3 × log2(0.3) − 0.7 × log2(0.7) = 0.88`. `pooled_entropy` treats all 60 observations as one
+long trial. It is also 0.88, so pooling has changed nothing.
 
 ```python
-from scipy.cluster.hierarchy import fcluster, linkage
-from scipy.spatial.distance import squareform
-
-rng = np.random.default_rng(1)
-camps = [rng.normal(3 if i % 2 else -3, 1, 500) for i in range(10)]
-result = ic.measure(camps)
-
-print(f"cohesion={result.cohesion:.2f}")
-for row in squareform(result.divergences)[:4, :4]:
-    print(" ".join(f"{value:.2f}" for value in row))
+result = ic.measure(split, bins=2)
+print(result.entropies.round(2))
+print(round(result.pooled_entropy, 2))
 ```
 
 ```text
-cohesion=0.82
-0.00 0.53 0.00 0.54
-0.53 0.00 0.51 0.00
-0.00 0.51 0.00 0.53
-0.54 0.00 0.53 0.00
+[0.47 0.47 0.47 0.47 0.47 0.47]
+1.0
 ```
 
-The table shows the first four trials. Trials 1 and 3 are 0.00 apart, so they behave alike.
-Trials 1 and 2 are 0.53 apart, so they do not.
+Each split trial is easy to guess, so its entropy is low. The pool is an even mix, so its
+entropy is 1. That gap between the pool and the trials is what incoherence measures.
 
-To sort every trial into a group, join the two closest trials, then the next closest, and carry
-on until the number of groups you asked for is left. This is called hierarchical clustering, and
-`scipy` does it from the divergences as they are.
+## Total incoherence
+
+Incoherence reaches 1 when every trial is certain and each is certain of something different.
+
+The table below has three trials and three outcomes. This time a row is not a list of
+observations. Each column counts how often the trial landed on one outcome. The first trial only
+ever lands on the first outcome, the second on the second and the third on the third.
+`measure_counts` takes a table like this.
 
 ```python
-groups = fcluster(linkage(result.divergences, "average"), t=2, criterion="maxclust")
-print(groups)
+result = ic.measure_counts([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+print(f"incoherence={result.incoherence:.2f}")
 ```
 
 ```text
-[1 2 1 2 1 2 1 2 1 2]
+incoherence=1.00
 ```
 
-The odd trials were drawn around −3 and the even ones around +3, and the groups match.
+Every trial has an entropy of 0, because it never varies. The pool is an even mix of all three
+outcomes, which is the highest entropy three outcomes can give. The gap cannot get any bigger.
 
-Check cohesion before you trust the groups. Asking for two groups always returns two, even when
-the trials are scattered and no real groups exist. A cohesion of 0.82 says the groups here are
-real.
+## Cohesion
+
+Incoherence says how much the trials disagree. Cohesion says whether that disagreement falls
+into a few camps or is different every time.
+
+The split trials fall into two camps. In the ensemble below every trial has its own share of 1s.
+
+```python
+scattered = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+]
+
+for name, trials in [("split", split), ("scattered", scattered)]:
+    result = ic.measure(trials, bins=2)
+    print(f"{name:10} incoherence={result.incoherence:.2f}  cohesion={result.cohesion:.2f}")
+```
+
+```text
+split      incoherence=0.53  cohesion=0.84
+scattered  incoherence=0.60  cohesion=0.35
+```
+
+Both ensembles are incoherent by about the same amount. Cohesion tells them apart. A split trial
+is one of two kinds, so once you know its camp you know what it looks like. The scattered trials
+have no camps to fall into.
+
+Read cohesion next to incoherence, never alone. Six trials is also few for cohesion, and real
+data needs more. The [FAQ](faq.md) explains both points, along with what counts as high, whether
+to bin real-valued data and when to set the options.

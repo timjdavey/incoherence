@@ -116,6 +116,18 @@ def test_bounds_set_the_range_of_the_bins():
     assert ic.incoherence(trials, bins=2, bounds=(0, 2)) == 0.0
 
 
+@pytest.mark.parametrize("k", [50, 100, 250, 1000])
+def test_high_k_does_not_depend_on_where_values_fall_on_the_grid(k):
+    on_grid = ic.incoherence([np.full(20, 0.2), np.full(20, 0.6)], bounds=(0, 1), k=k)
+    off_grid = ic.incoherence([np.full(20, 0.2011), np.full(20, 0.6013)], bounds=(0, 1), k=k)
+    assert off_grid == pytest.approx(on_grid, abs=0.01)
+
+
+def test_values_on_the_outer_bin_edges_are_counted():
+    result = ic.measure([[0.0, 1.0, 2.0], [2.0, 2.0, 0.0]], bins=[0, 1, 2])
+    assert result.incoherence == ic.measure_counts([[1, 2], [1, 2]]).incoherence
+
+
 def test_k_is_ignored_when_binning():
     assert ic.incoherence(TRIALS, bins=8, k=-1) == ic.incoherence(TRIALS, bins=8)
 
@@ -157,6 +169,13 @@ def test_inputs_are_not_changed():
         ([[1.0, 2.0], [3.0, 4.0]], {"weights": [1, np.inf]}, "finite"),
         ([[1.0, 2.0], [3.0, 4.0]], {"k": 0}, "k must be positive"),
         ([[1.0, 2.0], [3.0, 4.0]], {"k": -1}, "k must be positive"),
+        ([[1.0, 2.0], [3.0, 4.0]], {"k": np.nan}, "k must be positive"),
+        ([[1.0, 2.0], [3.0, 4.0]], {"k": np.inf}, "at most 1000"),
+        ([[1.0, 2.0], [3.0, 4.0]], {"k": 1000.5}, "at most 1000"),
+        ([[1.0, 2.0], [3.0, 4.0]], {"bounds": (0, np.inf)}, "bounds must be finite"),
+        ([[1.0, 2.0], [3.0, 4.0]], {"bounds": (-np.inf, np.inf)}, "bounds must be finite"),
+        ([[0.5, 0.5, 100.0], [0.5, 0.5, 0.5]], {"bins": [0, 1, 2]}, "outside the bin edges"),
+        ([[0.5, 0.5, -0.1], [0.5, 0.5, 0.5]], {"bins": [0, 1, 2]}, "outside the bin edges"),
     ],
 )
 def test_bad_observations_are_rejected(trials, kwargs, message):
@@ -188,33 +207,6 @@ def known_bug(reason):
 
 
 SIMPLE = [[0.0, 0.2, 0.4], [0.6, 0.8, 1.0]]
-
-
-@known_bug("the 501 point grid is too coarse for a sharp kernel")
-def test_high_k_does_not_depend_on_where_values_fall_on_the_grid():
-    on_grid = ic.incoherence([np.full(20, 0.2), np.full(20, 0.6)], bounds=(0, 1), k=1000)
-    off_grid = ic.incoherence([np.full(20, 0.2011), np.full(20, 0.6013)], bounds=(0, 1), k=1000)
-    assert off_grid == pytest.approx(on_grid, abs=0.01)
-
-
-@known_bug("numpy.histogram silently drops values outside explicit edges")
-def test_values_outside_explicit_bin_edges_are_rejected():
-    with pytest.raises(ValueError):
-        ic.measure([[0.5, 0.5, 100.0], [0.5, 0.5, 0.5]], bins=[0, 1, 2])
-
-
-@known_bug("infinite bounds are accepted")
-@pytest.mark.parametrize("bounds", [(0, np.inf), (-np.inf, np.inf)])
-def test_infinite_bounds_are_rejected(bounds):
-    with pytest.raises(ValueError):
-        ic.measure(SIMPLE, bounds=bounds)
-
-
-@known_bug("k is only checked for being above zero")
-@pytest.mark.parametrize("k", [np.nan, np.inf])
-def test_non_finite_k_is_rejected(k):
-    with pytest.raises(ValueError):
-        ic.measure(SIMPLE, k=k)
 
 
 @known_bug("the entropy limits collapse for a vanishingly small k")

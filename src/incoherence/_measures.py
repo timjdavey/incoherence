@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from ._entropy import Array, densities, density_entropy
+from ._entropy import _BLOCK, Array, densities, density_entropy, points_for
 
 Entropy = Callable[[Array], Array]
 
@@ -18,8 +18,9 @@ COHESION_POWER = 0.5
 
 #: Grid points for that entropy. The kernel at ``k = 100`` is only 0.01 wide,
 #: so it needs a finer grid than the default to give a steady answer.
-COHESION_POINTS = 2001
+COHESION_POINTS = points_for(COHESION_K)
 
+#: Most pairs worked on at once.
 _CHUNK = 4096
 
 
@@ -32,6 +33,11 @@ def incoherence(
     entropies: Array, pooled_entropy: float, max_entropy: float, weights: Array
 ) -> float:
     """Incoherence (Incoherence paper, eq. 9).
+
+    Trials that agree pool into the distribution they already share, so the
+    pooled entropy equals the entropy of each trial. Trials that disagree pool
+    into something more spread out than any one of them. Incoherence is the
+    weighted size of that gap, scaled to run from 0 to 1.
 
     Parameters
     ----------
@@ -53,6 +59,9 @@ def incoherence(
 def pairwise_divergences(rows: Array, entropy: Entropy, weights: Array) -> Array:
     """Jensen-Shannon divergence between every pair of trials (Cohesion paper, eq. 2).
 
+    For each pair, this is the entropy of the two trials pooled, less the
+    weighted mean of their own entropies.
+
     Returns
     -------
     Array
@@ -64,8 +73,9 @@ def pairwise_divergences(rows: Array, entropy: Entropy, weights: Array) -> Array
     wb = 1 - wa
     entropies = entropy(rows)
     out = np.empty(len(a))
-    for start in range(0, len(a), _CHUNK):
-        s = slice(start, start + _CHUNK)
+    step = max(1, min(_CHUNK, _BLOCK // rows.shape[1]))
+    for start in range(0, len(a), step):
+        s = slice(start, start + step)
         pair = wa[s, None] * rows[a[s]] + wb[s, None] * rows[b[s]]
         out[s] = entropy(pair) - wa[s] * entropies[a[s]] - wb[s] * entropies[b[s]]
     return np.clip(out, 0.0, 1.0)

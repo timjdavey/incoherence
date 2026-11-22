@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from hypothesis.extra import numpy as hnp
 
@@ -73,6 +73,10 @@ def test_repeating_observations_within_a_trial_changes_nothing(trials, copies):
 @settings(deadline=None)
 @given(continuous_trials, st.floats(0.01, 100), st.floats(-100, 100))
 def test_continuous_scale_and_shift_do_not_matter(trials, scale, shift):
+    # Skip a spread so small next to the shift that adding the shift rounds it away.
+    flat = np.concatenate([np.asarray(trial, dtype=np.float64) for trial in trials])
+    span = np.ptp(flat)
+    assume(span == 0 or scale * span > 1e-6 * (scale * np.abs(flat).max() + abs(shift)))
     moved = [np.asarray(trial, dtype=np.float64) * scale + shift for trial in trials]
     assert ic.incoherence(moved) == pytest.approx(ic.incoherence(trials), abs=1e-4)
 

@@ -55,9 +55,9 @@ Figure 2 is not seeded in the original notebook, so its rows are the mean of ten
 The last two rows show the grid alone. Those two panels use trials of different sizes, so the
 package itself gives 0.414 and 0.140. Improvement 3 explains why.
 
-The example in the README moves like this.
+The three test ensembles in `tests/test_paper.py` move like this.
 
-| README example | 501 points | 2,001 points |
+| Test ensemble | 501 points | 2,001 points |
 | :-- | :-- | :-- |
 | Ten matching trials | 0.951 | 0.996 |
 | Two camps | 0.801 | 0.831 |
@@ -68,8 +68,15 @@ correct for the method the paper describes, so this is not a correction to the p
 finer than 2,001 points moves cohesion by less than 0.004 more.
 
 **What it costs.** The last step of cohesion is about four times slower. It takes 0.04 seconds
-for 100 trials and about 4 seconds for 1,000. Incoherence is not affected, and still uses 501
-points so that it matches the published figures.
+for 100 trials and about 4 seconds for 1,000. Incoherence at the default `k = 10` is not
+affected, and still uses 501 points so that it matches the published figures.
+
+**The same rule for a higher `k`.** The 501 grid is fine enough for any `k` up to 25. Above that
+the package adds grid points in step with `k`, so that about ten always sit across the reach of
+one observation. At `k = 100` that is 2,001 points, the same as cohesion. On 501 points
+incoherence at `k = 100` read about 5% low, and at `k = 1000` it could miss an observation
+altogether. No published value moves, because `ensemblepy` always measured incoherence at
+`k = 10` and had no option to change it.
 
 **To get the published values back**, pass the divergences to the internal function with the old
 grid: `incoherence._measures.cohesion(divergences, points=501)`.
@@ -85,8 +92,9 @@ The package works `V0` out from the exact integral.
 **Why.** The exact value does not depend on a random draw, and it works for any `k`.
 
 **How much.** The exact `V0` differs from the saved one by between 0.02% and 0.18%. That moves
-results in the fourth decimal place. For the two camps in the README, the code behind the papers
-gives an incoherence of 0.5712 and the package gives 0.5713. `V1` matches to every digit.
+results in the fourth decimal place. For the two camps in those test ensembles, the code behind
+the papers gives an incoherence of 0.5712 and the package gives 0.5713. `V1` matches to every
+digit.
 
 **Which published figures move.** None. Rerunning the code behind the papers with the exact `V0`
 moves Figures 7 and 8 of the Incoherence paper by at most 0.0002, and Figures 2, 5 and 6 of the
@@ -133,7 +141,8 @@ gives 0.484 and 0.165 for the bottom two panels.
 ## 4. Better input sanitation
 
 **What changed.** The code behind the papers often silently dropped missing values and empty trials.
-The package raises an error for both.
+The package raises an error for both. It also raises an error for an observation that falls
+outside the bin edges you give, which used to be dropped without a word.
 
 **Why.** A dropped trial changes both measures, and you would not know it had gone.
 

@@ -72,7 +72,7 @@ The first ensemble sits on its floor, so its trials may not disagree at all. The
 
 ## How many trials do you need?
 
-At least ten, and more if you want to trust cohesion.
+The same is true as the observations (it assumes incoherence). But practically speaking aim for at least ten, and more for cohesion.
 
 Cohesion looks at pairs of trials, and few trials make few pairs. Two trials make one pair, five make 10 and ten make 45. A handful of values always looks bunched, so cohesion reads high when there are few trials, whatever the data.
 
@@ -214,6 +214,8 @@ k=10   incoherence=0.57
 k=20   incoherence=0.37
 k=100  incoherence=0.08
 ```
+
+A higher `k` only sees bunching tighter than about `1/k` of the range. Broad shapes then read as spread out, so every score falls and sits closer to its floor. A higher `k` also needs a finer grid, so it is slower, about 4 times at `k=100` and 40 times at `k=1000`. The limit is 1,000.
 
 No value of `k` is the correct one. The default of 10 is the one the published figures used, so keep it. Never compare results made with different values.
 
