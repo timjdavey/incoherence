@@ -222,10 +222,7 @@ def measure(
     k = max(k, MIN_K)
     points = points_for(k)
     scaled = [_to_unit(trial, low, high) for trial in observations]
-
-    def to_rows(groups: list[Array]) -> Array:
-        return np.stack([densities(group, k, points) for group in groups])
-
+    to_rows = partial(_density_rows, k=k, points=points)
     return Result(
         to_rows(scaled),
         _as_weights(weights, len(scaled)),
@@ -324,6 +321,11 @@ def _as_whole(table: Array) -> NDArray[np.int64] | None:
     if (table != np.round(table)).any() or table.max() >= MAX_DEALT or table.sum() >= MAX_DEALT:
         return None
     return table.astype(np.int64)
+
+
+def _density_rows(groups: list[Array], k: float, points: int) -> Array:
+    """Return one row of densities for each group of observations."""
+    return np.stack([densities(group, k, points) for group in groups])
 
 
 def _deal_observations(

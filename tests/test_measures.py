@@ -148,6 +148,12 @@ def test_a_trial_with_almost_no_weight_barely_moves_cohesion():
     assert weighted.cohesion == pytest.approx(ic.measure_counts(counts[:4]).cohesion, abs=1e-6)
 
 
+@pytest.mark.parametrize("tiny", [1e-320, 5e-324])
+def test_two_trials_score_a_cohesion_of_1_with_extreme_weights(tiny):
+    result = ic.measure_counts([[9, 1], [1, 9]], weights=[1, tiny])
+    assert result.cohesion == pytest.approx(1.0, abs=0.01)
+
+
 def test_equal_weights_leave_cohesion_exactly_as_it_was():
     counts = np.array([[9, 1, 0], [1, 5, 4], [2, 2, 6], [5, 5, 0]])
     plain = _measures.cohesion(ic.measure_counts(counts).divergences)

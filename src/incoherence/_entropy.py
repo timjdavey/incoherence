@@ -79,13 +79,21 @@ def densities(
     in each direction carries its influence onwards. The cost grows with the
     observations plus the grid points, rather than with the two multiplied.
     """
+    # Scaled so the largest is 1, or dividing by a tiny total can overflow.
+    weights = None if weights is None else weights / weights.max()
     r = grid(points)
     decay = np.exp(-k * (r[-1] - r[0]) / (points - 1))
     above = np.searchsorted(r, observations, side="right")
     below = above - 1
     mass = 1.0 if weights is None else weights
-    rising = np.bincount(above, mass * np.exp(-k * (r[above] - observations)), points)
-    falling = np.bincount(below, mass * np.exp(-k * (observations - r[below])), points)
+    rising = np.asarray(
+        np.bincount(above, mass * np.exp(-k * (r[above] - observations)), points),
+        dtype=np.float64,
+    )
+    falling = np.asarray(
+        np.bincount(below, mass * np.exp(-k * (observations - r[below])), points),
+        dtype=np.float64,
+    )
     total = _carry(rising, decay) + _carry(falling[::-1], decay)[::-1]
     return total / (len(observations) if weights is None else weights.sum())
 

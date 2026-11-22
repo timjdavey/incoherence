@@ -67,11 +67,11 @@ A table of probabilities has no floor. Probabilities do not say how many observa
 
 ## How many trials do you need?
 
-Incoherence is designed to be a fact about your system, not your data. So it is invariant to the number of trials you give. But that means you have to be more careful about how many you use. 
+Incoherence is designed to be a fact about your system, not your data. Copying every trial leaves it unchanged. But a small ensemble is a small sample of your system, so it can read lower and varies more. In the table below, the mean rises from 0.29 with 2 trials to 0.50 with 50.
 
-Practically speaking use at least ten for incoherence and more for cohesion. Few trials do not directly push incoherence up the way few observations do, however fewer trials might naturally increase it if the system has a high cohesion.
+Practically speaking use at least ten for incoherence and more for cohesion.
 
-However, cohesion goes up because it looks at pairs of trials. Two trials make one pair, five make 10 and ten make 45. A handful of pairs always looks bunched, so cohesion reads high whatever the data.
+Few trials push cohesion up, because it looks at pairs of trials. Two trials make one pair, five make 10 and ten make 45. A handful of pairs always looks bunched, so cohesion reads high whatever the data.
 
 In the example every trial wanders off on its own, so cohesion should be low. Each row is twenty ensembles, showing the mean with the lowest and highest in brackets.
 

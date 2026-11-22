@@ -18,7 +18,7 @@ jobs:
             resolution: lowest-direct
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --resolution ${{ matrix.resolution }}

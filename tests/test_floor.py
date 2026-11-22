@@ -1,5 +1,7 @@
 """The floor: the incoherence left when the observations are dealt out to the trials at random."""
 
+import pickle
+
 import numpy as np
 import pytest
 
@@ -140,3 +142,19 @@ def test_a_table_that_cannot_be_shuffled_has_no_floor(counts):
 def test_repeats_below_one_are_rejected(repeats):
     with pytest.raises(ValueError, match="repeats must be at least 1"):
         ic.measure(CAMPS).floor(repeats=repeats)
+
+
+@pytest.mark.parametrize(
+    "build",
+    [
+        lambda: ic.measure(UNEVEN),
+        lambda: ic.measure(UNEVEN, bins=8),
+        lambda: ic.measure_counts([[5, 0, 9], [1, 1, 1], [0, 40, 2]]),
+    ],
+    ids=["continuous", "binned", "counts"],
+)
+def test_a_result_survives_pickling(build):
+    result = build()
+    copy = pickle.loads(pickle.dumps(result))
+    assert copy.incoherence == result.incoherence
+    assert copy.floor(rng=3) == result.floor(rng=3)
