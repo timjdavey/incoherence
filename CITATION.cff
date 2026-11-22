@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+title: incoherence
+message: If you use this software, please cite the papers below.
+type: software
+authors:
+  - family-names: Davey
+    given-names: Timothy
+repository-code: https://github.com/timjdavey/incoherence
+license: MIT
+preferred-citation:
+  type: article
+  title: "Incoherence: A Generalized Measure of Complexity to Quantify Ensemble Divergence in Multi-Trial Experiments and Simulations"
+  authors:
+    - family-names: Davey
+      given-names: Timothy
+  journal: Entropy
+  volume: 26
+  issue: 8
+  start: 683
+  year: 2024
+  doi: 10.3390/e26080683
+references:
+  - type: article
+    title: "Cohesion: A Measure of Organisation and Epistemic Uncertainty of Incoherent Ensembles"
+    authors:
+      - family-names: Davey
+        given-names: Timothy
+    journal: Entropy
+    volume: 25
+    issue: 12
+    start: 1605
+    year: 2023
+    doi: 10.3390/e25121605

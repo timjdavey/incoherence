@@ -1,0 +1,59 @@
+[project]
+name = "incoherence"
+version = "0.1.0"
+description = "Incoherence and cohesion: measures of complexity and self-organisation for ensembles of trials"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Tim Davey" }]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.13",
+]
+keywords = ["complexity", "entropy", "ensemble", "self-organisation", "information theory"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/timjdavey/incoherence"
+Issues = "https://github.com/timjdavey/incoherence/issues"
+Changelog = "https://github.com/timjdavey/incoherence/blob/main/CHANGELOG.md"
+"Incoherence paper" = "https://doi.org/10.3390/e26080683"
+"Cohesion paper" = "https://doi.org/10.3390/e25121605"
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.100",
+    "pyright>=1.1.380",
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.12,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "NPY", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.pyright]
+include = ["src"]
+typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
