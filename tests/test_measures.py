@@ -216,3 +216,18 @@ def test_equal_weights_leave_cohesion_exactly_as_it_was():
 def test_evenly_spread_divergences_have_no_cohesion():
     for k in (100, _measures.cohesion_k(64)):
         assert _measures.cohesion(np.linspace(0, 1, 2000), k) == pytest.approx(0.0, abs=1e-6)
+
+
+@pytest.mark.parametrize("shares", [[0.5, 0.5], [0.82, 0.18], [0.99, 0.01], [0.4, 0.3, 0.2, 0.1]])
+def test_each_power_reads_separate_values_by_its_own_formula(shares):
+    # Power 1 reads 1 - H as the chance that two values match, and power 0.5 reads H
+    # as one equal step for each value. See experiments/power/results/laws.txt.
+    k = 400.0
+    shares = np.array(shares)
+    values = np.repeat(np.linspace(0.1, 0.9, len(shares)), np.round(1000 * shares).astype(int))
+    rows = _entropy.densities(values, k, _entropy.points_for(k))[None]
+    one = _entropy.density_entropy(rows, k, 1.0)[0]
+    half = _entropy.density_entropy(rows, k, _measures.COHESION_POWER)[0]
+    matched, places = shares @ shares, np.sqrt(shares).sum() ** 2
+    assert 1 - one == pytest.approx((k * matched - 4) / (k - 4), abs=1e-3)
+    assert half == pytest.approx(8 * (places - 1) / (k - 8), abs=1e-3)

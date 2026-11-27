@@ -143,7 +143,9 @@ def density_entropy(rows: Array, k: float, power: float = 1.0) -> Array:
     k
         The same ``k`` that produced the densities.
     power
-        Applied to the densities before the variance is taken.
+        Applied to the densities before the variance is taken. Each trial's
+        entropy uses 1, which tracks Shannon entropy. Cohesion's last step
+        uses 0.5, which counts separate values, see ``experiments/power``.
     """
     v0, v1 = _variance_limits(k, power, rows.shape[-1])
     variance = (rows**power).var(axis=-1)

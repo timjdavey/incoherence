@@ -1,0 +1,58 @@
+The laws. What each power reads on exact values
+
+The check. Over 12 sets of divergences from a cloud and 2 tight camps, the raw numbers give
+the package's Cohesion at power 0.5, and its entropy at power 1, to within 1e-12.
+
+Law 1. M values, exactly separate, with equal shares.
+Power 1 reads 1 - H as the chance two values match, 1 / m, or (k / m - 4) / (k - 4) at this k.
+Power 0.5 reads H as one equal step for each extra value, 8(m - 1) / (k - 8).
+Values      k  Power 1, 1 - H  Formula  Power 0.5, H  Formula
+------  -----  --------------  -------  ------------  -------
+1         100          1.0000   1.0000        0.0000   0.0000
+1         400          1.0000   1.0000        0.0000   0.0000
+1       1,600          1.0000   1.0000        0.0000   0.0000
+2         100          0.4795   0.4792        0.0827   0.0870
+2         400          0.4950   0.4949        0.0201   0.0204
+2       1,600          0.4988   0.4987        0.0050   0.0050
+3         100          0.3061   0.3056        0.1654   0.1739
+3         400          0.3266   0.3266        0.0403   0.0408
+3       1,600          0.3317   0.3317        0.0100   0.0101
+7         100          0.1074   0.1071        0.4676   0.5217
+7         400          0.1339   0.1342        0.1221   0.1224
+7       1,600          0.1404   0.1407        0.0313   0.0302
+16        100          0.0277   0.0234        0.7476   1.0000
+16        400          0.0529   0.0530        0.3010   0.3061
+16      1,600          0.0600   0.0602        0.0764   0.0754
+
+Law 2. Exactly separate values with unequal shares p.
+Power 1 swaps 1 / m for the sum of p squared, the chance two values match. A stray barely counts.
+Power 0.5 swaps m for the sum of root p, squared. A stray of 1% counts a fifth of a value.
+So the formulas are (k sum p^2 - 4) / (k - 4) and 8((sum root p)^2 - 1) / (k - 8).
+Values                                     k  Power 1, 1 - H  Formula  Power 0.5, H  Formula
+-------------------------------------  -----  --------------  -------  ------------  -------
+2 values, shares 82 and 18               100          0.6927   0.6925        0.0635   0.0668
+2 values, shares 82 and 18               400          0.7018   0.7018        0.0155   0.0157
+2 values, shares 82 and 18             1,600          0.7041   0.7041        0.0038   0.0039
+2 values, shares 99 and 1                100          0.9794   0.9794        0.0165   0.0173
+2 values, shares 99 and 1                400          0.9800   0.9800        0.0040   0.0041
+2 values, shares 99 and 1              1,600          0.9802   0.9802        0.0010   0.0010
+2 values, 999 and 1                      100          0.9979   0.9979        0.0052   0.0055
+2 values, 999 and 1                      400          0.9980   0.9980        0.0013   0.0013
+2 values, 999 and 1                    1,600          0.9980   0.9980        0.0003   0.0003
+7 values, shares 2, 1, 1, 1, 1, 1, 1     100          0.1215   0.1211        0.4581   0.5105
+7 values, shares 2, 1, 1, 1, 1, 1, 1     400          0.1475   0.1477        0.1194   0.1198
+7 values, shares 2, 1, 1, 1, 1, 1, 1   1,600          0.1539   0.1541        0.0305   0.0295
+7 values, shares 94, 1, 1, 1, 1, 1, 1    100          0.8795   0.8794        0.1148   0.1273
+7 values, shares 94, 1, 1, 1, 1, 1, 1    400          0.8830   0.8830        0.0296   0.0299
+7 values, shares 94, 1, 1, 1, 1, 1, 1  1,600          0.8839   0.8839        0.0074   0.0074
+
+Law 3. N random values, uniform on [0, 1]. The mean over 100 sets.
+Power 1 reads 1 - H as 1 / N whatever k is, so it needs no rule for k.
+Power 0.5 reads H as 1 - k / (16N), so k has to grow with N. This gives the 8n rule.
+N       1 / N  Power 1, k = 100  Power 1, k = 400  Power 1, k = 1,600  Power 0.5, k = 100  Power 0.5, k = 400  Power 0.5, k = 1,600
+-----  ------  ----------------  ----------------  ------------------  ------------------  ------------------  --------------------
+3      0.3333            0.3391            0.3314              0.3308       0.136 / 0.000       0.040 / 0.000         0.012 / 0.000
+10     0.1000            0.1019            0.1000              0.0994       0.445 / 0.375       0.157 / 0.000         0.045 / 0.000
+45     0.0222            0.0219            0.0221              0.0221       0.834 / 0.861       0.508 / 0.444         0.189 / 0.000
+300    0.0033            0.0033            0.0033              0.0033       0.977 / 0.979       0.909 / 0.917         0.658 / 0.667
+4,950  0.0002            0.0002            0.0002              0.0002       0.998 / 0.999       0.995 / 0.995         0.979 / 0.980

@@ -261,6 +261,14 @@ At 100 trials the default puts 0.67 between noise and camps, against 0.55 for a 
 - **The default struggles in three places.** With about ten observations a trial, many trials read noise as camps. With many options and few trials, camps are harder to tell from noise. Trials that are each nearly certain of one option read slightly higher from about 13 trials. In all three, `cohesion_k=100` reads them better, see [the limits](../experiments/k/results/README.md#what-no-rule-for-k-fixes).
 - **Never compare results made with different values,** just as for `k`.
 
+## Why does cohesion use a different power?
+
+Because its last step asks a different question. Every entropy estimate here raises each density to a power before it takes the variance. Each trial's entropy uses power 1, and cohesion's last step, on the pairwise divergences, uses 0.5.
+
+- **Power 1 follows the biggest bunch.** It tracks Shannon entropy about twice as closely, and a stray observation barely moves it. That is what a trial's entropy needs.
+- **Power 0.5 counts separate values.** Two clean camps give two divergence values, and power 0.5 reads them as bunched, so they score near 1. Power 1 reads them as only half bunched, and the same camps score 0.26 to 0.47.
+- **No way of reading power 1 fixes this.** Power 1 reads noise lower in cohesion's last step. But the one way of reading it that put clean camps near the top also read one camp, a 9 to 1 split and an even pair all at 0.96 or more. The [power experiments](../experiments/power/README.md) have the numbers.
+
 ## What should I check before I trust a number?
 
 1. Compare it with `result.floor()`, the floor for your sample size.

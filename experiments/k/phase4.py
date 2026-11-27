@@ -70,7 +70,7 @@ def _real(cache: Path | None) -> str:
     )
 
 
-def _figure_2(rng: np.random.Generator) -> dict[str, np.ndarray]:
+def figure_2(rng: np.random.Generator) -> dict[str, np.ndarray]:
     """Rebuild figure 2 of the Cohesion paper, which the notebook did not seed."""
     centres = {
         "Figure 2, Current": (100, 100, 100, 101, 101),
@@ -85,7 +85,7 @@ def _figure_2(rng: np.random.Generator) -> dict[str, np.ndarray]:
     return out
 
 
-def _figures_5_and_6() -> dict[str, np.ndarray]:
+def figures_5_and_6() -> dict[str, np.ndarray]:
     """Rebuild figures 5 and 6 of the Cohesion paper, with the notebook's own seeds.
 
     The notebook used numpy's legacy global generator, so this does too.
@@ -124,7 +124,7 @@ def _figures_5_and_6() -> dict[str, np.ndarray]:
     return {name: np.asarray(measure(trials).divergences) for name, trials in named.items()}
 
 
-def _reference() -> dict[str, np.ndarray]:
+def reference() -> dict[str, np.ndarray]:
     """Rebuild the three test ensembles of ``tests/test_paper.py``."""
     rng = np.random.default_rng(1)
     same = [rng.normal(0, 1, 500) for _ in range(10)]
@@ -136,9 +136,9 @@ def _reference() -> dict[str, np.ndarray]:
 
 def _papers() -> str:
     """Check the figures in the improvements page keep the order the papers give them."""
-    runs = [_figure_2(np.random.default_rng([PHASE, 2, run])) for run in range(10)]
-    figure_2 = {name: [run[name] for run in runs] for name in runs[0]}
-    groups = [figure_2, _figures_5_and_6(), _reference()]
+    runs = [figure_2(np.random.default_rng([PHASE, 2, run])) for run in range(10)]
+    runs_by_name = {name: [run[name] for run in runs] for name in runs[0]}
+    groups = [runs_by_name, figures_5_and_6(), reference()]
     rows, kept = [], []
     for group in groups:
         scores = []

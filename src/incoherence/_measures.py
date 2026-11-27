@@ -13,6 +13,7 @@ from ._entropy import Array, densities, density_entropy, points_for
 Entropy = Callable[[Array], Array]
 
 #: Power for the entropy of the pairwise divergences (Cohesion paper, eq. 3 to 5).
+#: Each trial's entropy uses power 1. See ``cohesion`` and ``experiments/power``.
 COHESION_POWER = 0.5
 
 #: How much that entropy's ``k`` grows for each trial. See ``experiments/k``.
@@ -148,6 +149,12 @@ def cohesion(
 
     Divergences that bunch around a few values mean the trials fall into a few
     groups, which gives low entropy and high cohesion.
+
+    The entropy uses power 0.5, where each trial's entropy uses power 1. At
+    power 0.5 the entropy rises by one equal step for each separate value, so
+    two clean camps, which give two values, read close to 1. At power 1,
+    ``1 - entropy`` is the chance that two values match, which is only about a
+    half for the same camps. The experiments in ``experiments/power`` compare the two.
 
     Parameters
     ----------

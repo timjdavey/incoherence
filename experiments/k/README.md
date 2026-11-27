@@ -104,7 +104,8 @@ A cloud and tight camps at 4 trials, with and without a floor of 100.
 
 - **The measure itself is held fixed.** Cohesion's last step keeps its power of 0.5, its squaring
   and the divergence. Each trial's continuous entropy keeps power 1, as the code has it. The rule is
-  picked on exact probabilities, so that second power never enters the choice.
+  picked on exact probabilities, so that second power never enters the choice. Why the two powers
+  differ is tested in [experiments/power](../power/README.md).
 - **The density grid follows k.** `points_for(k)` in `src/incoherence/_entropy.py` gives `20k + 1`
   points. It is checked for convergence at every k a rule reaches.
 - **The k for real values stays at 10.** It is `DEFAULT_K` in `src/incoherence/_result.py`.
@@ -128,7 +129,7 @@ Run these from the repository root.
 | `phase3.py` | What no rule fixes, one part of the data at a time | `limits.txt` |
 | `noise.py` | Kinds of noise across k, and the noise ceiling | `spread.txt`, `ceiling.txt` |
 | `phase4.py` | Fresh seeds, real values, the papers' figures, the grid and the cost | `confirm.txt`, `cost.txt` |
-| `run.py` | The runner and the check | |
+| `run.py` | The list of experiments, for the runner and the check in `experiments/runner.py` | |
 
 - **A full run takes about seven and a half minutes on eight cores.** The result does not depend on
   the number of cores.
