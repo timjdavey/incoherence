@@ -10,3 +10,8 @@ First release. A fresh build of the measures in the Incoherence and Cohesion pap
 
 [Improvements on the papers](docs/improvements.md) lists how results differ from `ensemblepy` and
 by how much.
+
+- **Cohesion's `k` grows with trials.** It is 8 for each trial, where the papers fixed it at 100.
+  The [k experiments](experiments/k/README.md) found this tells camps from noise better.
+- **`cohesion_k` sets it yourself.** Pass `cohesion_k=100` to `measure`, `measure_counts` or
+  `cohesion` to match the papers. `Result.cohesion_k` says which value was used.

@@ -12,13 +12,15 @@ from ._entropy import Array, densities, density_entropy, points_for
 
 Entropy = Callable[[Array], Array]
 
-#: Settings for the entropy of the pairwise divergences (Cohesion paper, eq. 3 to 5).
-COHESION_K = 100.0
+#: Power for the entropy of the pairwise divergences (Cohesion paper, eq. 3 to 5).
+#: Each trial's entropy uses power 1. See ``cohesion`` and ``experiments/power``.
 COHESION_POWER = 0.5
 
-#: Grid points for that entropy. The kernel at ``k = 100`` is only 0.01 wide,
-#: so it needs a finer grid than the default to give a steady answer.
-COHESION_POINTS = points_for(COHESION_K)
+#: How much that entropy's ``k`` grows for each trial. See ``experiments/k``.
+COHESION_RATE = 8.0
+
+#: The fixed ``k`` the papers used for that entropy, before it grew with trials.
+PAPER_COHESION_K = 100.0
 
 #: Most pairs worked on at once.
 _CHUNK = 4096
@@ -112,24 +114,62 @@ def pair_weights(weights: Array) -> Array | None:
     return scaled[a] * scaled[b]
 
 
+def effective_trials(weights: Array) -> float:
+    """How many trials the weights amount to, for setting cohesion's ``k``.
+
+    This is the number of trials when every weight is the same. Otherwise it
+    is ``1 / sum(weights ** 2)``, so a trial with almost no weight barely
+    counts, just as it barely counts towards cohesion itself.
+
+    Parameters
+    ----------
+    weights
+        One weight per trial, summing to 1.
+    """
+    if np.ptp(weights) == 0:
+        return float(len(weights))
+    return float(1 / (weights @ weights))
+
+
+def cohesion_k(trials: float) -> float:
+    """Return the default ``k`` for the entropy of the divergences, 8 for each trial.
+
+    More trials give more pairs, and more pairs need a finer kernel to tell
+    a few groups from noise. The experiments in ``experiments/k`` found that
+    ``8n`` reads noise lowest of every rule they tried, and beats the fixed
+    100 the papers used.
+    """
+    return COHESION_RATE * trials
+
+
 def cohesion(
-    divergences: Array, points: int = COHESION_POINTS, weights: Array | None = None
+    divergences: Array, k: float, points: int | None = None, weights: Array | None = None
 ) -> float:
     """Cohesion from the pairwise divergences (Cohesion paper, eq. 3 to 5).
 
     Divergences that bunch around a few values mean the trials fall into a few
     groups, which gives low entropy and high cohesion.
 
+    The entropy uses power 0.5, where each trial's entropy uses power 1. At
+    power 0.5 the entropy rises by one equal step for each separate value, so
+    two clean camps, which give two values, read close to 1. At power 1,
+    ``1 - entropy`` is the chance that two values match, which is only about a
+    half for the same camps. The experiments in ``experiments/power`` compare the two.
+
     Parameters
     ----------
     divergences
         One value in [0, 1] per pair of trials.
+    k
+        How quickly each divergence's influence falls away, from :func:`cohesion_k`
+        by default.
     points
-        The number of grid points for the entropy of the divergences.
+        The number of grid points for the entropy of the divergences. Leave as
+        ``None`` for the number that ``k`` needs, see :func:`points_for`.
     weights
         How much each pair counts, from :func:`pair_weights`. Leave as ``None``
         to count every pair the same.
     """
-    density = densities(divergences, COHESION_K, points, weights)
-    entropy = density_entropy(density, COHESION_K, COHESION_POWER)
+    density = densities(divergences, k, points_for(k) if points is None else points, weights)
+    entropy = density_entropy(density, k, COHESION_POWER)
     return float((1 - entropy) ** 2)

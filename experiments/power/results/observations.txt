@@ -1,0 +1,99 @@
+Level 1. Each trial's entropy at power 1 and at power 0.5
+
+Power 1 is the package's estimator, at k = 10 on its grid. Power 0.5 is the same with the root of each
+density taken first. Its kernel then reaches twice as far, so the package's grid cuts its tail off.
+'k = 20' and 'wide grid', which runs 1.5 past each end, are the two repairs for that. Power 1 at
+k = 20 is the control for the first.
+
+The check. Over 50 random ensembles, power 1 here gives the package's incoherence, and power 0.5
+gives the package's density_entropy at power 0.5, to within 1e-5. Its limits come from 200,001
+evenly spaced observations, where the package integrates exactly.
+
+Agreement with Shannon entropy. The papers justify the estimator against Shannon entropy, binned,
+as a share of its most. Rank is the Spearman rank agreement, so 1 is the same order. Gap is the
+mean gap, so 0 is the same value.
+
+Each trial's entropy, over 500 random shapes of 5,000 observations: mixes of one to three humps,
+blocks and beta shapes.
+Against        Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+-------------  -------  ---------------  ---------  -----------------  --------------------
+2 bins, rank     0.760            0.726      0.731              0.706                 0.712
+3 bins, rank     0.912            0.893      0.873              0.880                 0.859
+5 bins, rank     0.950            0.965      0.892              0.933                 0.881
+10 bins, rank    0.935            0.980      0.863              0.924                 0.854
+20 bins, rank    0.915            0.972      0.839              0.908                 0.830
+50 bins, rank    0.902            0.964      0.821              0.894                 0.813
+2 bins, gap      0.181            0.215      0.187              0.192                 0.192
+3 bins, gap      0.099            0.140      0.139              0.128                 0.154
+5 bins, gap      0.066            0.096      0.146              0.122                 0.167
+10 bins, gap     0.088            0.049      0.185              0.162                 0.210
+20 bins, gap     0.125            0.046      0.221              0.203                 0.249
+50 bins, gap     0.168            0.077      0.265              0.251                 0.293
+
+The one number of bins, from 2 to 60, that each sits closest to.
+                        Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+----------------------  -------  ---------------  ---------  -----------------  --------------------
+Closest number of bins        5               15          3                  5                     3
+Mean gap there            0.066            0.040      0.139              0.122                 0.154
+
+Incoherence against the discrete measure on the same data binned, over 500 ensembles of 8 trials
+of 2,000 observations. In half, each trial is its own random shape. In the rest, the trials share
+one shape, each moved and stretched a little.
+Against        Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+-------------  -------  ---------------  ---------  -----------------  --------------------
+2 bins, rank     0.747            0.683      0.797              0.783                 0.796
+3 bins, rank     0.891            0.831      0.890              0.900                 0.893
+5 bins, rank     0.961            0.945      0.893              0.927                 0.902
+10 bins, rank    0.952            0.975      0.849              0.896                 0.858
+20 bins, rank    0.929            0.969      0.815              0.865                 0.824
+50 bins, rank    0.898            0.954      0.775              0.828                 0.783
+2 bins, gap      0.118            0.153      0.098              0.102                 0.097
+3 bins, gap      0.062            0.099      0.067              0.068                 0.077
+5 bins, gap      0.037            0.058      0.073              0.070                 0.086
+10 bins, gap     0.052            0.030      0.098              0.096                 0.114
+20 bins, gap     0.080            0.042      0.122              0.123                 0.140
+50 bins, gap     0.115            0.073      0.153              0.157                 0.172
+
+Stray observations. A trial of Normal(0.3, 0.03), with a share of its observations moved to 0.9.
+Each cell is the rise in entropy. Shannon entropy on the same data in 10 and 50 bins gives the scale.
+Share moved  Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid  Shannon, 10 bins  Shannon, 50 bins
+-----------  -------  ---------------  ---------  -----------------  --------------------  ----------------  ----------------
+0.1%           0.003            0.002      0.012              0.023                 0.013             0.003             0.001
+1.0%           0.028            0.020      0.085              0.082                 0.090             0.021             0.009
+5.0%           0.132            0.097      0.251              0.188                 0.266             0.071             0.027
+
+Few observations. Right answer: the same entropy however many observations a trial holds. Each cell
+is the size of the bias, then the spread over draws in brackets, as the mean over four shapes.
+The bias is the mean over 2,000 draws less the value from 4,000 evenly spaced quantiles.
+Observations        Power 1  Power 1, k = 20      Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+------------  -------------  ---------------  -------------  -----------------  --------------------
+5             0.148 (0.142)    0.164 (0.115)  0.132 (0.139)      0.189 (0.119)         0.138 (0.148)
+10            0.076 (0.090)    0.084 (0.071)  0.067 (0.091)      0.098 (0.085)         0.071 (0.097)
+20            0.038 (0.056)    0.041 (0.044)  0.034 (0.060)      0.049 (0.058)         0.036 (0.064)
+50            0.016 (0.032)    0.017 (0.025)  0.016 (0.036)      0.021 (0.035)         0.017 (0.039)
+200           0.005 (0.015)    0.005 (0.011)  0.005 (0.017)      0.006 (0.016)         0.006 (0.018)
+
+Detection. Each ensemble is 10 trials. With no difference, every trial is Normal(0.5, 0.08). Each cell
+is the chance that an ensemble with the difference scores a higher incoherence than one without,
+over 500 of each. 0.5 is a coin toss and 1 is perfect. Each is the mean over three sizes of the
+difference and four tables: 50 and 200 observations a trial, with bounds at 0 and 1 or from the
+data. Every variant scores the same draws, so a gap of 0.01 is about the noise.
+Difference                                                  Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+----------------------------------------------------------  -------  ---------------  ---------  -----------------  --------------------
+One trial, mean moved by 0.04, 0.08, 0.12                     0.770            0.783      0.772              0.798                 0.764
+One trial, sd times 1.2, 1.35, 1.5                            0.886            0.868      0.902              0.895                 0.902
+One trial, sd times 0.8, 0.7, 0.6                             0.926            0.927      0.908              0.911                 0.910
+Every trial, mean jitter sd 0.02, 0.03, 0.04                  0.819            0.835      0.816              0.842                 0.807
+Every trial, sd jitter 5%, 10%, 15%                           0.869            0.861      0.872              0.867                 0.872
+Two camps, means 0.03, 0.05, 0.08 apart                       0.803            0.819      0.796              0.821                 0.788
+One trial, 2%, 5%, 10% scattered over the range               0.664            0.648      0.736              0.769                 0.741
+One trial, 50%, 75%, 100% an even spread, same mean and sd    0.477            0.487      0.460              0.498                 0.460
+Mean of the eight                                             0.777            0.778      0.783              0.800                 0.780
+
+Incoherence with no difference, which should be low.
+Table                                   Power 1  Power 1, k = 20  Power 0.5  Power 0.5, k = 20  Power 0.5, wide grid
+--------------------------------------  -------  ---------------  ---------  -----------------  --------------------
+50 observations, bounds 0 to 1            0.066            0.056      0.049              0.066                 0.062
+200 observations, bounds 0 to 1           0.033            0.028      0.025              0.034                 0.031
+50 observations, bounds from the data     0.062            0.041      0.093              0.109                 0.105
+200 observations, bounds from the data    0.031            0.020      0.044              0.052                 0.050

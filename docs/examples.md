@@ -135,8 +135,8 @@ for name, trials in [("split", split), ("scattered", scattered)]:
 ```
 
 ```text
-split      incoherence=0.53  cohesion=0.84
-scattered  incoherence=0.60  cohesion=0.35
+split      incoherence=0.53  cohesion=0.68
+scattered  incoherence=0.60  cohesion=0.15
 ```
 
 Both ensembles are incoherent by about the same amount. Cohesion tells them apart. A split trial

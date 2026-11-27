@@ -1,0 +1,9 @@
+Phase 4. The cost of one run at 1,600 trials
+
+4 tight camps over 4 options. Seconds are the best of 3 on one machine, so this table is not checked.
+Step                       k                         Size  Seconds
+--------------------  ------  ---------------------------  -------
+Pairwise divergences                      1,279,200 pairs     0.11
+Last step, fixed 100     100    2,001 points, 0.0 MB each     0.05
+Last step, 8n         12,800  256,001 points, 2.0 MB each     0.10
+Last step, 20n        32,000  640,001 points, 5.1 MB each     0.12
