@@ -14,17 +14,20 @@ fixed.
 | 8 camps in the main grid | 2 and 4 decide the order. 8 is a limit in phase 3 |
 | Data kind as its own part | Counts are the observations row. Real values are phase 4 |
 | Weights as an experiment, and the effective pairs count | One property decides the trial count, see [elements of the rule](design.md#elements-of-the-rule). Effective pairs also passes it, but it is the less simple of the two |
-| 2,000 draws outside phase 2 | Tails only decide the floor and the minimum |
+| 2,000 draws outside phase 2 | Few trials are where the rules differ most |
+| A pass bar against fixed 100 | The first design passed a rule only when noise read no higher than under fixed 100. Raising k lifts some kind of noise at every number of trials, so nothing but fixed 100 could pass. The [weighted error](design.md#how-we-judge-a-rule) replaced it |
 
 ## Parked
 
-| Parked | Runs only if | Note |
-| :-- | :-- | :-- |
-| `4n` and `20n` | The band in phase 1 sits clearly below or above `8n` | |
-| The added join `100 + 8n` and the smooth join `√(100² + (8n)²)` | The floor wins phase 2, and the mean steps at 12.5 trials by more than a tie | A hard `max(100, 8n)` bends at 12.5 trials, close to the 10 the FAQ gives as the minimum |
-| A ceiling of 1,000 | The map shows the best k levelling off, or the run at 1,600 trials is too slow | It may be about cost, not accuracy. `MAX_K = 1000` in `src/incoherence/_result.py` already caps the observation k for that reason |
-| The [noise ceiling](derivation.md#the-noise-ceiling) | In phase 3, tight camps with finite observations read lower as trials grow | An unsaved probe found a ceiling only mattered for exact camps |
-| Cloud spread in the pass bar | Phase 3 finds a spread where the winner reads above fixed 100 | |
+Three of the five triggers fired. What each part found is in the [results](results/README.md).
+
+| Parked | Runs only if | Note | What happened |
+| :-- | :-- | :-- | :-- |
+| `4n` and `20n` | The best k in phase 1 sits clearly below or above `8n` | | Fired. The best k sits at 9n to 16n, so `20n` ran in phase 2. Its weighted error over the grid is 0.304, against 0.300 for `8n` |
+| The added join `100 + 8n` and the smooth join `√(100² + (8n)²)` | The floor wins phase 2, and the mean steps at 12.5 trials by more than a tie | A hard `max(100, 8n)` bends at 12.5 trials, close to the 10 the FAQ gives as the minimum | Did not fire, as the floor lost. Both joins ran under the first design and stay in the table. Both lose to `8n` |
+| A ceiling of 1,000 | The map shows the best k levelling off, or the run at 1,600 trials is too slow | It may be about cost, not accuracy. `MAX_K = 1000` in `src/incoherence/_result.py` already caps the observation k for that reason | Did not fire. The best k still grows at 400 trials, and the last step takes about 0.1 seconds at 1,600 |
+| The [noise ceiling](derivation.md#the-noise-ceiling) | In phase 3, tight camps with finite observations read lower as trials grow | An unsaved probe found a ceiling only mattered for exact camps | Fired. It helps at 10 observations a trial and costs at 30 and 100, so the rule has no ceiling |
+| Kinds of noise across k | Phase 3 finds a spread where the winner reads above fixed 100 | | Fired, at a spread of 0.1. No single k reads every kind of noise lowest |
 
 ## Held fixed
 
@@ -50,10 +53,14 @@ An experiment goes in if it meets one of the first three and always meets the fo
 
 ## Open questions
 
+- **Is 2 the right weight?** It is a choice. `8n` wins at any weight above 1.72, and `20n` wins
+  at equal weights. See [phase 2](results/README.md#phase-2-plain-8n-wins).
+- **Should the weighted error use more than one cloud?** It is worked out on the cloud and the
+  tight camps of phase 2. The [floor table](results/floor.txt) reads nine kinds of noise, but
+  only for the floor.
 - **A shuffled baseline would change the order of the principles.** It reads a score against
   noise of the same size, so it would take over principles 1 and 4. The rule for k would then
   only need to keep camps and noise apart, and principle 3 would go first.
-- **The noise ceiling can't be worked out on every data kind.** Probabilities have no count of
-  observations, and real values have no count of options. If its trigger fires it needs a
-  fallback for both.
-- **The time budget is not set.** Nobody has timed the map at 400 trials or the run at 1,600.
+- **A shuffled baseline cannot be read like `floor()`.** With finite observations, one source
+  reads higher than camps do. So a score above the baseline would not mean a pattern.
+- **Weights and real values with few observations were not tested.**
