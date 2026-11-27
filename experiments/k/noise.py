@@ -1,4 +1,4 @@
-"""The parked parts that phase 3 sent back: kinds of noise across k, and the noise ceiling."""
+"""Kinds of noise across k, and the noise ceiling."""
 
 from math import sqrt
 from pathlib import Path
@@ -21,6 +21,7 @@ from common import (
     table,
 )
 
+#: Seeds the draws. Changing it moves spread.txt and ceiling.txt.
 PHASE = 5
 WINNER = "8n"
 RULES = (WINNER, "fixed 100", "20n")
@@ -85,7 +86,7 @@ def spread(cache: Path | None = None) -> str:
             maps[name].append([cell.trials, *(f"{value:.2f}" for value in p95[on_map])])
     headers = ["Trials", *(fmt_k(k) for k in SWEEP)]
     parts = [
-        "Parked part. Kinds of noise across k",
+        "Kinds of noise across k",
         f"Every kind of exact noise, {DRAWS} draws per cell. Spread is the concentration of the "
         "Dirichlet that\nscatters the trials over 4 options, and 1 is the cloud the rule was "
         "chosen on. In a corner is the share\nof trials that put more than "
@@ -186,7 +187,7 @@ def ceiling(cache: Path | None = None) -> str:
         for rule in CEILING_RULES[1:]
     ]
     parts = [
-        "Parked part. The noise ceiling",
+        "The noise ceiling",
         f"Trials of finite observations, {DRAWS} draws per cell. The ceiling is 2m / root(s - 1) "
         "for m observations\nover s options. Ceiling is min(8n, ceiling). Ceiling, 100 or more "
         "is min(8n, max(100, ceiling)).",

@@ -1,4 +1,4 @@
-Parked part. Kinds of noise across k
+Kinds of noise across k
 
 Every kind of exact noise, 200 draws per cell. Spread is the concentration of the Dirichlet that
 scatters the trials over 4 options, and 1 is the cloud the rule was chosen on. In a corner is the share

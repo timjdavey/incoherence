@@ -2,7 +2,7 @@
 
 Run it from the repository root::
 
-    uv run python experiments/k/run.py              # every phase
+    uv run python experiments/k/run.py              # every experiment
     uv run python experiments/k/run.py laws map     # some of them
     uv run python experiments/k/run.py --check      # rerun and compare with what is stored
 """
@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-import parked
+import noise
 import phase1
 import phase2
 import phase3
@@ -31,8 +31,8 @@ EXPERIMENTS: dict[str, Experiment] = {
     "few": phase2.report,
     "floor": phase2.floor,
     "limits": phase3.report,
-    "spread": parked.spread,
-    "ceiling": parked.ceiling,
+    "spread": noise.spread,
+    "ceiling": noise.ceiling,
     "confirm": phase4.report,
     "cost": phase4.cost,
 }

@@ -1,4 +1,4 @@
-Parked part. The noise ceiling
+The noise ceiling
 
 Trials of finite observations, 200 draws per cell. The ceiling is 2m / root(s - 1) for m observations
 over s options. Ceiling is min(8n, ceiling). Ceiling, 100 or more is min(8n, max(100, ceiling)).
