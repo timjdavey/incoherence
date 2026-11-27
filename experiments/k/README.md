@@ -5,16 +5,16 @@ found is in the [results](results/README.md).
 
 - **k is Cohesion's resolution.** Cohesion's last step measures how bunched the pairwise divergences
   are. Each divergence is spread into a narrow bump, and `k` sets how narrow it is.
-- **Today k is fixed at 100.** It is `COHESION_K` in `src/incoherence/_measures.py`, the value the
-  Cohesion paper uses.
+- **The Cohesion paper fixed k at 100.** The package now uses `8n` by default, from
+  `cohesion_k()` in `src/incoherence/_measures.py`. Pass `cohesion_k=100` to `measure` for the
+  paper's value.
 - **Plain `8n` wins.** With n trials, `k = 8n` has a [weighted error](#how-a-rule-is-judged) of
   0.300, against 0.327 for fixed 100. Adding a floor of 100 makes it worse. See [the
   results](results/README.md#plain-8n-wins).
 - **The minimum is 11 trials.** That is the fewest at which tight camps outscore noise in 95% of
   draws. Under fixed 100 it is 10. See [the minimum](results/README.md#the-minimum-is-11-trials).
-- **The package default has not changed yet.** Changing it would move Figure 2 of the Cohesion paper
-  by 0.22. See [what changing the default would
-  do](results/README.md#what-changing-the-default-would-do).
+- **The package default is now `8n`.** It moves Figure 2 of the Cohesion paper by 0.22. See [what
+  changing the default does](results/README.md#what-changing-the-default-does).
 
 ## Words
 
@@ -102,8 +102,9 @@ A cloud and tight camps at 4 trials, with and without a floor of 100.
 | Wider data | Spreads, options, observations per trial, looseness and uneven camps, each moved one at a time |
 | Confirmation | Fresh seeds, real values up to 100 trials, the papers' figures and one run at 1,600 trials |
 
-- **The measure itself is held fixed.** The power of 0.5, the squaring and the divergence stay as
-  the papers have them.
+- **The measure itself is held fixed.** Cohesion's last step keeps its power of 0.5, its squaring
+  and the divergence. Each trial's continuous entropy keeps power 1, as the code has it. The rule is
+  picked on exact probabilities, so that second power never enters the choice.
 - **The density grid follows k.** `points_for(k)` in `src/incoherence/_entropy.py` gives `20k + 1`
   points. It is checked for convergence at every k a rule reaches.
 - **The k for real values stays at 10.** It is `DEFAULT_K` in `src/incoherence/_result.py`.

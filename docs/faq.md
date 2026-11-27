@@ -69,7 +69,7 @@ A table of probabilities has no floor. Probabilities do not say how many observa
 
 Incoherence is designed to be a fact about your system, not your data. Copying every trial leaves it unchanged. But a small ensemble is a small sample of your system, so it can read lower and varies more. In the table below, the mean rises from 0.29 with 2 trials to 0.50 with 50.
 
-Practically speaking use at least ten for incoherence and more for cohesion.
+Practically speaking use at least ten for incoherence and eleven for cohesion.
 
 Few trials push cohesion up, because it looks at pairs of trials. Two trials make one pair, five make 10 and ten make 45. A handful of pairs always looks bunched, so cohesion reads high whatever the data.
 
@@ -91,14 +91,14 @@ for count in [2, 3, 5, 10, 50]:
 ```
 
 ```text
- 2 trials  incoherence 0.29 (0.03 to 0.60)  cohesion 1.00 (0.99 to 1.00)
- 3 trials  incoherence 0.38 (0.11 to 0.60)  cohesion 0.74 (0.70 to 0.92)
- 5 trials  incoherence 0.45 (0.09 to 0.68)  cohesion 0.48 (0.34 to 0.89)
-10 trials  incoherence 0.47 (0.16 to 0.63)  cohesion 0.29 (0.14 to 0.73)
+ 2 trials  incoherence 0.29 (0.03 to 0.60)  cohesion 0.99 (0.98 to 1.00)
+ 3 trials  incoherence 0.38 (0.11 to 0.60)  cohesion 0.52 (0.33 to 0.95)
+ 5 trials  incoherence 0.45 (0.09 to 0.68)  cohesion 0.37 (0.22 to 0.92)
+10 trials  incoherence 0.47 (0.16 to 0.63)  cohesion 0.28 (0.13 to 0.73)
 50 trials  incoherence 0.50 (0.47 to 0.54)  cohesion 0.22 (0.17 to 0.26)
 ```
 
-Two trials score a cohesion of 1 whatever the data. Even ten is not many. The mean is near where it settles, but one ensemble of ten scored 0.73 and another scored 0.14. Incoherence is just as jumpy, with two trials scoring anywhere from 0.03 to 0.60.
+Two trials score a cohesion of nearly 1 whatever the data. Even ten is not many. The mean is near where it settles, but one ensemble of ten scored 0.73 and another scored 0.13. Incoherence is just as jumpy, with two trials scoring anywhere from 0.03 to 0.60.
 
 ## What does a cohesion of 1 mean?
 
@@ -229,9 +229,37 @@ A higher `k` only sees bunching tighter than about `1/k` of the range. Broad sha
 
 No value of `k` is the correct one. The default of 10 is what the published figures used, so keep it. Never compare results made with different values.
 
+## Should I change `cohesion_k`?
+
+Only to match the papers. `cohesion_k` is a separate setting from `k`. It sets how finely cohesion's last step reads the pairwise divergences. By default it is 8 for each trial, so 10 trials give 80. The papers fixed it at 100, so pass `cohesion_k=100` to get their numbers back.
+
+More trials give more pairs, and more pairs can show finer detail. A fixed value reads the same camps lower as the ensemble grows. Here are two camps of trials at both settings.
+
+```python
+rng = np.random.default_rng(1)
+for count in [10, 100]:
+    two = [rng.normal(3 if i % 2 else -3, 1, 500) for i in range(count)]
+    for cohesion_k in [None, 100]:
+        result = ic.measure(two, cohesion_k=cohesion_k)
+        k, score = result.cohesion_k, result.cohesion
+        print(f"{count:3} trials  cohesion_k={k:<4g}  cohesion={score:.2f}")
+```
+
+```text
+ 10 trials  cohesion_k=80    cohesion=0.78
+ 10 trials  cohesion_k=100   cohesion=0.82
+100 trials  cohesion_k=800   cohesion=0.94
+100 trials  cohesion_k=100   cohesion=0.83
+```
+
+- **The default tells camps from noise better.** Over 3 to 400 trials it reads noise lower than 100 does on average, and camps higher. The [k experiments](../experiments/k/README.md) tested seven rules and this one won.
+- **`result.cohesion_k` says which value was used.** With unequal `weights` it counts trials by weight, so a trial with almost no weight barely moves it. The experiments did not test weights.
+- **The default struggles in three places.** With about ten observations a trial, many trials read noise as camps. With many options and few trials, camps are harder to tell from noise. Trials that are each nearly certain of one option read slightly higher from about 13 trials. In all three, `cohesion_k=100` reads them better, see [the limits](../experiments/k/results/README.md#what-no-rule-for-k-fixes).
+- **Never compare results made with different values,** just as for `k`.
+
 ## What should I check before I trust a number?
 
 1. Compare it with `result.floor()`, the floor for your sample size.
-2. Read cohesion only when you have many trials. Ten is the bare minimum.
+2. Read cohesion only when you have many trials. Eleven is the bare minimum.
 3. Never read cohesion without incoherence next to it.
-4. Keep the route, the bins, `bounds` and `k` the same across everything you compare.
+4. Keep the route, the bins, `bounds`, `k` and `cohesion_k` the same across everything you compare.

@@ -44,12 +44,14 @@ class Result:
         entropy: Entropy,
         max_entropy: float,
         deal: Deal | None = None,
+        cohesion_k: float | None = None,
     ) -> None:
         self._rows = rows
         self._weights = weights
         self._entropy = entropy
         self._max_entropy = max_entropy
         self._deal = deal
+        self._cohesion_k = cohesion_k
 
     def __repr__(self) -> str:
         """Return a short description."""
@@ -94,6 +96,18 @@ class Result:
         """
         return _read_only(_measures.pairwise_divergences(self._rows, self._entropy, self._weights))
 
+    @property
+    def cohesion_k(self) -> float:
+        """The ``k`` behind ``cohesion``.
+
+        Unless you set ``cohesion_k``, it is 8 for each trial. With unequal
+        weights, trials are counted as ``1 / sum(weights ** 2)`` of the weights
+        scaled to sum to 1, so a trial with almost no weight barely counts.
+        """
+        if self._cohesion_k is not None:
+            return self._cohesion_k
+        return _measures.cohesion_k(_measures.effective_trials(self._weights))
+
     @cached_property
     def cohesion(self) -> float:
         """How strongly the trials gather into a few shared patterns, from 0 to 1.
@@ -103,7 +117,9 @@ class Result:
         one value. Two trials always score near 1, because they make one pair.
         With unequal weights, a pair counts in proportion to both its weights.
         """
-        return _measures.cohesion(self.divergences, weights=_measures.pair_weights(self._weights))
+        return _measures.cohesion(
+            self.divergences, self.cohesion_k, weights=_measures.pair_weights(self._weights)
+        )
 
     def floor(
         self, repeats: int = DEFAULT_REPEATS, rng: np.random.Generator | int | None = None
@@ -142,7 +158,11 @@ class Result:
         generator = np.random.default_rng(rng)
         scores = [
             Result(
-                self._deal(generator), self._weights, self._entropy, self._max_entropy
+                self._deal(generator),
+                self._weights,
+                self._entropy,
+                self._max_entropy,
+                cohesion_k=self._cohesion_k,
             ).incoherence
             for _ in range(repeats)
         ]
@@ -156,6 +176,7 @@ def measure(
     bounds: tuple[float, float] | None = None,
     weights: ArrayLike | None = None,
     k: float = DEFAULT_K,
+    cohesion_k: float | None = None,
 ) -> Result:
     """Measure an ensemble of trials from the observations in each trial.
 
@@ -192,6 +213,13 @@ def measure(
         because one repeated value no longer scores near 0. Anything below
         0.0001 is treated as 0.0001, because results have settled by then.
         Ignored when ``bins`` is given.
+    cohesion_k
+        How quickly each pairwise divergence's influence falls away when
+        estimating cohesion. Leave as ``None`` for 8 times the number of
+        trials, see :attr:`Result.cohesion_k`. Pass ``100`` to match the papers,
+        which fixed it there. A higher value is slower, as the grid grows with
+        it. This is separate from ``k``, and applies to continuous and binned
+        data alike.
 
     Returns
     -------
@@ -215,11 +243,9 @@ def measure(
                 f"the bin edges ({edges[0]}, {edges[-1]})"
             )
         counts = np.stack([np.histogram(trial, edges)[0] for trial in observations])
-        return measure_counts(counts, weights=weights)
-    k = float(k)
-    if not 0 < k <= MAX_K:
-        raise ValueError(f"k must be positive and at most {MAX_K:g}, got {k}")
-    k = max(k, MIN_K)
+        return measure_counts(counts, weights=weights, cohesion_k=cohesion_k)
+    k = _as_k(k, "k", MAX_K)
+    cohesion_k = None if cohesion_k is None else _as_k(cohesion_k, "cohesion_k")
     points = points_for(k)
     scaled = [_to_unit(trial, low, high) for trial in observations]
     to_rows = partial(_density_rows, k=k, points=points)
@@ -229,10 +255,13 @@ def measure(
         partial(density_entropy, k=k),
         1.0,
         partial(_deal_observations, scaled, to_rows),
+        cohesion_k,
     )
 
 
-def measure_counts(counts: ArrayLike, *, weights: ArrayLike | None = None) -> Result:
+def measure_counts(
+    counts: ArrayLike, *, weights: ArrayLike | None = None, cohesion_k: float | None = None
+) -> Result:
     """Measure an ensemble of trials from a table of counts or probabilities.
 
     Parameters
@@ -243,6 +272,9 @@ def measure_counts(counts: ArrayLike, *, weights: ArrayLike | None = None) -> Re
         both work.
     weights
         One positive weight per trial. Defaults to equal weights.
+    cohesion_k
+        The ``k`` behind cohesion. Leave as ``None`` for 8 times the number of
+        trials, or pass ``100`` to match the papers. See :func:`measure`.
 
     Returns
     -------
@@ -256,10 +288,18 @@ def measure_counts(counts: ArrayLike, *, weights: ArrayLike | None = None) -> Re
         raise ValueError("counts must be finite and not negative")
     if not table.any(axis=1).all():
         raise ValueError("every trial needs at least one observation")
+    cohesion_k = None if cohesion_k is None else _as_k(cohesion_k, "cohesion_k")
     max_entropy = float(np.log2(table.shape[1]))
     whole = _as_whole(table)
     deal = None if whole is None else partial(_deal_counts, whole)
-    return Result(_sum_to_one(table), _as_weights(weights, len(table)), shannon, max_entropy, deal)
+    return Result(
+        _sum_to_one(table),
+        _as_weights(weights, len(table)),
+        shannon,
+        max_entropy,
+        deal,
+        cohesion_k,
+    )
 
 
 def incoherence(
@@ -270,7 +310,11 @@ def incoherence(
     weights: ArrayLike | None = None,
     k: float = DEFAULT_K,
 ) -> float:
-    """Incoherence of an ensemble of trials. Takes the same arguments as :func:`measure`."""
+    """Incoherence of an ensemble of trials.
+
+    Takes the same arguments as :func:`measure`, bar ``cohesion_k``, which has
+    no effect on incoherence.
+    """
     return measure(trials, bins=bins, bounds=bounds, weights=weights, k=k).incoherence
 
 
@@ -281,9 +325,21 @@ def cohesion(
     bounds: tuple[float, float] | None = None,
     weights: ArrayLike | None = None,
     k: float = DEFAULT_K,
+    cohesion_k: float | None = None,
 ) -> float:
     """Cohesion of an ensemble of trials. Takes the same arguments as :func:`measure`."""
-    return measure(trials, bins=bins, bounds=bounds, weights=weights, k=k).cohesion
+    return measure(
+        trials, bins=bins, bounds=bounds, weights=weights, k=k, cohesion_k=cohesion_k
+    ).cohesion
+
+
+def _as_k(value: float, name: str, maximum: float = np.inf) -> float:
+    """Check a ``k`` and return it as a float, raised to ``MIN_K`` if it is below."""
+    k = float(value)
+    if not (0 < k <= maximum and np.isfinite(k)):
+        limit = "finite" if np.isinf(maximum) else f"at most {maximum:g}"
+        raise ValueError(f"{name} must be positive and {limit}, got {k}")
+    return max(k, MIN_K)
 
 
 def _read_only(values: Array) -> Array:

@@ -97,8 +97,10 @@ class TestCohesion:
         assert ic.cohesion([trial] * 6) == pytest.approx(1.0, abs=1e-6)
 
     def test_two_clear_scenarios(self):
+        """The paper's 0.8 was at its fixed ``k`` of 100. Six trials give 48 by default."""
         counts = [[9, 1, 0, 0]] * 3 + [[0, 0, 1, 9]] * 3
-        assert discrete(counts).cohesion == pytest.approx(0.8, abs=0.05)
+        paper = ic.measure_counts(counts, cohesion_k=_measures.PAPER_COHESION_K)
+        assert paper.cohesion == pytest.approx(0.8, abs=0.05)
 
     def test_scenarios_score_above_scatter(self):
         camps, scatter = reference_trials()[1:]
@@ -122,12 +124,14 @@ def reference_trials():
 def test_matches_the_code_behind_the_papers(index, incoherence, cohesion):
     """Values from ``ensemblepy`` in timjdavey/incoherence-papers at 371249c.
 
-    That code measured cohesion on a 501-point grid. The package uses a finer
-    one, so cohesion is checked on the old grid here.
+    That code measured cohesion with ``k = 100`` on a 501-point grid. The
+    package grows ``k`` with trials and uses a finer grid, so cohesion is
+    checked at the old settings here.
     """
     result = ic.measure(reference_trials()[index])
     assert result.incoherence == pytest.approx(incoherence, abs=1e-3)
-    assert _measures.cohesion(result.divergences, points=501) == pytest.approx(cohesion, abs=1e-3)
+    old = _measures.cohesion(result.divergences, _measures.PAPER_COHESION_K, points=501)
+    assert old == pytest.approx(cohesion, abs=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -136,7 +140,18 @@ def test_matches_the_code_behind_the_papers(index, incoherence, cohesion):
     ids=["same", "camps", "scatter"],
 )
 def test_cohesion_on_the_finer_grid(index, cohesion):
-    """What the package returns, which differs from the old code by up to 0.06."""
+    """What ``cohesion_k=100`` returns, which differs from the old code by up to 0.06."""
+    trials = reference_trials()[index]
+    assert ic.cohesion(trials, cohesion_k=100) == pytest.approx(cohesion, abs=1e-3)
+
+
+@pytest.mark.parametrize(
+    ("index", "cohesion"),
+    [(0, 0.996), (1, 0.794), (2, 0.313)],
+    ids=["same", "camps", "scatter"],
+)
+def test_cohesion_by_default(index, cohesion):
+    """What the package returns by default, with ``k = 8n``, here 80."""
     assert ic.cohesion(reference_trials()[index]) == pytest.approx(cohesion, abs=1e-3)
 
 
@@ -146,11 +161,14 @@ def test_cohesion_on_the_finer_grid(index, cohesion):
 )
 def test_grid_table_in_the_improvements_page(value, old_grid, new_grid):
     divergences = np.full(45, value)
-    assert _measures.cohesion(divergences, points=501) == pytest.approx(old_grid, abs=0.0005)
-    assert _measures.cohesion(divergences) == pytest.approx(new_grid, abs=0.0005)
+    k = _measures.PAPER_COHESION_K
+    assert _measures.cohesion(divergences, k, points=501) == pytest.approx(old_grid, abs=0.0005)
+    assert _measures.cohesion(divergences, k) == pytest.approx(new_grid, abs=0.0005)
 
 
 @pytest.mark.parametrize("value", np.linspace(0, 1, 41) + 0.0003)
 def test_equal_divergences_are_fully_cohesive_wherever_they_fall(value):
     """The 501-point grid gave as little as 0.92 here, depending on the value."""
-    assert _measures.cohesion(np.full(45, min(value, 1.0))) == pytest.approx(1.0, abs=0.006)
+    divergences = np.full(45, min(value, 1.0))
+    for k in (_measures.PAPER_COHESION_K, _measures.cohesion_k(10)):
+        assert _measures.cohesion(divergences, k) == pytest.approx(1.0, abs=0.006)

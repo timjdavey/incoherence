@@ -23,12 +23,16 @@ POINTS = 501
 _ROUNDING = 1e-12
 
 
-@lru_cache
+@lru_cache(maxsize=2)
 def grid(points: int = POINTS) -> Array:
     """Return the reference points for the density estimate.
 
     Observations are scaled to [0, 1] first, and the grid overhangs by half a
     unit on each side.
+
+    Only the last two grids are kept, one for incoherence and one for
+    cohesion. Cohesion's grid grows with the number of trials, so keeping more
+    would hold a grid for every size of ensemble measured.
     """
     out = np.linspace(-0.5, 1.5, points)
     out.setflags(write=False)

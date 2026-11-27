@@ -47,11 +47,11 @@ print(f"incoherence={result.incoherence:.2f}  cohesion={result.cohesion:.2f}")
 ```
 
 ```text
-incoherence=0.57  cohesion=0.82
+incoherence=0.57  cohesion=0.78
 ```
 
 The trials disagree (incoherence of 0.57), but that disagreement has a clear pattern (cohesion of
-0.82), because they form two camps. The FAQ explains
+0.78), because they form two camps. The FAQ explains
 [what counts as high](https://github.com/timjdavey/incoherence/blob/main/docs/faq.md#what-counts-as-high).
 
 ## Documentation
@@ -60,7 +60,7 @@ The trials disagree (incoherence of 0.57), but that disagreement has a clear pat
   walks through small ensembles of 1s and 0s, the entropies behind their scores and cohesion.
 - [FAQ](https://github.com/timjdavey/incoherence/blob/main/docs/faq.md)
   answers what counts as high, how many trials and observations you need, whether to bin your
-  data and when to set `bounds` or `k`.
+  data and when to set `bounds`, `k` or `cohesion_k`.
 - [Improvements on the papers](https://github.com/timjdavey/incoherence/blob/main/docs/improvements.md)
   lists how results differ from the code behind the papers, and by how much.
 

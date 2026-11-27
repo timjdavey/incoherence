@@ -11,6 +11,8 @@ What the k experiments found. Every number comes from the tables in this folder,
 - **The minimum is 11 trials.** Under fixed 100 it is 10.
 - **Ten observations a trial is the one limit `8n` makes worse.** Loose camps are the largest limit,
   and no rule for k fixes either.
+- **The package now uses `8n`.** Pass `cohesion_k=100` for fixed 100. See [what changing the
+  default does](#what-changing-the-default-does).
 
 ## Tables
 
@@ -202,7 +204,7 @@ Each rule against `8n`, on 40 clouds and 80 kinds of camps with finite observati
 - **1,600 trials is not slow.** The last step takes about 0.1 seconds at k = 12,800, against 0.05 at
   k = 100.
 
-## What changing the default would do
+## What changing the default does
 
 | Ensemble | Trials | Fixed 100 | `8n` |
 | :-- | :-- | :-- | :-- |
@@ -213,12 +215,14 @@ Each rule against `8n`, on 40 clouds and 80 kinds of camps with finite observati
 | Figures 5 and 6, no patterns | 40 | 0.140 | 0.135 |
 | Test ensemble, two camps | 10 | 0.831 | 0.794 |
 
-- **Figure 2 of the Cohesion paper would no longer match.** It has 5 trials, so its k falls to 40,
+- **Figure 2 of the Cohesion paper no longer matches.** It has 5 trials, so its k falls to 40,
   and Options A and B fall by 0.22. The order is kept. A floor of 100 would leave all three
-  unchanged.
-- **The minimum in the docs moves from 10 trials to 11.**
-- **Three limits are new to the docs.** They are ten observations a trial, noise in the corners and
-  many options at few trials.
+  unchanged. `cohesion_k=100` gives the paper's values back.
+- **The minimum in the docs moved from 10 trials to 11.**
+- **Three limits are new to the [FAQ](../../../docs/faq.md#should-i-change-cohesion_k).** They are
+  ten observations a trial, noise in the corners and many options at few trials.
+- **With unequal weights the package counts trials by weight,** as `1 / Σw²` of the weights scaled
+  to sum to 1. That keeps a trial with almost no weight from moving k. It was not tested here.
 
 ## Open questions
 

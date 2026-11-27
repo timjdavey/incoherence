@@ -295,8 +295,18 @@ def test_a_table_with_one_state_has_no_entropy_to_reach():
     assert ic.measure_counts([[4], [7]]).max_entropy == 0
 
 
-@pytest.mark.parametrize("shortcut", [ic.incoherence, ic.cohesion])
-def test_shortcuts_list_the_same_options_as_measure(shortcut):
-    assert inspect.signature(shortcut).parameters.keys() == (
-        inspect.signature(ic.measure).parameters.keys()
-    )
+def test_shortcuts_list_the_same_options_as_measure():
+    options = inspect.signature(ic.measure).parameters.keys()
+    assert inspect.signature(ic.cohesion).parameters.keys() == options
+    assert inspect.signature(ic.incoherence).parameters.keys() == options - {"cohesion_k"}
+
+
+@pytest.mark.parametrize("cohesion_k", [0, -1, np.nan, np.inf])
+@pytest.mark.parametrize("bins", [None, 2])
+def test_cohesion_k_must_be_positive_and_finite(cohesion_k, bins):
+    with pytest.raises(ValueError, match="cohesion_k must be positive and finite"):
+        ic.measure(TRIALS, bins=bins, cohesion_k=cohesion_k)
+
+
+def test_cohesion_k_above_the_observation_limit_is_allowed():
+    assert ic.measure(TRIALS, cohesion_k=5000).cohesion_k == 5000

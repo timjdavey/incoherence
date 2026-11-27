@@ -83,8 +83,32 @@ def test_the_grid_grows_with_k(k, points):
     assert _entropy.points_for(k) == points
 
 
-def test_cohesion_uses_the_grid_for_its_own_k():
-    assert _measures.COHESION_POINTS == 2001
+def test_cohesion_k_is_8_for_each_trial():
+    assert _measures.cohesion_k(10) == 80
+    assert ic.measure_counts(np.eye(5)).cohesion_k == 40
+    assert ic.measure(np.eye(3)).cohesion_k == 24
+
+
+def test_cohesion_k_can_be_set():
+    counts = np.array([[9, 1, 0], [1, 5, 4], [2, 2, 6], [5, 5, 0]])
+    result = ic.measure_counts(counts, cohesion_k=100)
+    assert result.cohesion_k == 100
+    assert result.cohesion == _measures.cohesion(result.divergences, 100)
+    assert result.cohesion != ic.measure_counts(counts).cohesion
+
+
+def test_binned_data_passes_cohesion_k_on():
+    trials = [[0, 1, 1], [1, 2, 2], [0, 0, 2]]
+    binned = ic.measure(trials, bins=[0, 1, 2, 3], cohesion_k=100)
+    assert binned.cohesion_k == 100
+    assert ic.cohesion(trials, bins=[0, 1, 2, 3], cohesion_k=100) == binned.cohesion
+
+
+def test_cohesion_k_uses_the_grid_it_needs():
+    divergences = np.random.default_rng(1).random(45)
+    for k in (24, 100, 3200):
+        expected = _measures.cohesion(divergences, k, points=_entropy.points_for(k))
+        assert _measures.cohesion(divergences, k) == expected
 
 
 @pytest.mark.parametrize("k", [10, 25, 100, 1000])
@@ -104,6 +128,25 @@ def test_a_finer_grid_barely_moves_incoherence(k):
     points = _entropy.points_for(k)
     assert incoherence(points) == pytest.approx(ic.incoherence(trials, k=k))
     assert incoherence(points) == pytest.approx(incoherence(4 * (points - 1) + 1), rel=0.01)
+
+
+@pytest.mark.parametrize("trials", [3, 10, 100, 400])
+def test_a_finer_grid_barely_moves_cohesion(trials):
+    """Cohesion's ``k`` grows with trials, so its grid has to grow with it."""
+    rows = np.random.default_rng(trials).dirichlet(np.ones(4), trials)
+    result = ic.measure_counts(rows)
+    k = result.cohesion_k
+    finer = 4 * (_entropy.points_for(k) - 1) + 1
+    fine = _measures.cohesion(result.divergences, k, points=finer)
+    assert result.cohesion == pytest.approx(fine, abs=0.005)
+
+
+def test_the_grid_cache_stays_small():
+    """Every number of trials has its own grid, and only the last two are kept."""
+    rng = np.random.default_rng(0)
+    for trials in range(3, 41):
+        assert 0 <= ic.measure_counts(rng.dirichlet(np.ones(4), trials)).cohesion <= 1
+    assert _entropy.grid.cache_info().currsize <= 2
 
 
 @pytest.mark.filterwarnings("error")
@@ -145,7 +188,16 @@ def test_densities_match_the_direct_sum_for_many_observations():
 def test_a_trial_with_almost_no_weight_barely_moves_cohesion():
     counts = np.array([[9, 1, 0, 0], [8, 2, 0, 0], [0, 0, 1, 9], [0, 0, 2, 8], [3, 3, 2, 2]])
     weighted = ic.measure_counts(counts, weights=[1, 1, 1, 1, 1e-12])
-    assert weighted.cohesion == pytest.approx(ic.measure_counts(counts[:4]).cohesion, abs=1e-6)
+    plain = ic.measure_counts(counts[:4])
+    assert weighted.cohesion_k == pytest.approx(plain.cohesion_k, rel=1e-9)
+    # A k a hair above 32 takes one more grid point, which moves cohesion a little.
+    assert weighted.cohesion == pytest.approx(plain.cohesion, abs=1e-3)
+
+
+def test_unequal_weights_count_fewer_trials():
+    counts = np.array([[9, 1], [1, 9], [5, 5], [3, 7]])
+    assert ic.measure_counts(counts, weights=[1, 1, 1, 1]).cohesion_k == 32
+    assert ic.measure_counts(counts, weights=[3, 1, 1, 1]).cohesion_k == pytest.approx(8 * 3)
 
 
 @pytest.mark.parametrize("tiny", [1e-320, 5e-324])
@@ -156,10 +208,11 @@ def test_two_trials_score_a_cohesion_of_1_with_extreme_weights(tiny):
 
 def test_equal_weights_leave_cohesion_exactly_as_it_was():
     counts = np.array([[9, 1, 0], [1, 5, 4], [2, 2, 6], [5, 5, 0]])
-    plain = _measures.cohesion(ic.measure_counts(counts).divergences)
+    plain = _measures.cohesion(ic.measure_counts(counts).divergences, 32)
     assert ic.measure_counts(counts).cohesion == plain
     assert ic.measure_counts(counts, weights=[3, 3, 3, 3]).cohesion == plain
 
 
 def test_evenly_spread_divergences_have_no_cohesion():
-    assert _measures.cohesion(np.linspace(0, 1, 2000)) == pytest.approx(0.0, abs=1e-6)
+    for k in (100, _measures.cohesion_k(64)):
+        assert _measures.cohesion(np.linspace(0, 1, 2000), k) == pytest.approx(0.0, abs=1e-6)
