@@ -233,24 +233,28 @@ No value of `k` is the correct one. The default of 10 is what the published figu
 
 Only to match the papers. `cohesion_k` is a separate setting from `k`. It sets how finely cohesion's last step reads the pairwise divergences. By default it is 8 for each trial, so 10 trials give 80. The papers fixed it at 100, so pass `cohesion_k=100` to get their numbers back.
 
-More trials give more pairs, and more pairs can show finer detail. A fixed value reads the same camps lower as the ensemble grows. Here are two camps of trials at both settings.
+More trials give more pairs, and more pairs can show finer detail. A fixed value ignores that detail, so two camps read the same at 100 trials as at 10. The default uses it, so the same camps read higher as the ensemble grows. Here is noise, where each trial sits at a random place, against two camps of trials at both settings.
 
 ```python
 rng = np.random.default_rng(1)
 for count in [10, 100]:
+    noise = [rng.normal(rng.uniform(-3, 3), 1, 500) for _ in range(count)]
     two = [rng.normal(3 if i % 2 else -3, 1, 500) for i in range(count)]
-    for cohesion_k in [None, 100]:
-        result = ic.measure(two, cohesion_k=cohesion_k)
-        k, score = result.cohesion_k, result.cohesion
-        print(f"{count:3} trials  cohesion_k={k:<4g}  cohesion={score:.2f}")
+    for cohesion_k in [100, None]:
+        k = ic.measure(two, cohesion_k=cohesion_k).cohesion_k
+        low = ic.cohesion(noise, cohesion_k=cohesion_k)
+        high = ic.cohesion(two, cohesion_k=cohesion_k)
+        print(f"{count:3} trials  cohesion_k={k:<4g}  noise={low:.2f}  camps={high:.2f}")
 ```
 
 ```text
- 10 trials  cohesion_k=80    cohesion=0.78
- 10 trials  cohesion_k=100   cohesion=0.82
-100 trials  cohesion_k=800   cohesion=0.94
-100 trials  cohesion_k=100   cohesion=0.83
+ 10 trials  cohesion_k=100   noise=0.53  camps=0.83
+ 10 trials  cohesion_k=80    noise=0.53  camps=0.79
+100 trials  cohesion_k=100   noise=0.28  camps=0.83
+100 trials  cohesion_k=800   noise=0.28  camps=0.95
 ```
+
+At 100 trials the default puts 0.67 between noise and camps, against 0.55 for a fixed 100. At 10 trials the two settings are close, and 100 is slightly ahead.
 
 - **The default tells camps from noise better.** Over 3 to 400 trials it reads noise lower than 100 does on average, and camps higher. The [k experiments](../experiments/k/README.md) tested seven rules and this one won.
 - **`result.cohesion_k` says which value was used.** With unequal `weights` it counts trials by weight, so a trial with almost no weight barely moves it. The experiments did not test weights.
