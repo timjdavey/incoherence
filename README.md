@@ -66,6 +66,7 @@ The trials disagree (incoherence of 0.57), but that disagreement has a clear pat
 
 Every option and every value you can read back is described in the docstrings. Run
 `help(ic.measure)` and `help(ic.Result)`, or read
+[`_api.py`](https://github.com/timjdavey/incoherence/blob/main/src/incoherence/_api.py) and
 [`_result.py`](https://github.com/timjdavey/incoherence/blob/main/src/incoherence/_result.py).
 
 ## Cite

@@ -8,7 +8,7 @@ from scipy.spatial.distance import squareform
 from scipy.stats import entropy
 
 import incoherence as ic
-from incoherence._result import MIN_K
+from incoherence._inputs import MIN_K
 
 RNG = np.random.default_rng(0)
 TRIALS = [RNG.normal(i, 1, 200) for i in range(4)]
@@ -31,6 +31,13 @@ def test_shortcuts_match_the_result():
     assert ic.cohesion(TRIALS) == result.cohesion
     assert len(result.entropies) == 4
     assert repr(result) == f"Result(trials=4, incoherence={result.incoherence:.3f})"
+
+
+def test_entry_points_live_in_the_api_module():
+    for function in (ic.measure, ic.measure_counts, ic.incoherence, ic.cohesion):
+        assert function.__module__ == "incoherence._api"
+    # The experiments import Result from here, so it stays put.
+    assert ic.Result.__module__ == "incoherence._result"
 
 
 def test_cohesion_is_only_worked_out_when_read():

@@ -47,6 +47,17 @@ improvements page. If you change one, rerun it by hand or add a test, as
 
 Docs use British spelling.
 
+## Where code goes
+
+| File | What belongs there |
+| :-- | :-- |
+| `_api.py` | The four entry points, `measure`, `measure_counts`, `incoherence` and `cohesion` |
+| `_result.py` | `Result`, which works out each measure the first time it is read |
+| `_measures.py` | The equations from the papers, as pure functions |
+| `_entropy.py` | The entropy estimators, Shannon for discrete rows and density variance for continuous |
+| `_inputs.py` | Checking what the user passes in and putting it in shape |
+| `_shuffle.py` | Dealing the observations back out at random, for `Result.floor` |
+
 ## Where tests go
 
 | File | What belongs there |

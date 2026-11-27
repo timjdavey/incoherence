@@ -8,6 +8,7 @@ patterns. Both are defined in:
 - Davey, T. (2023). Cohesion. Entropy, 25(12), 1605.
 """
 
-from ._result import Result, cohesion, incoherence, measure, measure_counts
+from ._api import cohesion, incoherence, measure, measure_counts
+from ._result import Result
 
 __all__ = ["Result", "cohesion", "incoherence", "measure", "measure_counts"]
