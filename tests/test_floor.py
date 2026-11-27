@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 import incoherence as ic
-from incoherence._result import _deal_counts
+from incoherence._shuffle import deal_counts
 
 
 def by_hand(trials, rng, repeats, **kwargs):
@@ -56,7 +56,7 @@ def test_dealt_counts_keep_every_total():
     rng = np.random.default_rng(0)
     seen = set()
     for _ in range(50):
-        dealt = _deal_counts(table, rng) * sizes[:, None]
+        dealt = deal_counts(table, rng) * sizes[:, None]
         assert dealt == pytest.approx(np.round(dealt))
         assert dealt.sum(axis=1) == pytest.approx(sizes)
         assert dealt.sum(axis=0) == pytest.approx(table.sum(axis=0))

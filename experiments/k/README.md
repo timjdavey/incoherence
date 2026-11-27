@@ -108,7 +108,7 @@ A cloud and tight camps at 4 trials, with and without a floor of 100.
   differ is tested in [experiments/power](../power/README.md).
 - **The density grid follows k.** `points_for(k)` in `src/incoherence/_entropy.py` gives `20k + 1`
   points. It is checked for convergence at every k a rule reaches.
-- **The k for real values stays at 10.** It is `DEFAULT_K` in `src/incoherence/_result.py`.
+- **The k for real values stays at 10.** It is `DEFAULT_K` in `src/incoherence/_api.py`.
 
 ## Running
 
